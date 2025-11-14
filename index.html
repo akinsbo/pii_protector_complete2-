@@ -1,0 +1,13 @@
+<!doctype html>
+<html><head><meta charset="utf-8" /><title>Ledebe Protector (Dev)</title>
+<style>body{font-family:system-ui,sans-serif;margin:24px}textarea{width:100%;height:120px}.row{display:flex;gap:12px;align-items:center}</style>
+</head><body>
+<h2>GPT with PII Protection — Dev</h2>
+<div class="row"><label><input id="protect" type="checkbox" checked /> Protect PII</label><span id="shield"></span></div>
+<h4>Custom Terms (one per line)</h4><textarea id="customTerms"></textarea>
+<h4>Your Prompt</h4><textarea id="input" placeholder="Paste text with emails, phones, IDs…"></textarea>
+<div style="margin:12px 0;"><button id="send">Send</button></div>
+<h4>Protected Prompt</h4><textarea id="protected-prompt" readonly></textarea>
+<h5>Restored Result</h5><textarea id="output" readonly></textarea>
+<script type="module" src="/src/renderer.ts"></script>
+</body></html>

@@ -1,0 +1,35 @@
+appId: com.example.piiprotector
+productName: PII Protector
+files:
+  - dist/**
+  - index.prod.html
+  - src/**/*
+  - package.json
+extraMetadata:
+  main: dist/main.js
+
+mac:
+  target:
+    - dmg
+  category: public.app-category.productivity
+  hardenedRuntime: true
+  gatekeeperAssess: true
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.inherit.plist
+
+dmg:
+  background: build/dmg_background.png
+  icon: build/icon.icns
+  iconSize: 128
+  window:
+    width: 600
+    height: 400
+  contents:
+    - x: 140
+      y: 200
+      type: file
+      path: "{{productName}}.app"
+    - x: 460
+      y: 200
+      type: link
+      path: /Applications

@@ -1,5 +1,5 @@
 appId: com.example.piiprotector
-productName: PII Protector
+productName: Ledebe Protector
 files:
   - dist/**
   - index.prod.html
@@ -24,12 +24,3 @@ dmg:
   window:
     width: 600
     height: 400
-  contents:
-    - x: 140
-      y: 200
-      type: file
-      path: "{{productName}}.app"
-    - x: 460
-      y: 200
-      type: link
-      path: /Applications

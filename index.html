@@ -32,34 +32,52 @@
 
         .app-container {
             max-width: 800px;
-            margin: 2rem auto;
+            margin: 1rem auto;
             background: var(--white);
             border-radius: 12px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.1);
             overflow: hidden;
+            height: calc(100vh - 2rem);
+            display: flex;
+            flex-direction: column;
         }
 
         .app-header {
             background: var(--primary-blue);
             color: white;
-            padding: 1.5rem 2rem;
+            padding: 0.75rem 1.5rem;
             border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: white;
+            font-size: 0.9rem;
         }
 
         .app-header h2 {
-            font-size: 1.5rem;
+            font-size: 1.25rem;
             font-weight: 600;
         }
 
         .app-content {
-            padding: 2rem;
+            padding: 1rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
 
         .control-section {
             background: var(--bg-light);
-            border-radius: 8px;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
+            border-radius: 6px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 1rem;
             border: 1px solid var(--border);
         }
 
@@ -116,8 +134,10 @@
         .input-layout {
             display: grid;
             grid-template-columns: 2fr 1fr;
-            gap: 2rem;
-            margin-bottom: 2rem;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex: 1;
+            min-height: 0;
         }
 
         .prompt-section {
@@ -156,15 +176,15 @@
         }
 
         .prompt-input {
-            min-height: 150px;
-            max-height: 400px;
+            height: 100%;
+            min-height: 120px;
             border-color: var(--accent-green);
             box-shadow: 0 0 0 1px rgba(74, 222, 128, 0.1);
         }
 
         .custom-terms-input {
-            min-height: 120px;
-            max-height: 200px;
+            height: 100%;
+            min-height: 80px;
             border-color: var(--primary-blue);
             box-shadow: 0 0 0 1px rgba(30, 58, 138, 0.1);
         }
@@ -199,15 +219,15 @@
 
         .button-container {
             text-align: center;
-            margin: 2rem 0;
+            margin: 0.75rem 0;
         }
 
         .process-btn {
             background: var(--accent-green);
             color: white;
             border: none;
-            padding: 1rem 2.5rem;
-            font-size: 1.1rem;
+            padding: 0.75rem 2rem;
+            font-size: 1rem;
             font-weight: 600;
             border-radius: 8px;
             cursor: pointer;
@@ -221,7 +241,9 @@
 
         .results {
             display: grid;
-            gap: 1.5rem;
+            gap: 1rem;
+            flex: 1;
+            min-height: 0;
         }
 
         @media (min-width: 768px) {
@@ -238,7 +260,7 @@
 
         .result-header {
             background: var(--bg-light);
-            padding: 1rem;
+            padding: 0.75rem;
             border-bottom: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
@@ -273,7 +295,13 @@
         }
 
         .result-content {
-            padding: 1rem;
+            padding: 0.75rem;
+            height: 120px;
+        }
+
+        .result-content textarea {
+            height: 100%;
+            min-height: unset;
         }
 
         .feedback-section {
@@ -328,6 +356,30 @@
             cursor: not-allowed;
         }
 
+        .feedback-compact {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            padding: 0.75rem;
+            background: var(--bg-light);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .feedback-compact #feedback-text {
+            flex: 1;
+            padding: 0.5rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        .feedback-compact .feedback-btn {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+
         @media (max-width: 768px) {
             .app-container {
                 margin: 1rem;
@@ -339,6 +391,9 @@
             .feedback-actions {
                 flex-direction: column;
             }
+            .feedback-compact {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
@@ -346,19 +401,18 @@
     <div class="app-container">
         <div class="app-header">
             <h2>PII Protection Tool</h2>
+            <div class="header-controls">
+                <label class="toggle">
+                    <input id="protect" type="checkbox" checked>
+                    <span class="slider"></span>
+                </label>
+                <span>Protection</span>
+                <span id="shield">🛡️</span>
+            </div>
         </div>
         
         <div class="app-content">
-            <div class="control-section">
-                <div class="row">
-                    <label class="toggle">
-                        <input id="protect" type="checkbox" checked>
-                        <span class="slider"></span>
-                    </label>
-                    <span>Enable PII Protection</span>
-                    <span id="shield">🛡️</span>
-                </div>
-            </div>
+
 
             <div class="input-layout">
                 <div class="prompt-section">
@@ -399,16 +453,11 @@
                 </div>
             </div>
 
-            <div class="feedback-section">
-                <h3 class="section-title">Send Feedback</h3>
-                <div class="feedback-form">
-                    <textarea id="feedback-text" placeholder="Share your thoughts, report issues, or suggest improvements..."></textarea>
-                    <div class="feedback-actions">
-                        <input type="email" id="feedback-email" placeholder="Your email (optional)">
-                        <button id="send-feedback" class="feedback-btn">Send Feedback</button>
-                    </div>
-                </div>
+            <div class="feedback-compact">
+                <input type="text" id="feedback-text" placeholder="💬 Quick feedback or suggestions...">
+                <button id="send-feedback" class="feedback-btn">Send Feedback</button>
             </div>
+
         </div>
     </div>
     

@@ -43,7 +43,18 @@
     "files": [
       "dist/**/*",
       "*.html",
-      "src/**/*"
-    ]
+      "!src/**/*",
+      "!node_modules/**/*",
+      "!**/*.ts",
+      "!tsconfig.json",
+      "!vite.config.mts"
+    ],
+    "directories": {
+      "output": "dist-build"
+    },
+    "compression": "maximum",
+    "nsis": {
+      "oneClick": false
+    }
   }
 }

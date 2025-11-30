@@ -21,10 +21,10 @@ function createWindow() {
   
   if (isDev && !isPackaged) {
     // Development mode - load from project root
-    win.loadFile(path.join(process.cwd(), 'index.dev.html'));
+    win.loadFile(path.join(process.cwd(), 'index.html'));
   } else {
     // Production/packaged mode - load from app directory
-    win.loadFile(path.join(__dirname, '..', 'index.dev.html'));
+    win.loadFile(path.join(__dirname, '..', 'index.html'));
   }
 }
 app.whenReady().then(createWindow);

@@ -1,13 +1,318 @@
 <!doctype html>
-<html><head><meta charset="utf-8" /><title>Ledebe Protector (Dev)</title>
-<style>body{font-family:system-ui,sans-serif;margin:24px}textarea{width:100%;height:120px}.row{display:flex;gap:12px;align-items:center}</style>
-</head><body>
-<h2>GPT with PII Protection — Dev</h2>
-<div class="row"><label><input id="protect" type="checkbox" checked /> Protect PII</label><span id="shield"></span></div>
-<h4>Custom Terms (one per line)</h4><textarea id="customTerms"></textarea>
-<h4>Your Prompt</h4><textarea id="input" placeholder="Paste text with emails, phones, IDs…"></textarea>
-<div style="margin:12px 0;"><button id="send">Send</button></div>
-<h4>Protected Prompt</h4><textarea id="protected-prompt" readonly></textarea>
-<h5>Restored Result</h5><textarea id="output" readonly></textarea>
-<script type="module" src="./src/renderer.ts"></script>
-</body></html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PII Protector - Keep Your Data Safe</title>
+    <style>
+        :root {
+            --warm-orange: #ff6b35;
+            --soft-coral: #ff8c69;
+            --cream: #fef7f0;
+            --warm-gray: #6b7280;
+            --dark-gray: #374151;
+            --white: #ffffff;
+            --light-gray: #f9fafb;
+            --border: #e5e7eb;
+            --success: #10b981;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, var(--cream) 0%, #fff 100%);
+            color: var(--dark-gray);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--white);
+            border-radius: 16px;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--warm-orange) 0%, var(--soft-coral) 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .content {
+            padding: 2rem;
+        }
+
+        .section {
+            margin-bottom: 2rem;
+        }
+
+        .section:last-child {
+            margin-bottom: 0;
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--dark-gray);
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .toggle-section {
+            background: var(--light-gray);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .toggle {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: 0.4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--warm-orange);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        .toggle-label {
+            font-weight: 500;
+            color: var(--dark-gray);
+        }
+
+        .shield {
+            font-size: 1.5rem;
+            margin-left: auto;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 1rem;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            resize: vertical;
+            transition: all 0.3s ease;
+            background: var(--white);
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--warm-orange);
+            box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+        }
+
+        textarea::placeholder {
+            color: var(--warm-gray);
+        }
+
+        textarea[readonly] {
+            background: var(--light-gray);
+            color: var(--warm-gray);
+        }
+
+        .button-container {
+            text-align: center;
+            margin: 2rem 0;
+        }
+
+        button {
+            background: linear-gradient(135deg, var(--warm-orange) 0%, var(--soft-coral) 100%);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow);
+            min-width: 140px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .icon {
+            display: inline-block;
+            margin-right: 0.5rem;
+        }
+
+        .result-sections {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        @media (min-width: 768px) {
+            .result-sections {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .result-card {
+            background: var(--light-gray);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .result-card .section-title {
+            color: var(--warm-gray);
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 0.5rem;
+            }
+            
+            .header {
+                padding: 1.5rem;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .content {
+                padding: 1.5rem;
+            }
+            
+            .toggle-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🛡️ PII Protector</h1>
+            <p>Keep your sensitive data safe and secure</p>
+        </header>
+        
+        <div class="content">
+            <div class="toggle-section">
+                <div class="toggle-row">
+                    <label class="toggle">
+                        <input id="protect" type="checkbox" checked>
+                        <span class="slider"></span>
+                    </label>
+                    <span class="toggle-label">Enable PII Protection</span>
+                    <span id="shield" class="shield">🛡️</span>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3 class="section-title">
+                    <span class="icon">⚙️</span>
+                    Custom Terms (one per line)
+                </h3>
+                <textarea id="customTerms" placeholder="Add custom terms to protect (e.g., company names, project codes...)"></textarea>
+            </div>
+
+            <div class="section">
+                <h3 class="section-title">
+                    <span class="icon">✍️</span>
+                    Your Text
+                </h3>
+                <textarea id="input" placeholder="Paste your text here... We'll automatically protect emails, phone numbers, IDs, and other sensitive information."></textarea>
+            </div>
+
+            <div class="button-container">
+                <button id="send">🚀 Process Text</button>
+            </div>
+
+            <div class="result-sections">
+                <div class="result-card">
+                    <h4 class="section-title">🔒 Protected Version</h4>
+                    <textarea id="protected-prompt" readonly placeholder="Your protected text will appear here..."></textarea>
+                </div>
+                
+                <div class="result-card">
+                    <h4 class="section-title">🔓 Restored Result</h4>
+                    <textarea id="output" readonly placeholder="Processed result will appear here..."></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script type="module" src="./src/renderer.ts"></script>
+</body>
+</html>

@@ -14,11 +14,17 @@ function createWindow() {
       contextIsolation: true, nodeIntegration: false, sandbox: true,
     },
   });
-  const devURL = process.env.VITE_DEV_SERVER_URL || 'http://localhost:5173';
-  if (process.env.NODE_ENV === 'development' || process.env.VITE_DEV_SERVER_URL) {
-    win.loadURL(devURL);
+  
+  // Load the HTML file - check if we're in development or packaged
+  const isDev = process.env.NODE_ENV === 'development';
+  const isPackaged = app.isPackaged;
+  
+  if (isDev && !isPackaged) {
+    // Development mode - load from project root
+    win.loadFile(path.join(process.cwd(), 'index.dev.html'));
   } else {
-    win.loadFile(path.resolve(process.cwd(), 'index.dev.html'));
+    // Production/packaged mode - load from app directory
+    win.loadFile(path.join(__dirname, '..', 'index.dev.html'));
   }
 }
 app.whenReady().then(createWindow);

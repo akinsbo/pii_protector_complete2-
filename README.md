@@ -13,3 +13,6 @@ npm run dist:mac
 npm run dist:mac-universal
 
 Artifacts appear in `dist/`.
+
+## Build a macOS .dmg (electron-forge)
+npm run make

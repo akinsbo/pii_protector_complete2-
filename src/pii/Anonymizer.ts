@@ -111,5 +111,5 @@ export class Anonymizer {
     return placeholder;
   }
 
-  private hash(s: string) { return require('crypto').createHash('sha256').update(s).digest('hex').slice(0, 16); }
+  private hash(s: string) { return crypto.createHash('sha256').update(s).digest('hex').slice(0, 16); }
 }

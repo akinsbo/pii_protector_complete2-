@@ -3,22 +3,47 @@
   "version": "1.0.0",
   "description": "Electron + TypeScript app for masking and restoring PII with GPT integration",
   "main": "dist/main.js",
+  "files": [
+    "dist/",
+    "*.html",
+    "src/"
+  ],
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 5173",
     "dev:electron": "cross-env NODE_ENV=development concurrently -k \"npm:dev\" \"wait-on http://localhost:5173 && sleep 2 && electron .\"",
     "build": "tsc",
-    "start": "npm run build && electron .",
+    "start": "electron-forge start",
     "dist:mac": "npm run build && electron-builder --mac dmg",
-    "dist:mac-universal": "npm run build && electron-builder --mac universal"
+    "dist:mac-universal": "npm run build && electron-builder --mac universal",
+    "package": "electron-forge package",
+    "make": "electron-forge make"
   },
   "devDependencies": {
+    "@electron-forge/cli": "^7.10.2",
+    "@electron-forge/maker-deb": "^7.10.2",
+    "@electron-forge/maker-rpm": "^7.10.2",
+    "@electron-forge/maker-squirrel": "^7.10.2",
+    "@electron-forge/maker-zip": "^7.10.2",
+    "@electron-forge/plugin-auto-unpack-natives": "^7.10.2",
+    "@electron-forge/plugin-fuses": "^7.10.2",
+    "@electron/fuses": "^1.8.0",
     "@vitejs/plugin-react": "^5.1.1",
     "concurrently": "^8.2.2",
     "cross-env": "^7.0.3",
-    "electron": "^29.0.0",
-    "electron-builder": "^24.13.3",
+    "electron": "^39.2.4",
+    "electron-builder": "^26.0.12",
     "typescript": "^5.6.0",
-    "vite": "^5.4.0",
+    "vite": "^7.2.2",
     "wait-on": "^7.0.1"
+  },
+  "dependencies": {
+    "electron-squirrel-startup": "^1.0.1"
+  },
+  "build": {
+    "files": [
+      "dist/**/*",
+      "*.html",
+      "src/**/*"
+    ]
   }
 }

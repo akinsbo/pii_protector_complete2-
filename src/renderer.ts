@@ -56,7 +56,7 @@ function init() {
       protectedPromptEl.value = payload;
 
       // demo: echo back
-      let answer = `Echo: ${payload}`;
+      let answer = `${payload}`;
 
       if (protect.checked) {
         if (pii?.unmask) {
@@ -74,6 +74,77 @@ function init() {
       alert('Error, see DevTools');
     }
   });
+
+  // Feedback functionality
+  const feedbackBtn = byId<HTMLButtonElement>('send-feedback');
+  const feedbackText = byId<HTMLTextAreaElement>('feedback-text');
+  const feedbackEmail = byId<HTMLInputElement>('feedback-email');
+
+  feedbackBtn.addEventListener('click', async () => {
+    const message = feedbackText.value.trim();
+    if (!message) {
+      alert('Please enter your feedback');
+      return;
+    }
+
+    feedbackBtn.disabled = true;
+    feedbackBtn.textContent = 'Sending...';
+
+    try {
+      // @ts-ignore — exposed by Electron preload
+      const feedback = (window as any).feedback;
+      
+      // Validate secure connection before sending sensitive data
+      if (feedback?.endpoint && !feedback.endpoint.startsWith('https://')) {
+        throw new Error('Insecure connection: HTTPS required for feedback transmission');
+      }
+      
+      const result = await feedback.send(message, feedbackEmail.value.trim());
+      
+      if (result.success) {
+        alert('Thank you for your feedback!');
+        feedbackText.value = '';
+        feedbackEmail.value = '';
+      } else {
+        alert('Failed to send feedback. Please try again.');
+      }
+    } catch (error) {
+      alert('Failed to send feedback. Please try again.');
+    } finally {
+      feedbackBtn.disabled = false;
+      feedbackBtn.textContent = 'Send Feedback';
+    }
+  });
+
+  // Copy button functionality
+  document.querySelectorAll('.copy-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const targetId = btn.getAttribute('data-target');
+      const textarea = byId<HTMLTextAreaElement>(targetId!);
+      
+      try {
+        // Ensure secure context for clipboard operations
+        if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+          throw new Error('Clipboard access requires secure context');
+        }
+        await navigator.clipboard.writeText(textarea.value);
+        const originalText = btn.textContent;
+        btn.textContent = '✅ Copied!';
+        setTimeout(() => {
+          btn.textContent = originalText;
+        }, 2000);
+      } catch (error) {
+        // Fallback for older browsers
+        textarea.select();
+        document.execCommand('copy');
+        const originalText = btn.textContent;
+        btn.textContent = '✅ Copied!';
+        setTimeout(() => {
+          btn.textContent = originalText;
+        }, 2000);
+      }
+    });
+  });
 }
 
 if (document.readyState === 'loading') {
@@ -81,7 +152,3 @@ if (document.readyState === 'loading') {
 } else {
   init();
 }
-
-
-// if replacing, then show protected prompt and disappear the restored result.
-// else show restored result and disappear protected prompt.

@@ -36,3 +36,21 @@ ipcMain.handle('pii:mask', (_evt, payload: { text: string; customTerms?: string[
 });
 ipcMain.handle('pii:unmask', (_evt, payload: { text: string }) => anonymizer.unmask(payload.text));
 ipcMain.handle('pii:clear', () => { anonymizer.clear(); return { ok: true }; });
+
+ipcMain.handle('feedback:send', async (_evt, payload: { message: string; email?: string }) => {
+  try {
+    const response = await fetch('https://formspree.io/f/xdkogqpv', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: payload.message,
+        email: payload.email || 'anonymous',
+        app: 'PII Protector',
+        timestamp: new Date().toISOString()
+      })
+    });
+    return { success: response.ok };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+});

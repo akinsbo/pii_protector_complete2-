@@ -5,3 +5,7 @@ contextBridge.exposeInMainWorld('pii', {
   unmask: (text: string) => ipcRenderer.invoke('pii:unmask', { text }),
   clear: () => ipcRenderer.invoke('pii:clear'),
 });
+
+contextBridge.exposeInMainWorld('feedback', {
+  send: (message: string, email?: string) => ipcRenderer.invoke('feedback:send', { message, email }),
+});

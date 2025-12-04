@@ -1,7 +1,8 @@
 {
-  "name": "pii-protector",
+  "name": "ledebe-protector",
   "version": "1.0.0",
-  "description": "Electron + TypeScript app for masking and restoring PII with GPT integration",
+  "description": "Ledebe - Let there be secure data protection",
+  "author": "Ledebe",
   "main": "dist/main.js",
   "files": [
     "dist/",
@@ -33,16 +34,20 @@
     "electron": "^39.2.4",
     "electron-builder": "^26.0.12",
     "typescript": "^5.6.0",
-    "vite": "^7.2.2",
+    "vite": "^5.4.10",
     "wait-on": "^7.0.1"
   },
   "dependencies": {
     "electron-squirrel-startup": "^1.0.1"
   },
   "build": {
+    "appId": "com.ledebe.protector",
+    "productName": "Ledebe Protector",
+    "icon": "icon.svg",
     "files": [
       "dist/**/*",
       "*.html",
+      "icon.svg",
       "!src/**/*",
       "!node_modules/**/*",
       "!**/*.ts",
@@ -53,8 +58,8 @@
       "output": "dist-build"
     },
     "compression": "maximum",
-    "nsis": {
-      "oneClick": false
+    "mac": {
+      "category": "public.app-category.productivity"
     }
   }
 }

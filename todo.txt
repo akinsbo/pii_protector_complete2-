@@ -1,2 +1,2 @@
-Should be API driven
-I should be able to select what i do not want to protect
+TODO:Nice to have - Should be API driven so that other API can connect
+TODO: I should be able to select what i to not want to protect

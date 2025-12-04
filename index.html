@@ -16,6 +16,17 @@
             --border: #e2e8f0;
         }
 
+        [data-theme="dark"] {
+            --primary-blue: #3b82f6;
+            --accent-green: #10b981;
+            --dark-green: #059669;
+            --text-dark: #f9fafb;
+            --text-gray: #d1d5db;
+            --bg-light: #1f2937;
+            --white: #111827;
+            --border: #374151;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -50,6 +61,17 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
         }
 
         .header-controls {
@@ -400,8 +422,28 @@
 <body>
     <div class="app-container">
         <div class="app-header">
-            <h2>PII Protection Tool</h2>
+            <div class="header-left">
+                <div class="logo">
+                    <svg width="32" height="32" viewBox="0 0 512 512">
+                        <defs>
+                            <radialGradient id="lightGrad" cx="50%" cy="30%" r="70%">
+                                <stop offset="0%" style="stop-color:#fbbf24"/>
+                                <stop offset="100%" style="stop-color:#d97706"/>
+                            </radialGradient>
+                        </defs>
+                        <circle cx="256" cy="256" r="240" fill="#0f172a"/>
+                        <circle cx="256" cy="256" r="80" fill="url(#lightGrad)"/>
+                        <text x="256" y="290" text-anchor="middle" dominant-baseline="middle" fill="#fef3c7" font-family="serif" font-weight="bold" font-size="80">LDB</text>
+                    </svg>
+                </div>
+                <h2>Ledebe Protector</h2>
+            </div>
             <div class="header-controls">
+                <label class="toggle">
+                    <input id="darkMode" type="checkbox">
+                    <span class="slider"></span>
+                </label>
+                <span>Dark</span>
                 <label class="toggle">
                     <input id="protect" type="checkbox" checked>
                     <span class="slider"></span>

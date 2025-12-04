@@ -13,12 +13,24 @@ function byId<T extends HTMLElement>(id: string): T {
 function init() {
   console.log(`initinig`);
   const protect = byId<HTMLInputElement>('protect');
+  const darkMode = byId<HTMLInputElement>('darkMode');
   const inputEl = byId<HTMLTextAreaElement>('input');
   const outputEl = byId<HTMLTextAreaElement>('output');
   const protectedPromptEl = byId<HTMLTextAreaElement>('protected-prompt');
   const customTermsEl = byId<HTMLTextAreaElement>('customTerms');
   const sendBtn = byId<HTMLButtonElement>('send');
   const shield = byId<HTMLSpanElement>('shield');
+
+  // Dark mode toggle
+  darkMode.addEventListener('change', () => {
+    document.documentElement.setAttribute('data-theme', darkMode.checked ? 'dark' : 'light');
+    localStorage.setItem('darkMode', darkMode.checked.toString());
+  });
+
+  // Load saved dark mode preference
+  const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+  darkMode.checked = savedDarkMode;
+  document.documentElement.setAttribute('data-theme', savedDarkMode ? 'dark' : 'light');
 
   sendBtn.addEventListener('click', async () => {
     try {

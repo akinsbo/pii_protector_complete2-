@@ -43,7 +43,7 @@
   "build": {
     "appId": "com.ledebe.protector",
     "productName": "Ledebe Protector",
-    "icon": "icon.svg",
+    "icon": "icon.png",
     "files": [
       "dist/**/*",
       "*.html",

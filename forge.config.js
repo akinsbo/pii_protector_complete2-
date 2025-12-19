@@ -5,9 +5,9 @@ const { FuseV1Options, FuseVersion } = require('@electron/fuses');
 module.exports = {
   packagerConfig: {
     asar: true,
-    icon: path.resolve(__dirname, 'icon.icns')
+    icon: path.resolve(__dirname, 'icon.icns'),
   },
-    // ... other forge config
+  // ... other forge config
   rebuildConfig: {},
   makers: [
     {

@@ -23,21 +23,27 @@ function init() {
 
   // Dark mode toggle
   darkMode.addEventListener('change', () => {
-    document.documentElement.setAttribute('data-theme', darkMode.checked ? 'dark' : 'light');
+    document.documentElement.setAttribute(
+      'data-theme',
+      darkMode.checked ? 'dark' : 'light'
+    );
     localStorage.setItem('darkMode', darkMode.checked.toString());
   });
 
   // Load saved dark mode preference
   const savedDarkMode = localStorage.getItem('darkMode') === 'true';
   darkMode.checked = savedDarkMode;
-  document.documentElement.setAttribute('data-theme', savedDarkMode ? 'dark' : 'light');
+  document.documentElement.setAttribute(
+    'data-theme',
+    savedDarkMode ? 'dark' : 'light'
+  );
 
   sendBtn.addEventListener('click', async () => {
     try {
       const text = inputEl.value;
       const customTerms = (customTermsEl.value || '')
         .split('\n')
-        .map(s => s.trim())
+        .map((s) => s.trim())
         .filter(Boolean);
 
       let payload = text;
@@ -50,7 +56,11 @@ function init() {
       if (protect.checked) {
         if (pii?.mask) {
           console.log(`true pii?.mask: ${pii?.mask}`);
-          const { maskedText, placeholders } = await pii.mask(text, customTerms, 'conv-1');
+          const { maskedText, placeholders } = await pii.mask(
+            text,
+            customTerms,
+            'conv-1'
+          );
           payload = maskedText;
           maskedCount = Object.keys(placeholders).length;
         } else {
@@ -63,7 +73,9 @@ function init() {
       }
 
       shield.textContent = maskedCount ? `🛡️ protected: ${maskedCount}` : '';
-      console.log(`shield.textContent: ${shield.textContent}, maskedCount: ${maskedCount}, payload: ${payload}`);
+      console.log(
+        `shield.textContent: ${shield.textContent}, maskedCount: ${maskedCount}, payload: ${payload}`
+      );
 
       protectedPromptEl.value = payload;
 
@@ -89,8 +101,7 @@ function init() {
 
   // Feedback functionality
   const feedbackBtn = byId<HTMLButtonElement>('send-feedback');
-  const feedbackText = byId<HTMLTextAreaElement>('feedback-text');
-  const feedbackEmail = byId<HTMLInputElement>('feedback-email');
+  const feedbackText = byId<HTMLInputElement>('feedback-text');
 
   feedbackBtn.addEventListener('click', async () => {
     const message = feedbackText.value.trim();
@@ -105,18 +116,11 @@ function init() {
     try {
       // @ts-ignore — exposed by Electron preload
       const feedback = (window as any).feedback;
-      
-      // Validate secure connection before sending sensitive data
-      if (feedback?.endpoint && !feedback.endpoint.startsWith('https://')) {
-        throw new Error('Insecure connection: HTTPS required for feedback transmission');
-      }
-      
-      const result = await feedback.send(message, feedbackEmail.value.trim());
-      
+      const result = await feedback.send(message);
+
       if (result.success) {
         alert('Thank you for your feedback!');
         feedbackText.value = '';
-        feedbackEmail.value = '';
       } else {
         alert('Failed to send feedback. Please try again.');
       }
@@ -129,14 +133,17 @@ function init() {
   });
 
   // Copy button functionality
-  document.querySelectorAll('.copy-btn').forEach(btn => {
+  document.querySelectorAll('.copy-btn').forEach((btn) => {
     btn.addEventListener('click', async () => {
       const targetId = btn.getAttribute('data-target');
       const textarea = byId<HTMLTextAreaElement>(targetId!);
-      
+
       try {
         // Ensure secure context for clipboard operations
-        if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+        if (
+          location.protocol !== 'https:' &&
+          location.hostname !== 'localhost'
+        ) {
           throw new Error('Clipboard access requires secure context');
         }
         await navigator.clipboard.writeText(textarea.value);

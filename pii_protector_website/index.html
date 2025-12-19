@@ -17,6 +17,13 @@
                 <li><a href="#download">Download</a></li>
                 <li><a href="#contact">Contact</a></li>
             </ul>
+            <div class="language-selector">
+                <button onclick="setLanguage('en')" class="lang-btn" id="lang-en">EN</button>
+                <button onclick="setLanguage('es')" class="lang-btn" id="lang-es">ES</button>
+                <button onclick="setLanguage('fr')" class="lang-btn" id="lang-fr">FR</button>
+                <button onclick="setLanguage('ar')" class="lang-btn" id="lang-ar">AR</button>
+                <button onclick="setLanguage('zh')" class="lang-btn" id="lang-zh">中</button>
+            </div>
         </nav>
     </header>
 
@@ -41,7 +48,7 @@
                                 <div class="window-title">Ledebe</div>
                             </div>
                             <div class="window-content">
-                                <div class="demo-text">🛡️ Your data is protected</div>
+                                <div class="demo-text"><img id="protected-status-image" src="images/protected-en.svg" alt="Your data is protected" style="height: 40px;"></div>
                             </div>
                         </div>
                     </div>
@@ -91,7 +98,7 @@
                         </ul>
                     </div>
                     <div class="security-visual">
-                        <div class="shield-icon">🛡️</div>
+                        <div class="shield-icon"><img src="logo.png" alt="Security" style="width: 120px;"></div>
                     </div>
                 </div>
             </div>
@@ -156,5 +163,6 @@
             </div>
         </div>
     </footer>
+    <script src="i18n.js"></script>
 </body>
 </html>

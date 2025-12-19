@@ -8,12 +8,9 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true
   },
-  "include": [
-    "main.ts",
-    "preload.ts",
-    "src/**/*.ts",
-    "global.d.ts"
-  ]
+  "include": ["main.ts", "preload.ts", "src/**/*.ts", "global.d.ts"],
+  "exclude": ["e2e/**/*"]
 }

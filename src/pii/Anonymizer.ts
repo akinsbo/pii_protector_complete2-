@@ -1,4 +1,14 @@
-// src/pii/Anonymizer.ts
+/**
+ * @fileoverview Core PII anonymization engine for Ledebe Protector.
+ * Provides secure masking and unmasking of personally identifiable information
+ * including emails, phone numbers, IBANs, and custom terms.
+ * 
+ * @author Olaolu
+ * @version 1.0.0
+ * @since December 2025
+ * @license MIT
+ */
+
 import crypto from 'crypto';
 
 export type PiiType =
@@ -12,30 +22,57 @@ export type PiiType =
   | 'NAME'
   | 'CUSTOM';
 
+/** Represents a PII match found in text. */
 export interface Match {
+  /** The type of PII detected */
   type: PiiType;
+  /** Starting position in the text */
   start: number;
+  /** Ending position in the text */
   end: number;
+  /** The matched value */
   value: string;
 }
+
+/** Result of masking operation. */
 export interface MaskResult {
+  /** Text with PII replaced by placeholders */
   maskedText: string;
+  /** Mapping of placeholders to original values */
   placeholders: Record<string, string>;
 }
+
+/** Result of unmasking operation. */
 export interface RestoreResult {
+  /** Text with placeholders restored to original values */
   restoredText: string;
 }
+
+/** Configuration options for Anonymizer. */
 export interface AnonymizerOptions {
+  /** Custom terms to anonymize */
   customExactTerms?: string[];
+  /** Key for consistent mapping across sessions */
   consistentMapKey?: string;
 }
 
+/** Regular expression for email addresses. */
 const EMAIL_RE = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi;
+
+/** Regular expression for phone numbers. */
 const PHONE_RE =
   /\b(?:\+?\d{1,3}[-.\s]?)?(?:\(?\d{3,4}\)?[-.\s]?)?\d{3}[-.\s]?\d{3,4}\b/g;
+
+/** Regular expression for IP addresses. */
 const IP_RE = /\b(?:\d{1,3}\.){3}\d{1,3}\b/g;
+
+/** Regular expression for IBAN codes. */
 const IBAN_RE = /\b[A-Z]{2}\d{2}[A-Z0-9]{10,30}\b/g;
+
+/** Regular expression for NIN/BVN numbers (11 digits). */
 const NIN_BVN_RE = /\b\d{11}\b/g;
+
+/** Regular expression for credit card numbers. */
 const CARD_RE = /\b(?:\d[ -]*?){13,19}\b/g;
 
 type ConsistentMaps = {
@@ -44,10 +81,18 @@ type ConsistentMaps = {
   counters: Record<PiiType, number>;
 };
 
+/**
+ * Core anonymization engine for PII protection.
+ * Handles masking and unmasking of sensitive data with consistent placeholders.
+ */
 export class Anonymizer {
   private consistent: ConsistentMaps;
   private opts: AnonymizerOptions;
 
+  /**
+   * Creates a new Anonymizer instance.
+   * @param opts Configuration options for the anonymizer
+   */
   constructor(opts: AnonymizerOptions = {}) {
     this.opts = opts;
     this.consistent = {
@@ -67,6 +112,9 @@ export class Anonymizer {
     };
   }
 
+  /**
+   * Clears all stored mappings and resets counters.
+   */
   clear() {
     this.consistent.byOriginal.clear();
     this.consistent.byPlaceholder.clear();
@@ -75,10 +123,19 @@ export class Anonymizer {
     }
   }
 
+  /**
+   * Sets custom terms to be anonymized.
+   * @param terms Array of custom terms to protect
+   */
   setCustomTerms(terms: string[]) {
     this.opts.customExactTerms = terms ?? [];
   }
 
+  /**
+   * Masks PII in the provided text.
+   * @param text The text to anonymize
+   * @return Object containing masked text and placeholder mappings
+   */
   mask(text: string): MaskResult {
     const matches = this.findMatches(text).sort((a, b) => b.start - a.start);
     console.log('matches =' + matches);
@@ -92,6 +149,11 @@ export class Anonymizer {
     return { maskedText: masked, placeholders };
   }
 
+  /**
+   * Restores original values from masked text.
+   * @param text The masked text to restore
+   * @return Object containing the restored text
+   */
   unmask(text: string): RestoreResult {
     const restored = text.replace(/\[\[LDB:([A-Z]+)_(\d+)\]\]/g, (full) => {
       const original = this.consistent.byPlaceholder.get(full);
@@ -100,6 +162,11 @@ export class Anonymizer {
     return { restoredText: restored };
   }
 
+  /**
+   * Finds all PII matches in the text.
+   * @param text The text to scan for PII
+   * @return Array of matches found
+   */
   private findMatches(text: string): Match[] {
     const results: Match[] = [];
     const pushMatches = (re: RegExp, type: PiiType) => {
@@ -156,6 +223,12 @@ export class Anonymizer {
     return dedup;
   }
 
+  /**
+   * Gets or creates a consistent placeholder for a PII value.
+   * @param type The type of PII
+   * @param original The original value to mask
+   * @return The placeholder string
+   */
   private getOrCreatePlaceholder(type: PiiType, original: string): string {
     const stableKey = this.hash(
       `${this.opts.consistentMapKey ?? 'session'}::${type}::${original}`
@@ -169,7 +242,12 @@ export class Anonymizer {
     return placeholder;
   }
 
-  private hash(s: string) {
+  /**
+   * Creates a hash of the input string for consistent mapping.
+   * @param s The string to hash
+   * @return Truncated SHA-256 hash
+   */
+  private hash(s: string): string {
     return crypto.createHash('sha256').update(s).digest('hex').slice(0, 16);
   }
 }

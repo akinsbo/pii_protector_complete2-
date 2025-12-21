@@ -1,8 +1,42 @@
 #!/bin/bash
+#
+# Ledebe Protector - Artifact Build & Deployment Script
+#
+# Purpose: Build and deploy desktop application artifacts
+# Author: Olaolu
+# Version: 1.0.0
+# Since: December 2025
+# License: MIT
+#
+# This script performs:
+# - Comprehensive pre-build validation
+# - Cross-platform artifact building (macOS, Windows)
+# - S3 artifact deployment
+# - Download link generation
+#
+
+set -e
 
 BUCKET="ledebe"
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "$SCRIPT_DIR/.."
+
+echo "🔍 Running comprehensive pre-build checks..."
+
+# Run all quality and security checks
+echo "📝 Running linting..."
+npm run lint
+
+echo "🎨 Checking code formatting..."
+npm run format:check
+
+echo "🔒 Running security audit..."
+npm run security:audit
+
+echo "🧪 Running E2E tests..."
+npm run test:e2e
+
+echo "✅ All checks passed! Building artifacts..."
 
 echo "🔨 Building Mac artifact..."
 npm run dist:mac

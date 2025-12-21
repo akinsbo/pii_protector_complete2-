@@ -450,6 +450,7 @@
                 </label>
                 <span>Protection</span>
                 <span id="shield">🛡️</span>
+                <button id="settings-btn" style="background: none; border: none; color: white; cursor: pointer; font-size: 1.2rem; margin-left: 1rem;" title="Settings">⚙️</button>
             </div>
         </div>
         
@@ -500,6 +501,39 @@
                 <button id="send-feedback" class="feedback-btn">Send Feedback</button>
             </div>
 
+        </div>
+    </div>
+    
+    <!-- Settings Modal -->
+    <div id="settings-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+        <div style="background: var(--white); margin: 2rem auto; padding: 2rem; border-radius: 8px; max-width: 500px; max-height: 80vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border);">
+                <h3>Settings</h3>
+                <button id="close-settings" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-gray);">&times;</button>
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <h4 style="margin-bottom: 0.5rem; color: var(--text-dark);">Default Custom Terms</h4>
+                <p style="font-size: 0.85rem; color: var(--text-gray); margin-bottom: 0.75rem;">These terms will be automatically loaded when the app starts</p>
+                <textarea id="settings-custom-terms" style="width: 100%; height: 120px; padding: 0.75rem; border: 2px solid var(--border); border-radius: 6px; font-family: inherit; resize: vertical;" placeholder="company-name&#10;project-code&#10;secret-key"></textarea>
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <h4 style="margin-bottom: 0.5rem; color: var(--text-dark);">Preferences</h4>
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+                    <input type="checkbox" id="settings-auto-save" style="margin: 0;">
+                    <label for="settings-auto-save" style="color: var(--text-dark);">Auto-save custom terms</label>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <input type="checkbox" id="settings-notifications" style="margin: 0;">
+                    <label for="settings-notifications" style="color: var(--text-dark);">Show notifications</label>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                <button id="cancel-settings" style="background: var(--border); color: var(--text-dark); border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer;">Cancel</button>
+                <button id="save-settings" style="background: var(--accent-green); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer;">Save Settings</button>
+            </div>
         </div>
     </div>
     

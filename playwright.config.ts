@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Playwright configuration for E2E testing.
+ * Configures test execution, reporting, and browser automation settings.
+ * 
+ * @author Olaolu
+ * @version 1.0.0
+ * @since December 2025
+ * @license MIT
+ */
+
 import { defineConfig } from '@playwright/test';
 
 export default defineConfig({

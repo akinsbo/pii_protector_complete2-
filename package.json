@@ -11,11 +11,15 @@
   ],
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 5173",
-    "dev:electron": "cross-env NODE_ENV=development concurrently -k \"npm:dev\" \"wait-on https://localhost:5173 && sleep 2 && electron .\"",
+    "dev:electron": "cross-env NODE_ENV=development concurrently -k \"npm:dev\" \"wait-on http://localhost:5173 && sleep 2 && electron .\"",
     "build": "tsc",
     "start": "electron-forge start",
     "dist:mac": "npm run build && electron-builder --mac dmg",
     "dist:mac-universal": "npm run build && electron-builder --mac universal",
+    "dist:win": "npm run build && electron-builder --win nsis",
+    "dist:win-portable": "npm run build && electron-builder --win portable",
+    "dist:all": "npm run build && electron-builder --mac --win --linux",
+    "dist:publish": "npm run build && electron-builder --publish always",
     "package": "electron-forge package",
     "make": "electron-forge make",
     "test:e2e": "npm run build && playwright test",
@@ -39,22 +43,23 @@
     "@electron-forge/plugin-fuses": "^7.10.2",
     "@electron/fuses": "^1.8.0",
     "@playwright/test": "^1.57.0",
-    "@typescript-eslint/eslint-plugin": "^8.49.0",
-    "@typescript-eslint/parser": "^8.49.0",
-    "@vitejs/plugin-react": "^5.1.1",
+    "@typescript-eslint/eslint-plugin": "^8.50.0",
+    "@typescript-eslint/parser": "^8.50.0",
+    "@vitejs/plugin-react": "^5.1.2",
     "@wdio/cli": "^9.21.1",
-    "concurrently": "^8.2.2",
-    "cross-env": "^7.0.3",
-    "electron": "^39.2.4",
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
+    "electron": "^39.2.7",
     "electron-builder": "^26.0.12",
-    "electron-playwright-helpers": "^1.8.2",
-    "eslint": "^9.39.1",
+    "electron-playwright-helpers": "^2.0.1",
+    "eslint": "^9.39.2",
     "playwright": "^1.57.0",
     "prettier": "^3.7.4",
     "typescript": "^5.6.0",
-    "vite": "^5.4.10",
-    "wait-on": "^7.0.1",
-    "wdio-electron-service": "^9.2.1"
+    "vite": "^6.0.5",
+    "wait-on": "^9.0.3",
+    "wdio-electron-service": "^9.2.1",
+    "@electron/notarize": "^2.5.0"
   },
   "dependencies": {
     "electron-squirrel-startup": "^1.0.1"
@@ -62,11 +67,11 @@
   "build": {
     "appId": "com.ledebe.protector",
     "productName": "Ledebe Protector",
-    "icon": "icon.png",
+    "copyright": "Copyright © 2025 Ledebe. All rights reserved.",
     "files": [
       "dist/**/*",
       "*.html",
-      "icon.svg",
+      "assets/icon.svg",
       "!src/**/*",
       "!node_modules/**/*",
       "!**/*.ts",
@@ -78,7 +83,81 @@
     },
     "compression": "maximum",
     "mac": {
-      "category": "public.app-category.productivity"
-    }
+      "category": "public.app-category.productivity",
+      "notarize": false,
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["arm64", "x64"]
+        },
+        {
+          "target": "zip",
+          "arch": ["arm64", "x64"]
+        }
+      ]
+    },
+    "dmg": {
+      "title": "Install Ledebe Protector",
+      "backgroundColor": "#1e3a8a",
+      "window": {
+        "width": 600,
+        "height": 400
+      },
+      "contents": [
+        {
+          "x": 150,
+          "y": 200,
+          "type": "file"
+        },
+        {
+          "x": 450,
+          "y": 200,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64", "ia32"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Ledebe Protector",
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico",
+      "installerHeaderIcon": "assets/icon.ico",
+      "deleteAppDataOnUninstall": false,
+      "runAfterFinish": true,
+      "menuCategory": "Ledebe",
+      "displayLanguageSelector": true,
+      "multiLanguageInstaller": true,
+      "license": "LICENSE.txt"
+    },
+    "publish": {
+      "provider": "generic",
+      "url": "https://ledebe.s3-website-us-east-1.amazonaws.com/downloads/"
+    },
+    "afterSign": "scripts/notarize.js",
+    "extraResources": [
+      {
+        "from": "assets/",
+        "to": "assets/",
+        "filter": ["**/*"]
+      }
+    ]
   }
 }

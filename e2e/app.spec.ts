@@ -1,3 +1,13 @@
+/**
+ * @fileoverview End-to-end tests for Ledebe Protector Electron application.
+ * Tests application launch, stability, and core functionality.
+ * 
+ * @author Olaolu
+ * @version 1.0.0
+ * @since December 2025
+ * @license MIT
+ */
+
 import { test, expect } from '@playwright/test';
 import { spawn, ChildProcess } from 'child_process';
 import path from 'path';

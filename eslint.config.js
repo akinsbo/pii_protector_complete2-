@@ -1,3 +1,13 @@
+/**
+ * @fileoverview ESLint configuration for Ledebe Protector.
+ * Defines linting rules for TypeScript and JavaScript files.
+ * 
+ * @author Olaolu
+ * @version 1.0.0
+ * @since December 2025
+ * @license MIT
+ */
+
 module.exports = [
   {
     ignores: [

@@ -1,9 +1,17 @@
-// src/renderer.ts
+/**
+ * @fileoverview Renderer process for Ledebe Protector application.
+ * Handles UI interactions, PII protection, feedback, and template management.
+ * 
+ * @author Olaolu
+ * @version 1.0.0
+ * @since December 2025
+ * @license MIT
+ */
+
 import { WebAnonymizer } from './pii/WebAnonymizer';
 
 const fallback = new WebAnonymizer();
 
-// ✅ typed helper
 function byId<T extends HTMLElement>(id: string): T {
   const el = document.getElementById(id);
   if (!el) throw new Error(`#${id} not found`);
@@ -11,7 +19,6 @@ function byId<T extends HTMLElement>(id: string): T {
 }
 
 function init() {
-  console.log(`initinig`);
   const protect = byId<HTMLInputElement>('protect');
   const darkMode = byId<HTMLInputElement>('darkMode');
   const inputEl = byId<HTMLTextAreaElement>('input');
@@ -49,13 +56,11 @@ function init() {
       let payload = text;
       let maskedCount = 0;
 
-      // @ts-ignore — exposed by Electron preload in app runtime
+      // @ts-ignore
       const pii = (window as any).pii;
-      console.log(`text: ${text}, customTerms: ${customTerms}, pii: ${pii}`);
 
       if (protect.checked) {
         if (pii?.mask) {
-          console.log(`true pii?.mask: ${pii?.mask}`);
           const { maskedText, placeholders } = await pii.mask(
             text,
             customTerms,
@@ -64,7 +69,6 @@ function init() {
           payload = maskedText;
           maskedCount = Object.keys(placeholders).length;
         } else {
-          console.log(`false pii?.mask: ${pii?.mask}`);
           fallback.setCustomTerms(customTerms);
           const { maskedText, placeholders } = fallback.mask(text);
           payload = maskedText;
@@ -73,13 +77,8 @@ function init() {
       }
 
       shield.textContent = maskedCount ? `🛡️ protected: ${maskedCount}` : '';
-      console.log(
-        `shield.textContent: ${shield.textContent}, maskedCount: ${maskedCount}, payload: ${payload}`
-      );
-
       protectedPromptEl.value = payload;
 
-      // demo: echo back
       let answer = `${payload}`;
 
       if (protect.checked) {
@@ -99,7 +98,14 @@ function init() {
     }
   });
 
-  // Feedback functionality
+  setupFeedback();
+  setupTemplateHandlers();
+  setupSettingsHandlers();
+  setupCopyButtons();
+  loadSettings();
+}
+
+function setupFeedback() {
   const feedbackBtn = byId<HTMLButtonElement>('send-feedback');
   const feedbackText = byId<HTMLInputElement>('feedback-text');
 
@@ -114,7 +120,7 @@ function init() {
     feedbackBtn.textContent = 'Sending...';
 
     try {
-      // @ts-ignore — exposed by Electron preload
+      // @ts-ignore
       const feedback = (window as any).feedback;
       const result = await feedback.send(message);
 
@@ -131,19 +137,41 @@ function init() {
       feedbackBtn.textContent = 'Send Feedback';
     }
   });
+}
 
-  // Copy button functionality
+function setupTemplateHandlers() {
+  window.addEventListener('menu-save-template', showSaveTemplateDialog);
+  window.addEventListener('menu-load-template', showLoadTemplateDialog);
+  window.addEventListener('menu-clear-all', clearAllFields);
+}
+
+function setupSettingsHandlers() {
+  const settingsBtn = byId<HTMLButtonElement>('settings-btn');
+  const settingsModal = byId<HTMLDivElement>('settings-modal');
+  const closeSettings = byId<HTMLButtonElement>('close-settings');
+  const cancelSettings = byId<HTMLButtonElement>('cancel-settings');
+  const saveSettings = byId<HTMLButtonElement>('save-settings');
+  
+  settingsBtn.addEventListener('click', showSettingsModal);
+  closeSettings.addEventListener('click', hideSettingsModal);
+  cancelSettings.addEventListener('click', hideSettingsModal);
+  saveSettings.addEventListener('click', saveSettingsData);
+  
+  settingsModal.addEventListener('click', (e) => {
+    if (e.target === settingsModal) {
+      hideSettingsModal();
+    }
+  });
+}
+
+function setupCopyButtons() {
   document.querySelectorAll('.copy-btn').forEach((btn) => {
     btn.addEventListener('click', async () => {
       const targetId = btn.getAttribute('data-target');
       const textarea = byId<HTMLTextAreaElement>(targetId!);
 
       try {
-        // Ensure secure context for clipboard operations
-        if (
-          location.protocol !== 'https:' &&
-          location.hostname !== 'localhost'
-        ) {
+        if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
           throw new Error('Clipboard access requires secure context');
         }
         await navigator.clipboard.writeText(textarea.value);
@@ -153,7 +181,6 @@ function init() {
           btn.textContent = originalText;
         }, 2000);
       } catch (error) {
-        // Fallback for older browsers
         textarea.select();
         document.execCommand('copy');
         const originalText = btn.textContent;
@@ -164,6 +191,158 @@ function init() {
       }
     });
   });
+}
+
+function showSettingsModal() {
+  const settingsModal = byId<HTMLDivElement>('settings-modal');
+  settingsModal.style.display = 'block';
+}
+
+function hideSettingsModal() {
+  const settingsModal = byId<HTMLDivElement>('settings-modal');
+  settingsModal.style.display = 'none';
+}
+
+async function loadSettings() {
+  try {
+    // @ts-ignore
+    const settings = (window as any).settings;
+    if (settings?.load) {
+      const result = await settings.load();
+      if (result.success) {
+        const settingsData = result.settings;
+        
+        const customTermsEl = byId<HTMLTextAreaElement>('customTerms');
+        if (settingsData.customTerms && settingsData.customTerms.length > 0) {
+          customTermsEl.value = settingsData.customTerms.join('\n');
+        }
+        
+        const settingsCustomTerms = byId<HTMLTextAreaElement>('settings-custom-terms');
+        const autoSave = byId<HTMLInputElement>('settings-auto-save');
+        const notifications = byId<HTMLInputElement>('settings-notifications');
+        
+        settingsCustomTerms.value = settingsData.customTerms ? settingsData.customTerms.join('\n') : '';
+        autoSave.checked = settingsData.autoSave !== false;
+        notifications.checked = settingsData.notifications !== false;
+      }
+    }
+  } catch (error) {
+    console.error('Failed to load settings:', error);
+  }
+}
+
+async function saveSettingsData() {
+  try {
+    const settingsCustomTerms = byId<HTMLTextAreaElement>('settings-custom-terms');
+    const autoSave = byId<HTMLInputElement>('settings-auto-save');
+    const notifications = byId<HTMLInputElement>('settings-notifications');
+    
+    const customTerms = (settingsCustomTerms.value || '')
+      .split('\n')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    
+    const settingsData = {
+      customTerms,
+      autoSave: autoSave.checked,
+      notifications: notifications.checked,
+      theme: 'system'
+    };
+    
+    // @ts-ignore
+    const settings = (window as any).settings;
+    if (settings?.save) {
+      const result = await settings.save(settingsData);
+      if (result.success) {
+        const customTermsEl = byId<HTMLTextAreaElement>('customTerms');
+        customTermsEl.value = customTerms.join('\n');
+        
+        alert('Settings saved successfully!');
+        hideSettingsModal();
+      } else {
+        alert('Failed to save settings. Please try again.');
+      }
+    }
+  } catch (error) {
+    console.error('Failed to save settings:', error);
+    alert('Failed to save settings. Please try again.');
+  }
+}
+
+function showSaveTemplateDialog() {
+  const name = prompt('Enter template name:');
+  if (!name) return;
+  
+  const inputEl = byId<HTMLTextAreaElement>('input');
+  const customTermsEl = byId<HTMLTextAreaElement>('customTerms');
+  
+  const customTerms = (customTermsEl.value || '')
+    .split('\n')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  
+  // @ts-ignore
+  const templates = (window as any).templates;
+  if (templates?.save) {
+    templates.save(name, inputEl.value, customTerms)
+      .then((result: any) => {
+        if (result.success) {
+          alert('Template saved successfully!');
+        } else {
+          alert('Failed to save template.');
+        }
+      })
+      .catch(() => alert('Failed to save template.'));
+  }
+}
+
+function showLoadTemplateDialog() {
+  // @ts-ignore
+  const templates = (window as any).templates;
+  if (!templates?.list) return;
+  
+  templates.list()
+    .then((result: any) => {
+      if (result.success && result.templates.length > 0) {
+        const templateName = prompt(`Available templates:\n${result.templates.join('\n')}\n\nEnter template name to load:`);
+        if (!templateName) return;
+        
+        templates.load(templateName)
+          .then((loadResult: any) => {
+            if (loadResult.success && loadResult.template) {
+              const inputEl = byId<HTMLTextAreaElement>('input');
+              const customTermsEl = byId<HTMLTextAreaElement>('customTerms');
+              
+              inputEl.value = loadResult.template.text;
+              customTermsEl.value = loadResult.template.customTerms.join('\n');
+              
+              alert('Template loaded successfully!');
+            } else {
+              alert('Template not found.');
+            }
+          })
+          .catch(() => alert('Failed to load template.'));
+      } else {
+        alert('No templates found.');
+      }
+    })
+    .catch(() => alert('Failed to list templates.'));
+}
+
+function clearAllFields() {
+  if (confirm('Clear all fields?')) {
+    const inputEl = byId<HTMLTextAreaElement>('input');
+    const outputEl = byId<HTMLTextAreaElement>('output');
+    const protectedPromptEl = byId<HTMLTextAreaElement>('protected-prompt');
+    const customTermsEl = byId<HTMLTextAreaElement>('customTerms');
+    const shield = byId<HTMLSpanElement>('shield');
+    
+    inputEl.value = '';
+    outputEl.value = '';
+    protectedPromptEl.value = '';
+    customTermsEl.value = '';
+    shield.textContent = '';
+  }
 }
 
 if (document.readyState === 'loading') {

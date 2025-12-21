@@ -1,4 +1,14 @@
-// src/pii/WebAnonymizer.ts
+/**
+ * @fileoverview Browser-compatible PII anonymization engine.
+ * Lightweight version of Anonymizer for web environments without Node.js crypto.
+ * Uses DJB2 hash algorithm for consistent placeholder generation.
+ * 
+ * @author Olaolu
+ * @version 1.0.0
+ * @since December 2025
+ * @license MIT
+ */
+
 export type PiiType =
   | 'EMAIL'
   | 'PHONE'
@@ -9,34 +19,66 @@ export type PiiType =
   | 'CARD'
   | 'NAME'
   | 'CUSTOM';
+/** Represents a PII match found in text. */
 interface Match {
+  /** The type of PII detected */
   type: PiiType;
+  /** Starting position in the text */
   start: number;
+  /** Ending position in the text */
   end: number;
+  /** The matched value */
   value: string;
 }
+
+/** Result of masking operation. */
 export interface MaskResult {
+  /** Text with PII replaced by placeholders */
   maskedText: string;
+  /** Mapping of placeholders to original values */
   placeholders: Record<string, string>;
 }
+
+/** Result of unmasking operation. */
 export interface RestoreResult {
+  /** Text with placeholders restored to original values */
   restoredText: string;
 }
 
+/** Regular expression for email addresses. */
 const EMAIL_RE = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi;
+
+/** Regular expression for phone numbers. */
 const PHONE_RE =
   /\b(?:\+?\d{1,3}[-.\s]?)?(?:\(?\d{3,4}\)?[-.\s]?)?\d{3}[-.\s]?\d{3,4}\b/g;
+
+/** Regular expression for IP addresses. */
 const IP_RE = /\b(?:\d{1,3}\.){3}\d{1,3}\b/g;
+
+/** Regular expression for IBAN codes. */
 const IBAN_RE = /\b[A-Z]{2}\d{2}[A-Z0-9]{10,30}\b/g;
+
+/** Regular expression for NIN/BVN numbers (11 digits). */
 const NIN_BVN_RE = /\b\d{11}\b/g;
+
+/** Regular expression for credit card numbers. */
 const CARD_RE = /\b(?:\d[ -]*?){13,19}\b/g;
 
+/**
+ * DJB2 hash function for consistent placeholder generation.
+ * @param str The string to hash
+ * @return Hexadecimal hash string
+ */
 function djb2(str: string): string {
   let h = 5381;
   for (let i = 0; i < str.length; i++) h = ((h << 5) + h) ^ str.charCodeAt(i);
   return (h >>> 0).toString(16);
 }
 
+/**
+ * Browser-compatible PII anonymization engine.
+ * Lightweight version without Node.js dependencies.
+ */
 export class WebAnonymizer {
   private byOriginal = new Map<string, string>();
   private byPlaceholder = new Map<string, string>();
@@ -54,15 +96,27 @@ export class WebAnonymizer {
   private customExactTerms: string[] = [];
   private scope = 'browser-session';
 
+  /**
+   * Sets custom terms to be anonymized.
+   * @param terms Array of custom terms to protect
+   */
   setCustomTerms(terms: string[]) {
     this.customExactTerms = terms ?? [];
   }
+  /**
+   * Clears all stored mappings and resets counters.
+   */
   clear() {
     this.byOriginal.clear();
     this.byPlaceholder.clear();
     Object.keys(this.counters).forEach((k) => ((this.counters as any)[k] = 0));
   }
 
+  /**
+   * Masks PII in the provided text.
+   * @param text The text to anonymize
+   * @return Object containing masked text and placeholder mappings
+   */
   mask(text: string): MaskResult {
     const matches = this.findMatches(text).sort((a, b) => b.start - a.start);
     let masked = text;
@@ -75,6 +129,11 @@ export class WebAnonymizer {
     return { maskedText: masked, placeholders };
   }
 
+  /**
+   * Restores original values from masked text.
+   * @param text The masked text to restore
+   * @return Object containing the restored text
+   */
   unmask(text: string): RestoreResult {
     const restored = text.replace(
       /\[\[LDB:([A-Z]+)_(\d+)\]\]/g,
@@ -83,6 +142,11 @@ export class WebAnonymizer {
     return { restoredText: restored };
   }
 
+  /**
+   * Finds all PII matches in the text.
+   * @param text The text to scan for PII
+   * @return Array of matches found
+   */
   private findMatches(text: string): Match[] {
     const out: Match[] = [];
     const push = (re: RegExp, type: PiiType) => {
@@ -133,6 +197,12 @@ export class WebAnonymizer {
     return dedup;
   }
 
+  /**
+   * Gets or creates a placeholder for a PII value.
+   * @param type The type of PII
+   * @param original The original value to mask
+   * @return The placeholder string
+   */
   private getPlaceholder(type: PiiType, original: string): string {
     const key = djb2(`${this.scope}::${type}::${original}`);
     const existing = this.byOriginal.get(key);

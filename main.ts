@@ -83,7 +83,7 @@ function createWindow() {
   win = new BrowserWindow({
     width: 1100,
     height: 800,
-    icon: path.join(__dirname, 'assets', 'icon.png'),
+    icon: path.join(__dirname, 'assets', 'ledebe-logo.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,

@@ -61,21 +61,26 @@
         }
 
         .history-sidebar {
-            width: 280px;
-            background: var(--bg-light);
+            width: 320px;
+            background: linear-gradient(135deg, var(--bg-light) 0%, rgba(248, 250, 252, 0.8) 100%);
             border-right: 1px solid var(--border);
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            box-shadow: inset -1px 0 0 rgba(0,0,0,0.05);
         }
 
         .history-sidebar h3 {
             margin: 0;
-            padding: 1rem;
-            background: var(--primary-blue);
+            padding: 1.5rem 1.25rem;
+            background: linear-gradient(135deg, var(--primary-blue) 0%, #1e40af 100%);
             color: white;
-            font-size: 1rem;
+            font-size: 1.1rem;
+            font-weight: 600;
             border-bottom: 1px solid rgba(255,255,255,0.1);
+            text-align: center;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
         .main-content {
@@ -621,52 +626,86 @@
         .history-content {
             flex: 1;
             overflow-y: auto;
-            padding: 1rem;
+            padding: 0;
+            background: transparent;
         }
 
         .history-section {
-            margin-bottom: 1.5rem;
+            margin-bottom: 0;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .history-section:last-child {
+            border-bottom: none;
         }
 
         .history-section h4 {
-            margin: 0 0 0.75rem 0;
+            margin: 0;
+            padding: 1rem 1.25rem 0.75rem;
             color: var(--text-dark);
-            font-size: 0.9rem;
+            font-size: 0.95rem;
             font-weight: 600;
+            background: rgba(255,255,255,0.6);
+            border-bottom: 1px solid rgba(0,0,0,0.08);
+            letter-spacing: 0.3px;
         }
 
         .history-list {
-            max-height: 150px;
-            overflow-y: auto;
+            max-height: none;
+            overflow-y: visible;
+            padding: 0.5rem 0;
         }
 
         .history-item {
             background: var(--white);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: 0.5rem;
-            margin-bottom: 0.5rem;
+            border: none;
+            border-left: 3px solid transparent;
+            border-radius: 0;
+            padding: 1rem 1.25rem;
+            margin-bottom: 0;
             cursor: pointer;
             transition: all 0.3s ease;
+            border-bottom: 1px solid rgba(0,0,0,0.03);
+            position: relative;
         }
 
         .history-item:hover {
-            border-color: var(--accent-green);
-            transform: translateY(-1px);
+            background: rgba(74, 222, 128, 0.05);
+            border-left-color: var(--accent-green);
+            transform: translateX(2px);
+        }
+
+        .history-item:active {
+            background: rgba(74, 222, 128, 0.1);
+            transform: translateX(1px);
         }
 
         .history-item-text {
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             color: var(--text-dark);
-            white-space: nowrap;
+            line-height: 1.4;
+            margin-bottom: 0.5rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
             overflow: hidden;
-            text-overflow: ellipsis;
-            margin-bottom: 0.25rem;
+            font-weight: 500;
         }
 
         .history-item-date {
-            font-size: 0.7rem;
+            font-size: 0.75rem;
             color: var(--text-gray);
+            font-weight: 400;
+            opacity: 0.8;
+        }
+
+        .history-empty {
+            padding: 2rem 1.25rem;
+            text-align: center;
+            color: var(--text-gray);
+            font-style: italic;
+            font-size: 0.85rem;
+            opacity: 0.7;
         }
 
         @media (max-width: 1024px) {
@@ -776,7 +815,7 @@
         .main-input {
             width: 100%;
             min-height: 120px;
-            padding: 1rem 3rem 1rem 1rem;
+            padding: 1rem;
             border: 2px solid var(--border);
             border-radius: 8px;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'Roboto', sans-serif;
@@ -1119,46 +1158,7 @@
             display: none;
         }
 
-        .dictate-btn {
-            position: absolute;
-            top: 0.5rem;
-            right: 0.5rem;
-            background: transparent;
-            color: var(--text-gray);
-            border: 1px solid var(--border);
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 1.1rem;
-            transition: all 0.3s ease;
-            z-index: 2;
-        }
 
-        .dictate-btn:hover {
-            background: var(--bg-light);
-            color: var(--accent-green);
-            border-color: var(--accent-green);
-            transform: scale(1.1);
-        }
-
-        .dictate-btn.listening {
-            background: #e74c3c !important;
-            color: white !important;
-            border-color: #e74c3c !important;
-            animation: pulse 1.5s infinite;
-        }
-
-        .dictate-btn.not-supported {
-            background: #95a5a6;
-            cursor: not-allowed;
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
 
         .share-content {
             background: var(--white);
@@ -1317,27 +1317,16 @@
         <div class="app-header">
             <div class="header-left">
                 <div class="logo">
-                    <svg width="32" height="32" viewBox="0 0 512 512">
-                        <defs>
-                            <radialGradient id="lightGrad" cx="50%" cy="30%" r="70%">
-                                <stop offset="0%" style="stop-color:#fbbf24"/>
-                                <stop offset="100%" style="stop-color:#d97706"/>
-                            </radialGradient>
-                        </defs>
-                        <circle cx="256" cy="256" r="240" fill="#0f172a"/>
-                        <circle cx="256" cy="256" r="80" fill="url(#lightGrad)"/>
-                        <text x="256" y="290" text-anchor="middle" dominant-baseline="middle" fill="#fef3c7" font-family="serif" font-weight="bold" font-size="80">LDB</text>
-                    </svg>
+                    <img src="assets/ledebe-logo.png" alt="Ledebe Logo" style="width: 32px; height: 32px; background: #6b7280; border-radius: 6px; padding: 4px;">
                 </div>
                 <div>
-                    <h2>Ledebe Protector</h2>
-                    <div style="font-size: 0.8rem; opacity: 0.8; margin-top: -0.25rem;">Keep your personal info safe when using AI</div>
+                    <h2 data-i18n="appTitle">Ledebe Protector</h2>
+                    <div style="font-size: 0.8rem; opacity: 0.8; margin-top: -0.25rem;" data-i18n="appSubtitle">Keep your personal info safe when using AI</div>
                 </div>
             </div>
             <div class="header-controls">
-                <button id="help-btn" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; cursor: pointer; font-size: 0.9rem; padding: 0.5rem 1rem; border-radius: 6px; margin-right: 1rem;" title="Quick Help">❓ Help</button>
-                <button id="show-tutorial-btn" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; cursor: pointer; font-size: 0.9rem; padding: 0.5rem 1rem; border-radius: 6px; margin-right: rem;" title="Show Tutorial">📚 Tutorial</button>
-                <button id="ai-chat-btn" style="background: none; border: 1px solid rgba(255,255,255,0.2); color: white; cursor: pointer; font-size: 0.9rem; padding: 0.5rem 1rem; border-radius: 6px; margin-right: 0.5rem;" title="Chat with AI safely">Chat on App</button>
+                <button id="help-btn" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; cursor: pointer; font-size: 0.9rem; padding: 0.5rem 1rem; border-radius: 6px; margin-right: 1rem;" title="Quick Help" data-i18n="helpBtn">❓ Help</button>
+                <button id="show-tutorial-btn" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; cursor: pointer; font-size: 0.9rem; padding: 0.5rem 1rem; border-radius: 6px; margin-right: rem;" title="Show Tutorial" data-i18n="tutorialBtn">📚 Tutorial</button>
                 <label class="toggle" title="Switch between light and dark themes">
                     <input id="darkMode" type="checkbox">
                     <span class="slider"></span>
@@ -1348,15 +1337,15 @@
         
         <div class="app-body">
             <div class="history-sidebar">
-                <h3>📅 History</h3>
+                <h3 data-i18n="historyTitle">📚 History</h3>
                 <div class="history-content">
                     <div class="history-section">
-                        <h4>Recent Prompts</h4>
+                        <h4 data-i18n="recentPrompts">Recent Prompts</h4>
                         <div id="sidebar-prompt-history" class="history-list"></div>
                     </div>
                     
                     <div class="history-section">
-                        <h4>Recent Restored</h4>
+                        <h4 data-i18n="recentRestored">Recent Restored</h4>
                         <div id="sidebar-restore-history" class="history-list"></div>
                     </div>
                 </div>
@@ -1368,7 +1357,7 @@
             <div id="welcome-guide" class="welcome-guide">
                 <button id="close-tutorial" style="position: absolute; top: 1rem; right: 1rem; background: rgba(255,255,255,0.2); border: none; color: white; font-size: 1.5rem; cursor: pointer; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">&times;</button>
                 <div class="guide-content">
-                    <h3>🛡️ Welcome! Here's how to protect your personal info:</h3>
+                    <h3 data-i18n="welcomeTitle">🛡️ Welcome! Here's how to protect your personal info:</h3>
                     <div class="guide-steps">
                         <div class="guide-step">
                             <span class="step-number">1</span>
@@ -1413,37 +1402,37 @@
                         <div class="step-indicator">
                             <span class="step-number">1</span>
                             <div class="step-info">
-                                <h3>Enter Your Text</h3>
-                                <p>Paste any text that might contain personal information</p>
+                                <h3 data-i18n="enterText">Enter Your Text</h3>
+                                <p data-i18n="enterTextDesc">Paste any text that might contain personal information</p>
                             </div>
                         </div>
                         <div class="step-navigation">
-                            <button id="protect-my-info-btn" class="primary-btn">🛡️ Protect My Info</button>
+                            <button id="protect-my-info-btn" class="primary-btn" data-i18n="protectBtn">🛡️ Protect My Info</button>
                         </div>
                     </div>
                     
                     <div class="input-section">
                         <div class="input-container">
-                            <button id="paste-input-btn" class="copy-btn" title="Paste from clipboard" style="margin-bottom: 0.5rem; display: block;">📋 Paste</button>
+                            <button id="paste-input-btn" class="copy-btn" title="Paste from clipboard" style="margin-bottom: 0.5rem; display: block;" data-i18n="pasteBtn">📋 Paste</button>
                             <textarea id="input" class="main-input" data-i18n-placeholder="inputPlaceholder" placeholder="Type or paste your text here...">Hi, I'm John Smith. My email is john@company.com and my phone is +1-555-123-4567. I work at TechCorp on Project Alpha.</textarea>
-                            <button id="dictate-btn" class="dictate-btn" title="Voice input" data-i18n-title="dictateBtn">🎤</button>
+
                         </div>
                         
                         <div class="input-actions">
                             <div class="custom-terms-toggle">
-                                <button id="add-custom-terms" class="toggle-btn" data-i18n="addCustomTermsBtn">+ Add Custom Terms to Protect</button>
+                                <button id="add-custom-terms" class="toggle-btn" data-i18n="addCustomTerms">+ Add Custom Terms to Protect</button>
                             </div>
                             <div class="quick-actions-group">
-                                <button id="view-last-restored-btn" class="toggle-btn" style="display: none;">📄 View Last Restored</button>
-                                <button id="go-to-restore-btn" class="toggle-btn">🔄 Go to Restore</button>
+                                <button id="view-last-restored-btn" class="toggle-btn" style="display: none;" data-i18n="viewLastRestored">📄 View Last Restored</button>
+                                <button id="go-to-restore-btn" class="toggle-btn" data-i18n="goToRestore">🔄 Go to Restore</button>
                             </div>
                         </div>
                         
                         <div class="custom-terms-section" id="custom-terms-section" style="display: none;">
                             <div class="section-header">
-                                <h4>Custom Terms to Protect</h4>
+                                <h4 data-i18n="customTermsTitle">Custom Terms to Protect</h4>
                                 <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                    <button id="save-to-defaults-btn" class="copy-btn" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">❤️ Save to Defaults</button>
+                                    <button id="save-to-defaults-btn" class="copy-btn" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;" data-i18n="saveToDefaults">❤️ Save to Defaults</button>
                                     <span id="terms-counter" class="counter">0/50</span>
                                 </div>
                             </div>
@@ -1461,13 +1450,13 @@ Smith</textarea>
                         <div class="step-indicator">
                             <span class="step-number">2</span>
                             <div class="step-info">
-                                <h3>Your Protected Text</h3>
-                                <p>Personal info has been safely hidden with placeholders</p>
+                                <h3 data-i18n="protectedText">Your Protected Text</h3>
+                                <p data-i18n="protectedDesc">Personal info has been safely hidden with placeholders</p>
                             </div>
                         </div>
                         <div class="step-navigation">
-                            <button id="prev-step-2" class="nav-btn">← Back</button>
-                            <button id="next-step-2" class="nav-btn">Next →</button>
+                            <button id="prev-step-2" class="nav-btn" data-i18n="backBtn">← Back</button>
+                            <button id="next-step-2" class="nav-btn" data-i18n="nextBtn">Next →</button>
                         </div>
                         <div class="protection-status" id="protection-status"></div>
                     </div>
@@ -1484,9 +1473,7 @@ Smith</textarea>
                         </div>
                         
                         <div class="action-buttons">
-                            <button id="use-with-ai-btn" class="secondary-btn">Chat on App</button>
                             <button id="share-external-btn" class="secondary-btn">Chat outside App</button>
-                            <button id="start-over-btn" class="secondary-btn">↺ Protect Different Text</button>
                         </div>
                     </div>
                 </div>
@@ -1496,13 +1483,13 @@ Smith</textarea>
                         <div class="step-indicator">
                             <span class="step-number">3</span>
                             <div class="step-info">
-                                <h3>Restore Original Text</h3>
-                                <p>Paste AI response here to restore your personal info</p>
+                                <h3 data-i18n="restoreTitle">Restore Original Text</h3>
+                                <p data-i18n="restoreDesc">Paste AI response here to restore your personal info</p>
                             </div>
                         </div>
                         <div class="step-navigation">
                             <button id="prev-step-3" class="nav-btn">← Back</button>
-                            <button id="paste-btn" class="copy-btn" title="Paste from clipboard">📋 Paste</button>
+                            <button id="paste-btn" class="copy-btn" title="Paste from clipboard" data-i18n="pasteBtn">📋 Paste</button>
                         </div>
                     </div>
                     
@@ -1540,8 +1527,8 @@ Smith</textarea>
 
             <div class="feedback-section">
                 <div class="feedback-compact">
-                    <input type="text" id="feedback-text" placeholder="💬 How can we improve? Your feedback helps!">
-                    <button id="send-feedback" class="feedback-btn">Send</button>
+                    <input type="text" id="feedback-text" data-i18n-placeholder="feedbackPlaceholder" placeholder="💬 How can we improve? Your feedback helps!">
+                    <button id="send-feedback" class="feedback-btn" data-i18n="sendBtn">Send</button>
                 </div>
             </div>
         </div>
@@ -1654,12 +1641,12 @@ Smith</textarea>
     <div id="settings-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
         <div style="background: var(--white); margin: 2rem auto; padding: 2rem; border-radius: 8px; max-width: 500px; max-height: 80vh; overflow-y: auto;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border);">
-                <h3>Settings</h3>
+                <h3 data-i18n="settingsTitle">Settings</h3>
                 <button id="close-settings" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-gray);">&times;</button>
             </div>
             
             <div style="margin-bottom: 1.5rem;">
-                <h4 style="margin-bottom: 0.5rem; color: var(--text-dark);">Font Family</h4>
+                <h4 style="margin-bottom: 0.5rem; color: var(--text-dark);" data-i18n="fontFamily">Font Family</h4>
                 <select id="font-select" style="width: 100%; padding: 0.75rem; border: 2px solid var(--border); border-radius: 6px; font-family: inherit;">
                     <option value="arial" style="font-family: Arial, sans-serif;">Arial</option>
                     <option value="calibri" style="font-family: Calibri, sans-serif;">Calibri</option>
@@ -1672,7 +1659,7 @@ Smith</textarea>
             </div>
             
             <div style="margin-bottom: 1.5rem;">
-                <h4 style="margin-bottom: 0.5rem; color: var(--text-dark);">Language / Idioma / Langue / اللغة / 语言</h4>
+                <h4 style="margin-bottom: 0.5rem; color: var(--text-dark);" data-i18n="languageTitle">Language / Idioma / Langue / اللغة / 语言</h4>
                 <select id="language-select" style="width: 100%; padding: 0.75rem; border: 2px solid var(--border); border-radius: 6px; font-family: inherit;">
                     <option value="en">English</option>
                     <option value="es">Español</option>
@@ -1684,50 +1671,85 @@ Smith</textarea>
             
             <div style="margin-bottom: 1.5rem;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                    <h4 style="margin-bottom: 0; color: var(--text-dark);">Default Custom Terms</h4>
+                    <h4 style="margin-bottom: 0; color: var(--text-dark);" data-i18n="defaultCustomTerms">Default Custom Terms</h4>
                     <span id="settings-terms-counter" style="font-size: 0.8rem; color: var(--text-gray);">0/50</span>
                 </div>
-                <p style="font-size: 0.85rem; color: var(--text-gray); margin-bottom: 0.75rem;">These terms will be automatically loaded when the app starts</p>
+                <p style="font-size: 0.85rem; color: var(--text-gray); margin-bottom: 0.75rem;" data-i18n="defaultCustomTermsDesc">These terms will be automatically loaded when the app starts</p>
                 <textarea id="settings-custom-terms" style="width: 100%; height: 120px; padding: 0.75rem 0.75rem 0.75rem 0.75rem; padding-top: 0.5rem; border: 2px solid var(--border); border-radius: 6px; font-family: 'Monaco', 'Menlo', 'Consolas', monospace; resize: vertical; line-height: 1.5; background-image: repeating-linear-gradient(transparent, transparent 1.4em, rgba(30, 58, 138, 0.15) 1.4em, rgba(30, 58, 138, 0.15) 1.5em);" placeholder="company-name&#10;project-code&#10;secret-key"></textarea>
             </div>
             
             <div style="margin-bottom: 1.5rem;">
-                <h4 style="margin-bottom: 0.5rem; color: var(--text-dark);">Privacy & Analytics</h4>
+                <h4 style="margin-bottom: 0.5rem; color: var(--text-dark);" data-i18n="privacyAnalytics">Privacy & Analytics</h4>
                 <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
                     <input type="checkbox" id="settings-analytics" style="margin: 0;">
-                    <label for="settings-analytics" style="color: var(--text-dark);">Share anonymous usage analytics</label>
+                    <label for="settings-analytics" style="color: var(--text-dark);" data-i18n="shareAnalytics">Share anonymous usage analytics</label>
                 </div>
-                <p style="font-size: 0.8rem; color: var(--text-gray); margin-left: 1.5rem; margin-bottom: 0.75rem;">Help improve the app by sharing anonymous plugin usage data. No personal information or content is collected.</p>
-                <button id="view-analytics" style="background: var(--primary-blue); color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">📊 View Analytics Dashboard</button>
+                <p style="font-size: 0.8rem; color: var(--text-gray); margin-left: 1.5rem; margin-bottom: 0.75rem;" data-i18n="analyticsDesc">Help improve the app by sharing anonymous plugin usage data. No personal information or content is collected.</p>
+                <button id="view-analytics" style="background: var(--primary-blue); color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">📊 View Storage Analytics</button>
             </div>
             
             <div style="margin-bottom: 1.5rem;">
-                <h4 style="margin-bottom: 0.5rem; color: var(--text-dark);">Preferences</h4>
+                <h4 style="margin-bottom: 0.5rem; color: var(--text-dark);" data-i18n="preferences">Preferences</h4>
                 <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
                     <input type="checkbox" id="settings-auto-save" style="margin: 0;">
-                    <label for="settings-auto-save" style="color: var(--text-dark);">Auto-save custom terms</label>
+                    <label for="settings-auto-save" style="color: var(--text-dark);" data-i18n="autoSaveTerms">Auto-save custom terms</label>
                 </div>
                 <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
                     <input type="checkbox" id="settings-notifications" style="margin: 0;">
-                    <label for="settings-notifications" style="color: var(--text-dark);">Show notifications</label>
+                    <label for="settings-notifications" style="color: var(--text-dark);" data-i18n="showNotifications">Show notifications</label>
                 </div>
                 <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <label for="settings-history-limit" style="color: var(--text-dark);">Save last</label>
+                    <label for="settings-history-limit" style="color: var(--text-dark);" data-i18n="saveLast">Save last</label>
                     <input type="number" id="settings-history-limit" min="1" max="10" value="3" style="width: 60px; padding: 0.25rem; border: 1px solid var(--border); border-radius: 4px;">
-                    <label for="settings-history-limit" style="color: var(--text-dark);">prompts</label>
+                    <label for="settings-history-limit" style="color: var(--text-dark);" data-i18n="prompts">prompts</label>
                 </div>
             </div>
             
             <div style="display: flex; gap: 1rem; justify-content: flex-end;">
-                <button id="cancel-settings" style="background: var(--border); color: var(--text-dark); border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer;">Cancel</button>
-                <button id="save-settings" style="background: var(--accent-green); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer;">Save Settings</button>
+                <button id="cancel-settings" style="background: var(--border); color: var(--text-dark); border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer;" data-i18n="cancelBtn">Cancel</button>
+                <button id="save-settings" style="background: var(--accent-green); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer;" data-i18n="saveSettingsBtn">Save Settings</button>
             </div>
         </div>
     </div>
     
     <script>
+      // Internationalization
+      const translations = {
+        en: { appTitle: 'Ledebe Protector', appSubtitle: 'Keep your personal info safe when using AI', helpBtn: 'Help', tutorialBtn: 'Tutorial', chatBtn: 'Chat on App', settingsBtn: 'Settings', historyTitle: 'History', welcomeTitle: '🛡️ Welcome! Here\'s how to protect your personal info:', protectBtn: '🛡️ Protect My Info', inputPlaceholder: 'Type or paste your text here...', addCustomTerms: '+ Add Custom Terms to Protect', customTermsTitle: 'Custom Terms to Protect', saveToDefaults: '❤️ Save to Defaults', protectedText: 'Your Protected Text', backBtn: '← Back', nextBtn: 'Next →', restoreTitle: 'Restore Original Text', restoreBtn: '🔄 Restore Personal Info', feedbackPlaceholder: '💬 How can we improve? Your feedback helps!', sendBtn: 'Send', recentPrompts: 'Recent Prompts', recentRestored: 'Recent Restored', noPrompts: '📝 No prompts yet', noRestores: '🔄 No restores yet', enterText: 'Enter Your Text', enterTextDesc: 'Paste any text that might contain personal information', protectedDesc: 'Personal info has been safely hidden with placeholders', restoreDesc: 'Paste AI response here to restore your personal info', pasteBtn: '📋 Paste', viewLastRestored: '📄 View Last Restored', goToRestore: '🔄 Go to Restore', settingsTitle: 'Settings', fontFamily: 'Font Family', languageTitle: 'Language / Idioma / Langue / اللغة / 语言', defaultCustomTerms: 'Default Custom Terms', defaultCustomTermsDesc: 'These terms will be automatically loaded when the app starts', privacyAnalytics: 'Privacy & Analytics', shareAnalytics: 'Share anonymous usage analytics', analyticsDesc: 'Help improve the app by sharing anonymous plugin usage data. No personal information or content is collected.', preferences: 'Preferences', autoSaveTerms: 'Auto-save custom terms', showNotifications: 'Show notifications', saveLast: 'Save last', prompts: 'prompts', cancelBtn: 'Cancel', saveSettingsBtn: 'Save Settings' },
+        es: { appTitle: 'Protector Ledebe', appSubtitle: 'Mantén tu información personal segura al usar IA', helpBtn: 'Ayuda', tutorialBtn: 'Tutorial', chatBtn: 'Chat en App', settingsBtn: 'Configuración', historyTitle: 'Historial', welcomeTitle: '🛡️ ¡Bienvenido! Así es como proteger tu información personal:', protectBtn: '🛡️ Proteger Mi Información', inputPlaceholder: 'Escribe o pega tu texto aquí...', addCustomTerms: '+ Agregar Términos Personalizados', customTermsTitle: 'Términos Personalizados a Proteger', saveToDefaults: '❤️ Guardar por Defecto', protectedText: 'Tu Texto Protegido', backBtn: '← Atrás', nextBtn: 'Siguiente →', restoreTitle: 'Restaurar Texto Original', restoreBtn: '🔄 Restaurar Información Personal', feedbackPlaceholder: '💬 ¿Cómo podemos mejorar? ¡Tus comentarios ayudan!', sendBtn: 'Enviar', recentPrompts: 'Prompts Recientes', recentRestored: 'Restaurados Recientes', noPrompts: '📝 No hay prompts aún', noRestores: '🔄 No hay restauraciones aún', enterText: 'Ingresa Tu Texto', enterTextDesc: 'Pega cualquier texto que pueda contener información personal', protectedDesc: 'La información personal ha sido ocultada de forma segura con marcadores', restoreDesc: 'Pega la respuesta de IA aquí para restaurar tu información personal', pasteBtn: '📋 Pegar', viewLastRestored: '📄 Ver Último Restaurado', goToRestore: '🔄 Ir a Restaurar', settingsTitle: 'Configuración', fontFamily: 'Familia de Fuente', languageTitle: 'Idioma / Language / Langue / اللغة / 语言', defaultCustomTerms: 'Términos Personalizados por Defecto', defaultCustomTermsDesc: 'Estos términos se cargarán automáticamente al iniciar la aplicación', privacyAnalytics: 'Privacidad y Análisis', shareAnalytics: 'Compartir análisis de uso anónimo', analyticsDesc: 'Ayuda a mejorar la aplicación compartiendo datos de uso anónimos. No se recopila información personal ni contenido.', preferences: 'Preferencias', autoSaveTerms: 'Guardar automáticamente términos personalizados', showNotifications: 'Mostrar notificaciones', saveLast: 'Guardar últimos', prompts: 'prompts', cancelBtn: 'Cancelar', saveSettingsBtn: 'Guardar Configuración' },
+        fr: { appTitle: 'Protecteur Ledebe', appSubtitle: 'Gardez vos informations personnelles en sécurité', helpBtn: 'Aide', tutorialBtn: 'Tutoriel', chatBtn: 'Chat dans l\'App', settingsBtn: 'Paramètres', historyTitle: 'Historique', welcomeTitle: '🛡️ Bienvenue ! Voici comment protéger vos informations:', protectBtn: '🛡️ Protéger Mes Informations', inputPlaceholder: 'Tapez ou collez votre texte ici...', addCustomTerms: '+ Ajouter des Termes Personnalisés', customTermsTitle: 'Termes Personnalisés à Protéger', saveToDefaults: '❤️ Sauvegarder par Défaut', protectedText: 'Votre Texte Protégé', backBtn: '← Retour', nextBtn: 'Suivant →', restoreTitle: 'Restaurer le Texte Original', restoreBtn: '🔄 Restaurer les Informations', feedbackPlaceholder: '💬 Comment améliorer ? Vos commentaires aident !', sendBtn: 'Envoyer', recentPrompts: 'Prompts Récents', recentRestored: 'Restaurés Récents', noPrompts: '📝 Pas encore de prompts', noRestores: '🔄 Pas encore de restaurations', enterText: 'Entrez Votre Texte', enterTextDesc: 'Collez tout texte pouvant contenir des informations personnelles', protectedDesc: 'Les informations personnelles ont été cachées en toute sécurité avec des espaces réservés', restoreDesc: 'Collez la réponse IA ici pour restaurer vos informations personnelles', pasteBtn: '📋 Coller', viewLastRestored: '📄 Voir le Dernier Restauré', goToRestore: '🔄 Aller à Restaurer', settingsTitle: 'Paramètres', fontFamily: 'Famille de Police', languageTitle: 'Langue / Language / Idioma / اللغة / 语言', defaultCustomTerms: 'Termes Personnalisés par Défaut', defaultCustomTermsDesc: 'Ces termes seront automatiquement chargés au démarrage de l\'application', privacyAnalytics: 'Confidentialité et Analyses', shareAnalytics: 'Partager les analyses d\'utilisation anonymes', analyticsDesc: 'Aidez à améliorer l\'application en partageant des données d\'utilisation anonymes. Aucune information personnelle ou contenu n\'est collecté.', preferences: 'Préférences', autoSaveTerms: 'Sauvegarde automatique des termes personnalisés', showNotifications: 'Afficher les notifications', saveLast: 'Sauvegarder les derniers', prompts: 'prompts', cancelBtn: 'Annuler', saveSettingsBtn: 'Sauvegarder les Paramètres' },
+        ar: { appTitle: 'حامي ليديبي', appSubtitle: 'احتفظ بمعلوماتك الشخصية آمنة', helpBtn: 'مساعدة', tutorialBtn: 'دليل', chatBtn: 'محادثة في التطبيق', settingsBtn: 'الإعدادات', historyTitle: 'التاريخ', welcomeTitle: '🛡️ مرحباً! إليك كيفية حماية معلوماتك:', protectBtn: '🛡️ احم معلوماتي', inputPlaceholder: 'اكتب أو الصق نصك هنا...', addCustomTerms: '+ إضافة مصطلحات مخصصة', customTermsTitle: 'المصطلحات المخصصة للحماية', saveToDefaults: '❤️ حفظ كافتراضي', protectedText: 'نصك المحمي', backBtn: '← رجوع', nextBtn: 'التالي →', restoreTitle: 'استعادة النص الأصلي', restoreBtn: '🔄 استعادة المعلومات الشخصية', feedbackPlaceholder: '💬 كيف يمكننا التحسين؟ ملاحظاتك تساعد!', sendBtn: 'إرسال', recentPrompts: 'الطلبات الأخيرة', recentRestored: 'المستعاد الأخير', noPrompts: '📝 لا توجد طلبات بعد', noRestores: '🔄 لا توجد استعادات بعد', enterText: 'أدخل نصك', enterTextDesc: 'الصق أي نص قد يحتوي على معلومات شخصية', protectedDesc: 'تم إخفاء المعلومات الشخصية بأمان بعلامات', restoreDesc: 'الصق رد الذكاء الاصطناعي هنا لاستعادة معلوماتك الشخصية', pasteBtn: '📋 لصق', viewLastRestored: '📄 عرض آخر استعادة', goToRestore: '🔄 الذهاب للاستعادة', settingsTitle: 'الإعدادات', fontFamily: 'عائلة الخط', languageTitle: 'اللغة / Language / Idioma / Langue / 语言', defaultCustomTerms: 'المصطلحات المخصصة الافتراضية', defaultCustomTermsDesc: 'سيتم تحميل هذه المصطلحات تلقائياً عند بدء تشغيل التطبيق', privacyAnalytics: 'الخصوصية والتحليلات', shareAnalytics: 'مشاركة تحليلات الاستخدام المجهولة', analyticsDesc: 'ساعد في تحسين التطبيق من خلال مشاركة بيانات الاستخدام المجهولة. لا يتم جمع أي معلومات شخصية أو محتوى.', preferences: 'التفضيلات', autoSaveTerms: 'حفظ تلقائي للمصطلحات المخصصة', showNotifications: 'إظهار الإشعارات', saveLast: 'حفظ آخر', prompts: 'طلبات', cancelBtn: 'إلغاء', saveSettingsBtn: 'حفظ الإعدادات' },
+        zh: { appTitle: 'Ledebe 保护器', appSubtitle: '使用AI时保护您的个人信息安全', helpBtn: '帮助', tutorialBtn: '教程', chatBtn: '应用内聊天', settingsBtn: '设置', historyTitle: '历史记录', welcomeTitle: '🛡️ 欢迎！以下是如何保护您的个人信息：', protectBtn: '🛡️ 保护我的信息', inputPlaceholder: '在此输入或粘贴您的文本...', addCustomTerms: '+ 添加自定义保护条款', customTermsTitle: '自定义保护条款', saveToDefaults: '❤️ 保存为默认', protectedText: '您的受保护文本', backBtn: '← 返回', nextBtn: '下一步 →', restoreTitle: '恢复原始文本', restoreBtn: '🔄 恢复个人信息', feedbackPlaceholder: '💬 我们如何改进？您的反馈很有帮助！', sendBtn: '发送', recentPrompts: '最近的提示', recentRestored: '最近恢复的', noPrompts: '📝 还没有提示', noRestores: '🔄 还没有恢复', enterText: '输入您的文本', enterTextDesc: '粘贴任何可能包含个人信息的文本', protectedDesc: '个人信息已安全地用占位符隐藏', restoreDesc: '在此粘贴AI响应以恢复您的个人信息', pasteBtn: '📋 粘贴', viewLastRestored: '📄 查看最后恢复的', goToRestore: '🔄 转到恢复', settingsTitle: '设置', fontFamily: '字体系列', languageTitle: '语言 / Language / Idioma / Langue / اللغة', defaultCustomTerms: '默认自定义条款', defaultCustomTermsDesc: '这些条款将在应用程序启动时自动加载', privacyAnalytics: '隐私和分析', shareAnalytics: '分享匿名使用分析', analyticsDesc: '通过分享匿名使用数据帮助改进应用程序。不会收集个人信息或内容。', preferences: '首选项', autoSaveTerms: '自动保存自定义条款', showNotifications: '显示通知', saveLast: '保存最后', prompts: '个提示', cancelBtn: '取消', saveSettingsBtn: '保存设置' }
+      };
+      
+      let currentLanguage = localStorage.getItem('selectedLanguage') || 'en';
+      
+      function translateApp() {
+        const t = translations[currentLanguage] || translations.en;
+        document.title = t.appTitle;
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+          const key = el.getAttribute('data-i18n');
+          if (t[key]) el.textContent = t[key];
+        });
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+          const key = el.getAttribute('data-i18n-placeholder');
+          if (t[key]) el.placeholder = t[key];
+        });
+      }
+      
       // Inline minimal functionality for packaged app
       document.addEventListener('DOMContentLoaded', function() {
+        translateApp();
+        
+        const languageSelect = document.getElementById('language-select');
+        if (languageSelect) {
+          languageSelect.value = currentLanguage;
+          languageSelect.addEventListener('change', function() {
+            currentLanguage = languageSelect.value;
+            localStorage.setItem('selectedLanguage', currentLanguage);
+            translateApp();
+          });
+        }
         // Dark mode toggle
         const darkMode = document.getElementById('darkMode');
         if (darkMode) {
@@ -1843,7 +1865,11 @@ Smith</textarea>
           
           protectMyInfoBtn.addEventListener('click', function() {
             if (input.value.trim()) {
-              saveToHistory('prompt', input.value);
+              // Don't save default example text to history
+              const defaultText = "Hi, I'm John Smith. My email is john@company.com and my phone is +1-555-123-4567. I work at TechCorp on Project Alpha.";
+              if (input.value !== defaultText) {
+                saveToHistory('prompt', input.value);
+              }
               processProtection();
             }
           });
@@ -1853,6 +1879,11 @@ Smith</textarea>
         if (protectMyInfoBtn) {
           protectMyInfoBtn.addEventListener('click', function() {
             if (input && input.value.trim()) {
+              // Don't save default example text to history
+              const defaultText = "Hi, I'm John Smith. My email is john@company.com and my phone is +1-555-123-4567. I work at TechCorp on Project Alpha.";
+              if (input.value !== defaultText) {
+                saveToHistory('prompt', input.value);
+              }
               processProtection();
             }
           });
@@ -1991,10 +2022,11 @@ Smith</textarea>
         let promptHistory = JSON.parse(localStorage.getItem('promptHistory') || '[]');
         let restoreHistory = JSON.parse(localStorage.getItem('restoreHistory') || '[]');
         
-        function saveToHistory(type, text) {
+        function saveToHistory(type, text, customTerms = '') {
           const history = type === 'prompt' ? promptHistory : restoreHistory;
           const item = {
             text: text,
+            customTerms: customTerms,
             date: new Date().toLocaleString()
           };
           
@@ -2145,16 +2177,7 @@ Smith</textarea>
           });
         });
         
-        // Start over button
-        const startOverBtn = document.getElementById('start-over-btn');
-        if (startOverBtn) {
-          startOverBtn.addEventListener('click', function() {
-            document.getElementById('input').value = '';
-            document.getElementById('protected-prompt').value = '';
-            showStep(1); // Go back to main menu
-          });
-        }
-        
+
         // Undo/Redo functionality
         const undoBtn = document.getElementById('undo-edit-btn');
         const redoBtn = document.getElementById('redo-edit-btn');
@@ -2200,44 +2223,48 @@ Smith</textarea>
           
           if (sidebarPromptHistory) {
             sidebarPromptHistory.innerHTML = promptHistory.length ? 
-              promptHistory.slice(0, 5).map(item => `
+              promptHistory.slice(0, 8).map(item => `
                 <div class="history-item" onclick="loadPrompt('${item.text.replace(/'/g, "\\'")}')"> 
                   <div class="history-item-text">${item.text}</div>
                   <div class="history-item-date">${item.date}</div>
                 </div>
-              `).join('') : '<p style="color: var(--text-gray); font-style: italic; font-size: 0.8rem;">No prompts yet</p>';
+              `).join('') : '<div class="history-empty"><span data-i18n="noPrompts">📝 No prompts yet</span><br><small>Your protected texts will appear here</small></div>';
           }
           
           if (sidebarRestoreHistory) {
             sidebarRestoreHistory.innerHTML = restoreHistory.length ?
-              restoreHistory.slice(0, 5).map(item => `
+              restoreHistory.slice(0, 8).map(item => `
                 <div class="history-item" onclick="loadRestore('${item.text.replace(/'/g, "\\'")}')"> 
                   <div class="history-item-text">${item.text}</div>
                   <div class="history-item-date">${item.date}</div>
                 </div>
-              `).join('') : '<p style="color: var(--text-gray); font-style: italic; font-size: 0.8rem;">No restores yet</p>';
+              `).join('') : '<div class="history-empty"><span data-i18n="noRestores">🔄 No restores yet</span><br><small>Your restored texts will appear here</small></div>';
           }
         }
         
-        function loadPrompt(text) {
+        // Make functions global so they can be called from onclick handlers
+        window.loadPrompt = function(text, customTerms = '') {
           const input = document.getElementById('input');
+          const customTermsInput = document.getElementById('customTerms');
           if (input) {
             input.value = text;
-            document.getElementById('history-modal').style.display = 'none';
+            if (customTermsInput && customTerms) {
+              customTermsInput.value = customTerms;
+            }
+            input.dispatchEvent(new Event('input'));
             showStep(1);
           }
-        }
+        };
         
-        function loadRestore(text) {
+        window.loadRestore = function(text) {
           const output = document.getElementById('output');
           const restoredResult = document.getElementById('restored-result');
           if (output) {
             output.value = text;
             if (restoredResult) restoredResult.style.display = 'block';
-            document.getElementById('history-modal').style.display = 'none';
             showStep(3);
           }
-        }
+        };
         
         // Close history modal
         const closeHistory = document.getElementById('close-history');
@@ -2250,106 +2277,105 @@ Smith</textarea>
         // Initialize sidebar history on load
         updateSidebarHistory();
         
-        // Dictation functionality
-        const dictateBtn = document.getElementById('dictate-btn');
-        let recognition = null;
-        let isListening = false;
-        
-        if (dictateBtn) {
-          // Check for speech recognition support
-          if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            recognition = new SpeechRecognition();
-            recognition.continuous = true;
-            recognition.interimResults = true;
-            recognition.lang = 'en-US';
+        // View analytics button
+        const viewAnalyticsBtn = document.getElementById('view-analytics');
+        if (viewAnalyticsBtn) {
+          viewAnalyticsBtn.addEventListener('click', function() {
+            const storageData = getStorageAnalytics();
+            const analyticsHtml = `
+              <div style="background: var(--white); padding: 2rem; border-radius: 8px; max-width: 500px; margin: 2rem auto; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                <h3 style="margin: 0 0 1.5rem 0; color: var(--text-dark); text-align: center;">📊 Storage Analytics</h3>
+                <div style="margin-bottom: 1.5rem;">
+                  <h4 style="margin: 0 0 0.75rem 0; color: var(--text-dark);">Local Storage Usage</h4>
+                  ${storageData.map(item => `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid var(--border);">
+                      <span style="color: var(--text-dark);">${item.name}</span>
+                      <div style="text-align: right;">
+                        <div style="font-weight: 600; color: var(--text-dark);">${item.size}</div>
+                        <div style="font-size: 0.8rem; color: var(--text-gray);">${item.count} items</div>
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+                <div style="text-align: center; padding-top: 1rem; border-top: 1px solid var(--border);">
+                  <button onclick="this.parentElement.parentElement.parentElement.remove()" style="background: var(--accent-green); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer;">Close</button>
+                </div>
+              </div>
+            `;
             
-            dictateBtn.addEventListener('click', function() {
-              const input = document.getElementById('input');
-              if (!input) return;
-              
-              if (!isListening) {
-                recognition.start();
-                isListening = true;
-                dictateBtn.classList.add('listening');
-              } else {
-                recognition.stop();
-                isListening = false;
-                dictateBtn.classList.remove('listening');
-              }
+            const overlay = document.createElement('div');
+            overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; display: flex; align-items: center; justify-content: center;';
+            overlay.innerHTML = analyticsHtml;
+            document.body.appendChild(overlay);
+            
+            overlay.addEventListener('click', function(e) {
+              if (e.target === overlay) overlay.remove();
             });
-            
-            recognition.onresult = function(event) {
-              const input = document.getElementById('input');
-              if (!input) return;
-              
-              let finalTranscript = '';
-              for (let i = event.resultIndex; i < event.results.length; i++) {
-                if (event.results[i].isFinal) {
-                  finalTranscript += event.results[i][0].transcript;
-                }
-              }
-              
-              if (finalTranscript) {
-                input.value += finalTranscript;
-                input.dispatchEvent(new Event('input'));
-              }
-            };
-            
-            recognition.onend = function() {
-              isListening = false;
-              dictateBtn.classList.remove('listening');
-            };
-            
-            recognition.onerror = function(event) {
-              console.error('Speech recognition error:', event.error);
-              isListening = false;
-              dictateBtn.classList.remove('listening');
-            };
-          } else {
-            dictateBtn.classList.add('not-supported');
-            dictateBtn.style.background = '#95a5a6';
-            dictateBtn.style.cursor = 'not-allowed';
-            dictateBtn.title = 'Speech recognition not supported in this browser';
+          });
+        }
+        
+        function getStorageAnalytics() {
+          const data = [];
+          
+          // Prompt History
+          const promptHistory = JSON.parse(localStorage.getItem('promptHistory') || '[]');
+          const promptSize = new Blob([JSON.stringify(promptHistory)]).size;
+          data.push({
+            name: '📝 Prompt History',
+            size: formatBytes(promptSize),
+            count: promptHistory.length
+          });
+          
+          // Restore History
+          const restoreHistory = JSON.parse(localStorage.getItem('restoreHistory') || '[]');
+          const restoreSize = new Blob([JSON.stringify(restoreHistory)]).size;
+          data.push({
+            name: '🔄 Restore History',
+            size: formatBytes(restoreSize),
+            count: restoreHistory.length
+          });
+          
+          // Settings
+          const settings = localStorage.getItem('defaultCustomTerms') || '';
+          const settingsSize = new Blob([settings]).size;
+          data.push({
+            name: '⚙️ Settings & Terms',
+            size: formatBytes(settingsSize),
+            count: settings.split('\n').filter(Boolean).length
+          });
+          
+          // Other localStorage items
+          let otherSize = 0;
+          let otherCount = 0;
+          for (let key in localStorage) {
+            if (!['promptHistory', 'restoreHistory', 'defaultCustomTerms'].includes(key)) {
+              otherSize += new Blob([localStorage[key]]).size;
+              otherCount++;
+            }
           }
+          
+          if (otherSize > 0) {
+            data.push({
+              name: '📁 Other Data',
+              size: formatBytes(otherSize),
+              count: otherCount
+            });
+          }
+          
+          return data;
         }
         
-        // Chat on App button functionality - opens built-in AI chat
-        const useWithAiBtn = document.getElementById('use-with-ai-btn');
-        const aiChatBtn = document.getElementById('ai-chat-btn');
-        
-        if (useWithAiBtn) {
-          useWithAiBtn.addEventListener('click', function() {
-            const protectedText = document.getElementById('protected-prompt')?.value;
-            if (protectedText) {
-              // For now, copy to clipboard and show instructions
-              navigator.clipboard.writeText(protectedText).then(() => {
-                alert('Protected text copied to clipboard!\n\nYou can now paste it into any AI chat service.');
-              }).catch(() => {
-                alert('Protected text ready to use with AI chat services.');
-              });
-            } else {
-              alert('No protected text available. Please protect some text first.');
-            }
-          });
+        function formatBytes(bytes) {
+          if (bytes === 0) return '0 B';
+          const k = 1024;
+          const sizes = ['B', 'KB', 'MB', 'GB'];
+          const i = Math.floor(Math.log(bytes) / Math.log(k));
+          return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
         }
         
-        if (aiChatBtn) {
-          aiChatBtn.addEventListener('click', function() {
-            const protectedText = document.getElementById('protected-prompt')?.value;
-            if (protectedText) {
-              navigator.clipboard.writeText(protectedText).then(() => {
-                alert('Protected text copied to clipboard!\n\nYou can now paste it into any AI chat service.');
-              }).catch(() => {
-                alert('Protected text ready to use with AI chat services.');
-              });
-            } else {
-              alert('No protected text available. Please protect some text first.');
-            }
-          });
-        }
+
         
-        
+
         // Save to defaults functionality
         const saveToDefaultsBtn = document.getElementById('save-to-defaults-btn');
         if (saveToDefaultsBtn) {
@@ -2398,6 +2424,16 @@ Smith</textarea>
         
         if (cancelSettings && settingsModal) {
           cancelSettings.addEventListener('click', function() {
+            settingsModal.style.display = 'none';
+          });
+        }
+        
+        // Save settings button functionality
+        const saveSettings = document.getElementById('save-settings');
+        if (saveSettings && settingsModal) {
+          saveSettings.addEventListener('click', function() {
+            // Save settings logic would go here
+            // For now, just close the modal
             settingsModal.style.display = 'none';
           });
         }

@@ -43,15 +43,44 @@
         }
 
         .app-container {
-            max-width: 800px;
+            max-width: 1200px;
             margin: 1rem auto;
             background: var(--white);
             border-radius: 12px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            overflow-y: auto;
+            overflow: hidden;
             height: calc(100vh - 2rem);
             display: flex;
             flex-direction: column;
+        }
+
+        .app-body {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .history-sidebar {
+            width: 280px;
+            background: var(--bg-light);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .history-sidebar h3 {
+            margin: 0;
+            padding: 1rem;
+            background: var(--primary-blue);
+            color: white;
+            font-size: 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
         }
 
         @media (max-width: 900px) {
@@ -237,10 +266,14 @@
             padding: 1rem;
             border: 2px solid var(--border);
             border-radius: 8px;
-            font-family: inherit;
-            font-size: 0.95rem;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'Roboto', sans-serif;
+            font-size: 1rem;
+            line-height: 1.6;
+            letter-spacing: 0.01em;
             resize: vertical;
             transition: all 0.3s ease;
+            color: var(--text-dark);
+            background: var(--white);
         }
 
         .prompt-input {
@@ -560,6 +593,88 @@
             }
         }
 
+        /* Quick Actions Group */
+        .quick-actions-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .quick-actions-group {
+                flex-direction: column;
+            }
+        }
+
+        .result-actions {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        @media (max-width: 768px) {
+            .result-actions {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+        }
+
+        .history-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+
+        .history-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .history-section h4 {
+            margin: 0 0 0.75rem 0;
+            color: var(--text-dark);
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .history-list {
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .history-item:hover {
+            border-color: var(--accent-green);
+            transform: translateY(-1px);
+        }
+
+        .history-item-text {
+            font-size: 0.8rem;
+            color: var(--text-dark);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 0.25rem;
+        }
+
+        .history-item-date {
+            font-size: 0.7rem;
+            color: var(--text-gray);
+        }
+
+        @media (max-width: 1024px) {
+            .history-sidebar {
+                display: none;
+            }
+        }
+
         /* Workflow Styles */
         .main-workflow {
             display: flex;
@@ -661,11 +776,14 @@
         .main-input {
             width: 100%;
             min-height: 120px;
-            padding: 1rem;
+            padding: 1rem 3rem 1rem 1rem;
             border: 2px solid var(--border);
             border-radius: 8px;
-            font-family: inherit;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'Roboto', sans-serif;
             font-size: 1rem;
+            line-height: 1.6;
+            letter-spacing: 0.01em;
+            font-weight: 400;
             resize: vertical;
             transition: all 0.3s ease;
         }
@@ -1003,27 +1121,31 @@
 
         .dictate-btn {
             position: absolute;
-            top: 0.75rem;
-            right: 0.75rem;
-            background: var(--accent-green);
-            color: white;
-            border: none;
-            width: 40px;
-            height: 40px;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: transparent;
+            color: var(--text-gray);
+            border: 1px solid var(--border);
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
             cursor: pointer;
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             transition: all 0.3s ease;
             z-index: 2;
         }
 
         .dictate-btn:hover {
-            background: var(--dark-green);
+            background: var(--bg-light);
+            color: var(--accent-green);
+            border-color: var(--accent-green);
             transform: scale(1.1);
         }
 
         .dictate-btn.listening {
-            background: #e74c3c;
+            background: #e74c3c !important;
+            color: white !important;
+            border-color: #e74c3c !important;
             animation: pulse 1.5s infinite;
         }
 
@@ -1224,6 +1346,23 @@
             </div>
         </div>
         
+        <div class="app-body">
+            <div class="history-sidebar">
+                <h3>📅 History</h3>
+                <div class="history-content">
+                    <div class="history-section">
+                        <h4>Recent Prompts</h4>
+                        <div id="sidebar-prompt-history" class="history-list"></div>
+                    </div>
+                    
+                    <div class="history-section">
+                        <h4>Recent Restored</h4>
+                        <div id="sidebar-restore-history" class="history-list"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="main-content">
         <div class="app-content">
             <!-- Welcome Guide -->
             <div id="welcome-guide" class="welcome-guide">
@@ -1279,14 +1418,14 @@
                             </div>
                         </div>
                         <div class="step-navigation">
-                            <button id="protect-my-info-btn" class="primary-btn" disabled>🛡️ Protect My Info</button>
+                            <button id="protect-my-info-btn" class="primary-btn">🛡️ Protect My Info</button>
                         </div>
                     </div>
                     
                     <div class="input-section">
                         <div class="input-container">
-                            <textarea id="input" class="main-input" data-i18n-placeholder="inputPlaceholder" placeholder="Type or paste your text here..."></textarea>
-                            <div class="input-suggestion" id="input-suggestion" data-i18n="inputPlaceholderSuggestion">✨ Try typing: "Hi, I'm John Smith. My email is john@company.com and my phone is +1-555-123-4567. I work at TechCorp on Project Alpha."</div>
+                            <button id="paste-input-btn" class="copy-btn" title="Paste from clipboard" style="margin-bottom: 0.5rem; display: block;">📋 Paste</button>
+                            <textarea id="input" class="main-input" data-i18n-placeholder="inputPlaceholder" placeholder="Type or paste your text here...">Hi, I'm John Smith. My email is john@company.com and my phone is +1-555-123-4567. I work at TechCorp on Project Alpha.</textarea>
                             <button id="dictate-btn" class="dictate-btn" title="Voice input" data-i18n-title="dictateBtn">🎤</button>
                         </div>
                         
@@ -1294,18 +1433,25 @@
                             <div class="custom-terms-toggle">
                                 <button id="add-custom-terms" class="toggle-btn" data-i18n="addCustomTermsBtn">+ Add Custom Terms to Protect</button>
                             </div>
-                            <button id="go-to-restore-btn" class="toggle-btn">🔄 Go to Restore</button>
+                            <div class="quick-actions-group">
+                                <button id="view-last-restored-btn" class="toggle-btn" style="display: none;">📄 View Last Restored</button>
+                                <button id="go-to-restore-btn" class="toggle-btn">🔄 Go to Restore</button>
+                            </div>
                         </div>
                         
                         <div class="custom-terms-section" id="custom-terms-section" style="display: none;">
                             <div class="section-header">
                                 <h4>Custom Terms to Protect</h4>
-                                <span id="terms-counter" class="counter">0/50</span>
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <button id="save-to-defaults-btn" class="copy-btn" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">❤️ Save to Defaults</button>
+                                    <span id="terms-counter" class="counter">0/50</span>
+                                </div>
                             </div>
                             <p class="helper-text">Add company names, project codes, or other sensitive terms (one per line)</p>
                             <textarea id="customTerms" class="custom-terms-input" placeholder="company-name
 project-alpha
-secret-key-2024"></textarea>
+secret-key-2024">John
+Smith</textarea>
                         </div>
                     </div>
                 </div>
@@ -1356,14 +1502,13 @@ secret-key-2024"></textarea>
                         </div>
                         <div class="step-navigation">
                             <button id="prev-step-3" class="nav-btn">← Back</button>
-                            <button id="protect-new-btn" class="nav-btn" style="background: var(--primary-blue); color: white; border-color: var(--primary-blue);">🛡️ Protect New Text</button>
+                            <button id="paste-btn" class="copy-btn" title="Paste from clipboard">📋 Paste</button>
                         </div>
                     </div>
                     
                     <div class="restore-section">
                         <div class="input-container">
                             <textarea id="ai-response-input" class="main-input" data-i18n-placeholder="aiResponsePlaceholder" placeholder="Paste the AI's response here to restore your personal information..."></textarea>
-                            <button id="paste-btn" class="copy-btn" title="Paste from clipboard">📋 Paste</button>
                         </div>
                         <button id="restore-btn" class="primary-btn" disabled data-i18n="restoreBtn" onclick="
                           const input = document.getElementById('ai-response-input');
@@ -1378,10 +1523,15 @@ secret-key-2024"></textarea>
                         <div class="result-card" id="restored-result" style="display: none;">
                             <div class="result-header">
                                 <h4>✨ Restored with Your Personal Info</h4>
-                                <button class="copy-btn" data-target="output">📋 Copy Restored Text</button>
+                                <div class="result-actions">
+                                    <button class="copy-btn" data-target="output">📋 Copy Current Text</button>
+                                    <button id="undo-edit-btn" class="copy-btn" title="Undo last edit">↶ Undo</button>
+                                    <button id="redo-edit-btn" class="copy-btn" title="Redo last edit">↷ Redo</button>
+                                    <button id="protect-new-btn" class="nav-btn" style="background: var(--primary-blue); color: white; border-color: var(--primary-blue);">🛡️ Protect New Text</button>
+                                </div>
                             </div>
                             <div class="result-content">
-                                <textarea id="output" readonly></textarea>
+                                <textarea id="output"></textarea>
                             </div>
                         </div>
                     </div>
@@ -1392,6 +1542,28 @@ secret-key-2024"></textarea>
                 <div class="feedback-compact">
                     <input type="text" id="feedback-text" placeholder="💬 How can we improve? Your feedback helps!">
                     <button id="send-feedback" class="feedback-btn">Send</button>
+                </div>
+            </div>
+        </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- History Modal -->
+    <div id="history-modal" class="share-modal" style="display: none;">
+        <div class="share-content">
+            <button class="close-share" id="close-history">&times;</button>
+            <h3>📅 History</h3>
+            
+            <div id="history-content">
+                <div class="history-section">
+                    <h4>Recent Prompts</h4>
+                    <div id="prompt-history" class="history-list"></div>
+                </div>
+                
+                <div class="history-section">
+                    <h4>Recent Restored Texts</h4>
+                    <div id="restore-history" class="history-list"></div>
                 </div>
             </div>
         </div>
@@ -1484,6 +1656,19 @@ secret-key-2024"></textarea>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border);">
                 <h3>Settings</h3>
                 <button id="close-settings" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-gray);">&times;</button>
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <h4 style="margin-bottom: 0.5rem; color: var(--text-dark);">Font Family</h4>
+                <select id="font-select" style="width: 100%; padding: 0.75rem; border: 2px solid var(--border); border-radius: 6px; font-family: inherit;">
+                    <option value="arial" style="font-family: Arial, sans-serif;">Arial</option>
+                    <option value="calibri" style="font-family: Calibri, sans-serif;">Calibri</option>
+                    <option value="georgia" style="font-family: Georgia, serif;">Georgia</option>
+                    <option value="palatino" style="font-family: 'Palatino Linotype', Palatino, serif;">Palatino Linotype</option>
+                    <option value="system" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">System Default</option>
+                    <option value="times" style="font-family: 'Times New Roman', serif;">Times New Roman</option>
+                    <option value="verdana" style="font-family: Verdana, sans-serif;">Verdana</option>
+                </select>
             </div>
             
             <div style="margin-bottom: 1.5rem;">
@@ -1605,10 +1790,31 @@ secret-key-2024"></textarea>
         
         // Quick action buttons
         const goToRestoreBtn = document.getElementById('go-to-restore-btn');
+        const viewLastRestoredBtn = document.getElementById('view-last-restored-btn');
+        const viewHistoryBtn = document.getElementById('view-history-btn');
         
         if (goToRestoreBtn) {
           goToRestoreBtn.addEventListener('click', function() {
             showStep(3);
+          });
+        }
+        
+        if (viewLastRestoredBtn) {
+          viewLastRestoredBtn.addEventListener('click', function() {
+            const output = document.getElementById('output');
+            if (output && output.value) {
+              showStep(3);
+              const restoredResult = document.getElementById('restored-result');
+              if (restoredResult) {
+                restoredResult.style.display = 'block';
+              }
+            }
+          });
+        }
+        
+        if (viewHistoryBtn) {
+          viewHistoryBtn.addEventListener('click', function() {
+            showHistoryModal();
           });
         }
         
@@ -1622,12 +1828,22 @@ secret-key-2024"></textarea>
         }
         
         if (input && protectMyInfoBtn) {
+          // Clear default text on first click
+          let hasCleared = false;
+          input.addEventListener('focus', function() {
+            if (!hasCleared && input.value === "Hi, I'm John Smith. My email is john@company.com and my phone is +1-555-123-4567. I work at TechCorp on Project Alpha.") {
+              input.value = '';
+              hasCleared = true;
+            }
+          });
+          
           input.addEventListener('input', function() {
             protectMyInfoBtn.disabled = !input.value.trim();
           });
           
           protectMyInfoBtn.addEventListener('click', function() {
             if (input.value.trim()) {
+              saveToHistory('prompt', input.value);
               processProtection();
             }
           });
@@ -1681,6 +1897,23 @@ secret-key-2024"></textarea>
           });
         }
         
+        // Paste button for input
+        const pasteInputBtn = document.getElementById('paste-input-btn');
+        if (pasteInputBtn) {
+          pasteInputBtn.addEventListener('click', async function() {
+            try {
+              const text = await navigator.clipboard.readText();
+              const input = document.getElementById('input');
+              if (input) {
+                input.value = text;
+                input.dispatchEvent(new Event('input'));
+              }
+            } catch (err) {
+              console.error('Failed to read clipboard:', err);
+            }
+          });
+        }
+        
         // Paste button handler
         const pasteBtn = document.getElementById('paste-btn');
         if (pasteBtn) {
@@ -1717,6 +1950,7 @@ secret-key-2024"></textarea>
           const aiResponseInput = document.getElementById('ai-response-input');
           const output = document.getElementById('output');
           const restoredResult = document.getElementById('restored-result');
+          const protectNewBtn = document.getElementById('protect-new-btn');
           
           if (!aiResponseInput || !output) return;
           
@@ -1730,13 +1964,60 @@ secret-key-2024"></textarea>
           
           output.value = restoredText;
           
+          // Save initial restored state to edit history
+          saveEditState(restoredText);
+          saveToHistory('restore', restoredText);
+          
           if (restoredResult) {
             restoredResult.style.display = 'block';
           }
+          
+          // Show protect new text button after restore
+          if (protectNewBtn) {
+            protectNewBtn.style.display = 'block';
+          }
+          
+          // Show view last restored button in step 1
+          const viewLastRestoredBtn = document.getElementById('view-last-restored-btn');
+          if (viewLastRestoredBtn) {
+            viewLastRestoredBtn.style.display = 'block';
+          }
         }
         
-        // Global placeholder map
+        // Global placeholder map, edit history, and app history
         let placeholderMap = {};
+        let editHistory = [];
+        let editHistoryIndex = -1;
+        let promptHistory = JSON.parse(localStorage.getItem('promptHistory') || '[]');
+        let restoreHistory = JSON.parse(localStorage.getItem('restoreHistory') || '[]');
+        
+        function saveToHistory(type, text) {
+          const history = type === 'prompt' ? promptHistory : restoreHistory;
+          const item = {
+            text: text,
+            date: new Date().toLocaleString()
+          };
+          
+          history.unshift(item);
+          if (history.length > 10) history.pop(); // Keep only last 10
+          
+          localStorage.setItem(type + 'History', JSON.stringify(history));
+          if (type === 'prompt') promptHistory = history;
+          else restoreHistory = history;
+          
+          updateSidebarHistory();
+        }
+        
+        function saveEditState(text) {
+          editHistory = editHistory.slice(0, editHistoryIndex + 1);
+          editHistory.push(text);
+          editHistoryIndex = editHistory.length - 1;
+          
+          const undoBtn = document.getElementById('undo-edit-btn');
+          const redoBtn = document.getElementById('redo-edit-btn');
+          if (undoBtn) undoBtn.disabled = editHistoryIndex <= 0;
+          if (redoBtn) redoBtn.disabled = editHistoryIndex >= editHistory.length - 1;
+        }
         
         // PII Protection function
         function processProtection() {
@@ -1872,6 +2153,279 @@ secret-key-2024"></textarea>
             document.getElementById('protected-prompt').value = '';
             showStep(1); // Go back to main menu
           });
+        }
+        
+        // Undo/Redo functionality
+        const undoBtn = document.getElementById('undo-edit-btn');
+        const redoBtn = document.getElementById('redo-edit-btn');
+        const output = document.getElementById('output');
+        
+        if (undoBtn) {
+          undoBtn.addEventListener('click', function() {
+            if (editHistoryIndex > 0) {
+              editHistoryIndex--;
+              if (output) output.value = editHistory[editHistoryIndex];
+              undoBtn.disabled = editHistoryIndex <= 0;
+              if (redoBtn) redoBtn.disabled = false;
+            }
+          });
+        }
+        
+        if (redoBtn) {
+          redoBtn.addEventListener('click', function() {
+            if (editHistoryIndex < editHistory.length - 1) {
+              editHistoryIndex++;
+              if (output) output.value = editHistory[editHistoryIndex];
+              redoBtn.disabled = editHistoryIndex >= editHistory.length - 1;
+              if (undoBtn) undoBtn.disabled = false;
+            }
+          });
+        }
+        
+        // Track changes in output textarea
+        if (output) {
+          let changeTimeout;
+          output.addEventListener('input', function() {
+            clearTimeout(changeTimeout);
+            changeTimeout = setTimeout(function() {
+              saveEditState(output.value);
+            }, 1000); // Save after 1 second of no typing
+          });
+        }
+        
+        // Update sidebar history
+        function updateSidebarHistory() {
+          const sidebarPromptHistory = document.getElementById('sidebar-prompt-history');
+          const sidebarRestoreHistory = document.getElementById('sidebar-restore-history');
+          
+          if (sidebarPromptHistory) {
+            sidebarPromptHistory.innerHTML = promptHistory.length ? 
+              promptHistory.slice(0, 5).map(item => `
+                <div class="history-item" onclick="loadPrompt('${item.text.replace(/'/g, "\\'")}')"> 
+                  <div class="history-item-text">${item.text}</div>
+                  <div class="history-item-date">${item.date}</div>
+                </div>
+              `).join('') : '<p style="color: var(--text-gray); font-style: italic; font-size: 0.8rem;">No prompts yet</p>';
+          }
+          
+          if (sidebarRestoreHistory) {
+            sidebarRestoreHistory.innerHTML = restoreHistory.length ?
+              restoreHistory.slice(0, 5).map(item => `
+                <div class="history-item" onclick="loadRestore('${item.text.replace(/'/g, "\\'")}')"> 
+                  <div class="history-item-text">${item.text}</div>
+                  <div class="history-item-date">${item.date}</div>
+                </div>
+              `).join('') : '<p style="color: var(--text-gray); font-style: italic; font-size: 0.8rem;">No restores yet</p>';
+          }
+        }
+        
+        function loadPrompt(text) {
+          const input = document.getElementById('input');
+          if (input) {
+            input.value = text;
+            document.getElementById('history-modal').style.display = 'none';
+            showStep(1);
+          }
+        }
+        
+        function loadRestore(text) {
+          const output = document.getElementById('output');
+          const restoredResult = document.getElementById('restored-result');
+          if (output) {
+            output.value = text;
+            if (restoredResult) restoredResult.style.display = 'block';
+            document.getElementById('history-modal').style.display = 'none';
+            showStep(3);
+          }
+        }
+        
+        // Close history modal
+        const closeHistory = document.getElementById('close-history');
+        if (closeHistory) {
+          closeHistory.addEventListener('click', function() {
+            document.getElementById('history-modal').style.display = 'none';
+          });
+        }
+        
+        // Initialize sidebar history on load
+        updateSidebarHistory();
+        
+        // Dictation functionality
+        const dictateBtn = document.getElementById('dictate-btn');
+        let recognition = null;
+        let isListening = false;
+        
+        if (dictateBtn) {
+          // Check for speech recognition support
+          if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+            
+            dictateBtn.addEventListener('click', function() {
+              const input = document.getElementById('input');
+              if (!input) return;
+              
+              if (!isListening) {
+                recognition.start();
+                isListening = true;
+                dictateBtn.classList.add('listening');
+              } else {
+                recognition.stop();
+                isListening = false;
+                dictateBtn.classList.remove('listening');
+              }
+            });
+            
+            recognition.onresult = function(event) {
+              const input = document.getElementById('input');
+              if (!input) return;
+              
+              let finalTranscript = '';
+              for (let i = event.resultIndex; i < event.results.length; i++) {
+                if (event.results[i].isFinal) {
+                  finalTranscript += event.results[i][0].transcript;
+                }
+              }
+              
+              if (finalTranscript) {
+                input.value += finalTranscript;
+                input.dispatchEvent(new Event('input'));
+              }
+            };
+            
+            recognition.onend = function() {
+              isListening = false;
+              dictateBtn.classList.remove('listening');
+            };
+            
+            recognition.onerror = function(event) {
+              console.error('Speech recognition error:', event.error);
+              isListening = false;
+              dictateBtn.classList.remove('listening');
+            };
+          } else {
+            dictateBtn.classList.add('not-supported');
+            dictateBtn.style.background = '#95a5a6';
+            dictateBtn.style.cursor = 'not-allowed';
+            dictateBtn.title = 'Speech recognition not supported in this browser';
+          }
+        }
+        
+        // Chat on App button functionality - opens built-in AI chat
+        const useWithAiBtn = document.getElementById('use-with-ai-btn');
+        const aiChatBtn = document.getElementById('ai-chat-btn');
+        
+        if (useWithAiBtn) {
+          useWithAiBtn.addEventListener('click', function() {
+            const protectedText = document.getElementById('protected-prompt')?.value;
+            if (protectedText) {
+              // For now, copy to clipboard and show instructions
+              navigator.clipboard.writeText(protectedText).then(() => {
+                alert('Protected text copied to clipboard!\n\nYou can now paste it into any AI chat service.');
+              }).catch(() => {
+                alert('Protected text ready to use with AI chat services.');
+              });
+            } else {
+              alert('No protected text available. Please protect some text first.');
+            }
+          });
+        }
+        
+        if (aiChatBtn) {
+          aiChatBtn.addEventListener('click', function() {
+            const protectedText = document.getElementById('protected-prompt')?.value;
+            if (protectedText) {
+              navigator.clipboard.writeText(protectedText).then(() => {
+                alert('Protected text copied to clipboard!\n\nYou can now paste it into any AI chat service.');
+              }).catch(() => {
+                alert('Protected text ready to use with AI chat services.');
+              });
+            } else {
+              alert('No protected text available. Please protect some text first.');
+            }
+          });
+        }
+        
+        
+        // Save to defaults functionality
+        const saveToDefaultsBtn = document.getElementById('save-to-defaults-btn');
+        if (saveToDefaultsBtn) {
+          saveToDefaultsBtn.addEventListener('click', function() {
+            const customTerms = document.getElementById('customTerms');
+            const settingsCustomTerms = document.getElementById('settings-custom-terms');
+            
+            if (customTerms && settingsCustomTerms && customTerms.value.trim()) {
+              const currentTerms = customTerms.value.split('\n').map(s => s.trim()).filter(Boolean);
+              const existingDefaults = settingsCustomTerms.value.split('\n').map(s => s.trim()).filter(Boolean);
+              
+              // Merge terms, avoiding duplicates, up to 50 limit
+              const allTerms = [...new Set([...existingDefaults, ...currentTerms])].slice(0, 50);
+              
+              settingsCustomTerms.value = allTerms.join('\n');
+              localStorage.setItem('defaultCustomTerms', allTerms.join('\n'));
+              
+              saveToDefaultsBtn.textContent = '✓ Saved!';
+              setTimeout(() => {
+                saveToDefaultsBtn.textContent = '❤️ Save to Defaults';
+              }, 2000);
+            }
+          });
+        }
+        
+        // Settings button functionality
+        const settingsBtn = document.getElementById('settings-btn');
+        const settingsModal = document.getElementById('settings-modal');
+        const closeSettings = document.getElementById('close-settings');
+        const cancelSettings = document.getElementById('cancel-settings');
+        
+        if (settingsBtn && settingsModal) {
+          settingsBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Settings button clicked');
+            settingsModal.style.display = 'block';
+          });
+        }
+        
+        if (closeSettings && settingsModal) {
+          closeSettings.addEventListener('click', function() {
+            settingsModal.style.display = 'none';
+          });
+        }
+        
+        if (cancelSettings && settingsModal) {
+          cancelSettings.addEventListener('click', function() {
+            settingsModal.style.display = 'none';
+          });
+        }
+        
+        // Font selection
+        const fontSelect = document.getElementById('font-select');
+        if (fontSelect) {
+          fontSelect.addEventListener('change', function() {
+            const fontMap = {
+              'system': '-apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", "Roboto", sans-serif',
+              'arial': 'Arial, sans-serif',
+              'calibri': 'Calibri, sans-serif',
+              'times': '"Times New Roman", serif',
+              'georgia': 'Georgia, serif',
+              'palatino': '"Palatino Linotype", Palatino, serif',
+              'verdana': 'Verdana, sans-serif'
+            };
+            const selectedFont = fontMap[fontSelect.value] || fontMap.system;
+            document.querySelectorAll('textarea').forEach(textarea => {
+              textarea.style.fontFamily = selectedFont;
+            });
+            localStorage.setItem('selectedFont', fontSelect.value);
+          });
+          
+          // Load saved font
+          const savedFont = localStorage.getItem('selectedFont') || 'system';
+          fontSelect.value = savedFont;
+          fontSelect.dispatchEvent(new Event('change'));
         }
         
         // Help button

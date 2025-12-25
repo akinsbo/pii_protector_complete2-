@@ -34,6 +34,17 @@ contextBridge.exposeInMainWorld('settings', {
   load: () => ipcRenderer.invoke('settings:load'),
 });
 
+contextBridge.exposeInMainWorld('auth', {
+  authenticate: (providerName: string) => ipcRenderer.invoke('auth:authenticate', providerName),
+  openInApp: (providerName: string) => ipcRenderer.invoke('auth:openInApp', providerName),
+  getProviders: () => ipcRenderer.invoke('auth:getProviders'),
+  isAuthenticated: (providerName: string) => ipcRenderer.invoke('auth:isAuthenticated', providerName),
+});
+
+contextBridge.exposeInMainWorld('electronAPI', {
+  invoke: (channel: string, ...args: any[]) => ipcRenderer.invoke(channel, ...args),
+});
+
 // Menu event listeners
 ipcRenderer.on('menu:save-template', () => {
   window.dispatchEvent(new CustomEvent('menu-save-template'));
@@ -46,3 +57,34 @@ ipcRenderer.on('menu:load-template', () => {
 ipcRenderer.on('menu:clear-all', () => {
   window.dispatchEvent(new CustomEvent('menu-clear-all'));
 });
+
+// Type declarations for exposed APIs
+interface Window {
+  pii: {
+    mask: (text: string, customTerms?: string[], sessionId?: string) => Promise<any>;
+    unmask: (text: string) => Promise<any>;
+    clear: () => Promise<any>;
+  };
+  feedback: {
+    send: (message: string, email?: string) => Promise<any>;
+  };
+  templates: {
+    save: (name: string, text: string, customTerms: string[]) => Promise<any>;
+    load: (name: string) => Promise<any>;
+    list: () => Promise<any>;
+    delete: (name: string) => Promise<any>;
+  };
+  settings: {
+    save: (settings: any) => Promise<any>;
+    load: () => Promise<any>;
+  };
+  auth: {
+    authenticate: (providerName: string) => Promise<any>;
+    openInApp: (providerName: string) => Promise<any>;
+    getProviders: () => Promise<any>;
+    isAuthenticated: (providerName: string) => Promise<any>;
+  };
+  electronAPI: {
+    invoke: (channel: string, ...args: any[]) => Promise<any>;
+  };
+}

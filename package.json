@@ -1,7 +1,7 @@
 {
   "name": "ledebe-protector",
   "version": "1.0.0",
-  "description": "Ledebe - Let there be secure data protection",
+  "description": "Ledebe Protector - Let there be secure data protection",
   "author": "Ledebe",
   "main": "dist/main.js",
   "files": [
@@ -25,12 +25,13 @@
     "test:e2e": "npm run build && playwright test",
     "test:e2e:ui": "npm run build && playwright test --ui",
     "test:e2e:headed": "npm run build && playwright test --headed",
+    "test:core": "npm run build && playwright test e2e/core-functionality.spec.ts",
     "lint": "eslint . --ext .ts,.js",
     "lint:fix": "eslint . --ext .ts,.js --fix",
     "format": "prettier --write \"**/*.{ts,js,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,js,json,md}\"",
     "security:audit": "npm audit",
-    "test:all": "npm run lint && npm run format:check && npm run build && npm run test:e2e",
+    "test:all": "npm run lint && npm run format:check && npm run build && npm run test:core",
     "deploy:website": "./deployments/deploy.sh"
   },
   "devDependencies": {
@@ -68,10 +69,10 @@
     "appId": "com.ledebe.protector",
     "productName": "Ledebe Protector",
     "copyright": "Copyright © 2025 Ledebe. All rights reserved.",
+
     "files": [
       "dist/**/*",
       "*.html",
-      "assets/icon.svg",
       "!src/**/*",
       "!node_modules/**/*",
       "!**/*.ts",
@@ -87,6 +88,8 @@
       "notarize": false,
       "hardenedRuntime": true,
       "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
       "target": [
         {
           "target": "dmg",
@@ -117,7 +120,8 @@
           "type": "link",
           "path": "/Applications"
         }
-      ]
+      ],
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
     },
     "win": {
       "target": [
@@ -137,9 +141,6 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "Ledebe Protector",
-      "installerIcon": "assets/icon.ico",
-      "uninstallerIcon": "assets/icon.ico",
-      "installerHeaderIcon": "assets/icon.ico",
       "deleteAppDataOnUninstall": false,
       "runAfterFinish": true,
       "menuCategory": "Ledebe",

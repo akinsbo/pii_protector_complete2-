@@ -8,8 +8,9 @@ echo "🔧 Setting up free crash reporting storage..."
 # Check if GitHub CLI is installed
 if ! command -v gh &> /dev/null; then
     echo "❌ GitHub CLI not found. Please install it first:"
-    echo "   brew install gh"
-    echo "   or visit: https://cli.github.com/"
+    echo "   macOS: brew install gh"
+    echo "   Windows: winget install GitHub.cli"
+    echo "   Linux: See https://cli.github.com/"
     exit 1
 fi
 
@@ -50,7 +51,7 @@ if [ $? -eq 0 ]; then
     echo "   export GITHUB_TOKEN=\"$(gh auth token)\""
     echo "   export CRASH_GIST_ID=\"$GIST_ID\""
     echo ""
-    echo "2. Update management portal:"
+    echo "2. Update management portal (if using GitHub integration):"
     echo "   Replace 'YOUR_GIST_ID' in management-portal/index.html with: $GIST_ID"
     echo ""
     echo "3. Add to your shell profile (~/.zshrc or ~/.bashrc):"

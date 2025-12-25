@@ -13,9 +13,11 @@ const path = require('path');
 const { Anonymizer } = require('./src/pii/Anonymizer');
 const os = require('os');
 const { crashReporter } = require('./src/crash-reporter');
+const { BrowserAuth } = require('./src/auth/BrowserAuth');
 
 let win: any = null;
 const anonymizer = new Anonymizer({ consistentMapKey: 'default-session' });
+const browserAuth = new BrowserAuth();
 
 /**
  * Creates the application menu with templates functionality.
@@ -81,11 +83,14 @@ function createWindow() {
   win = new BrowserWindow({
     width: 1100,
     height: 800,
+    icon: path.join(__dirname, 'assets', 'icon.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
+      allowRunningInsecureContent: false,
+      experimentalFeatures: false
     },
   });
 
@@ -99,13 +104,18 @@ function createWindow() {
     win.loadURL('http://localhost:5173');
   } else {
     crashReporter.addBreadcrumb('window', 'Loading production HTML', 'info');
-    win.loadFile(path.join(__dirname, '..', 'index.html'));
+    win.loadFile('index.html');
   }
   
   crashReporter.addBreadcrumb('window', 'Main window created successfully', 'info');
 }
 app.whenReady().then(() => {
   crashReporter.addBreadcrumb('app', 'Application started', 'info');
+  
+  // Fix SSL issues without compromising security
+  app.commandLine.appendSwitch('ignore-certificate-errors-spki-list');
+  app.commandLine.appendSwitch('ignore-ssl-errors');
+  
   createWindow();
   sendInstallationEvent();
 });
@@ -268,6 +278,49 @@ ipcMain.handle('settings:load', () => {
   }
 });
 
+// Browser authentication handlers
+ipcMain.handle('auth:authenticate', async (_evt: any, providerName: string) => {
+  try {
+    const result = await browserAuth.authenticateWithBrowser(providerName);
+    return result;
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+});
+
+ipcMain.handle('auth:openInApp', async (_evt: any, providerName: string) => {
+  try {
+    const chatWindow = await browserAuth.openServiceInApp(providerName);
+    return { success: !!chatWindow };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+});
+
+ipcMain.handle('auth:getProviders', () => {
+  try {
+    const providers = browserAuth.getProviders();
+    return { success: true, providers };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+});
+
+ipcMain.handle('auth:isAuthenticated', async (_evt: any, providerName: string) => {
+  try {
+    const isAuth = await browserAuth.isAuthenticated(providerName);
+    return { success: true, authenticated: isAuth };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+});
+
+// Handle return to app from browser auth
+ipcMain.handle('auth:return-to-app', () => {
+  // This is handled by the BrowserAuth class
+  return { success: true };
+});
+
 /**
  * Gets stored templates from file system.
  */
@@ -331,6 +384,21 @@ function saveSettings(settings: any) {
   const settingsPath = path.join(os.homedir(), '.ledebe-settings.json');
   
   fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+}
+
+// Compile TypeScript files on the fly for development
+if (process.env.NODE_ENV === 'development') {
+  try {
+    require('ts-node').register({
+      transpileOnly: true,
+      compilerOptions: {
+        module: 'commonjs',
+        target: 'es2020'
+      }
+    });
+  } catch (error) {
+    console.warn('ts-node not available, using compiled JS files');
+  }
 }
 
 

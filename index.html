@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PII Protector</title>
+    <link rel="stylesheet" href="src/styles/auth.css">
     <style>
         :root {
             --primary-blue: #1e3a8a;
@@ -47,10 +48,55 @@
             background: var(--white);
             border-radius: 12px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            overflow: hidden;
+            overflow-y: auto;
             height: calc(100vh - 2rem);
             display: flex;
             flex-direction: column;
+        }
+
+        @media (max-width: 900px) {
+            .app-container {
+                margin: 0.5rem;
+                height: calc(100vh - 1rem);
+                border-radius: 8px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .app-container {
+                margin: 0;
+                height: 100vh;
+                border-radius: 0;
+            }
+            
+            .app-header {
+                padding: 0.5rem 1rem;
+            }
+            
+            .header-left {
+                flex-direction: column;
+                gap: 0.25rem;
+            }
+            
+            .header-controls {
+                gap: 0.5rem;
+                font-size: 0.8rem;
+            }
+            
+            .guide-steps {
+                grid-template-columns: 1fr;
+            }
+            
+            .step-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+            
+            .step-navigation {
+                width: 100%;
+                justify-content: space-between;
+            }
         }
 
         .app-header {
@@ -209,6 +255,15 @@
             min-height: 80px;
             border-color: var(--primary-blue);
             box-shadow: 0 0 0 1px rgba(30, 58, 138, 0.1);
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+            line-height: 1.5;
+            padding-top: 0.5rem;
+            background-image: repeating-linear-gradient(
+                transparent,
+                transparent 1.4em,
+                rgba(30, 58, 138, 0.15) 1.4em,
+                rgba(30, 58, 138, 0.15) 1.5em
+            );
         }
 
         textarea:focus {
@@ -402,6 +457,447 @@
             white-space: nowrap;
         }
 
+        /* Welcome Guide Styles */
+        .welcome-guide {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .welcome-guide h3 {
+            margin: 0 0 1.5rem 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .guide-steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .guide-step {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: left;
+        }
+
+        .step-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+
+        .step-content strong {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .step-content p {
+            margin: 0;
+            opacity: 0.9;
+            line-height: 1.4;
+        }
+
+        .got-it-btn {
+            background: var(--accent-green);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .got-it-btn:hover {
+            background: var(--dark-green);
+            transform: translateY(-2px);
+        }
+
+        .guide-navigation {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .guide-navigation .secondary-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .guide-navigation .secondary-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+            justify-content: center;
+        }
+
+        @media (max-width: 768px) {
+            .quick-actions {
+                flex-direction: column;
+            }
+        }
+
+        /* Workflow Styles */
+        .main-workflow {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .workflow-step {
+            background: var(--white);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            opacity: 0.5;
+            transition: all 0.3s ease;
+        }
+
+        .workflow-step.active {
+            opacity: 1;
+            border-color: var(--accent-green);
+            box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.1);
+        }
+
+        .step-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .step-navigation {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .nav-btn {
+            background: var(--white);
+            color: var(--text-dark);
+            border: 1px solid var(--border);
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .step-indicator {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .step-indicator .step-number {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background: var(--accent-green);
+            color: white;
+            border-radius: 50%;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .step-info h3 {
+            margin: 0 0 0.25rem 0;
+            color: var(--text-dark);
+            font-size: 1.3rem;
+        }
+
+        .step-info p {
+            margin: 0;
+            color: var(--text-gray);
+            font-size: 0.95rem;
+        }
+
+        .protection-status {
+            background: var(--accent-green);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        /* Input Styles */
+        .main-input {
+            width: 100%;
+            min-height: 120px;
+            padding: 1rem;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 1rem;
+            resize: vertical;
+            transition: all 0.3s ease;
+        }
+
+        .main-input:focus {
+            outline: none;
+            border-color: var(--accent-green);
+            box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.1);
+        }
+
+        .input-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+            gap: 1rem;
+        }
+
+        .toggle-btn {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-gray);
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-btn:hover {
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+        }
+
+        .primary-btn {
+            background: var(--accent-green);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .primary-btn:hover:not(:disabled) {
+            background: var(--dark-green);
+            transform: translateY(-1px);
+        }
+
+        .primary-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .secondary-btn {
+            background: var(--white);
+            color: var(--text-dark);
+            border: 2px solid var(--border);
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .secondary-btn:hover {
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+        }
+
+        .custom-terms-section {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: var(--bg-light);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .section-header h4 {
+            margin: 0;
+            color: var(--text-dark);
+            font-size: 1.1rem;
+        }
+
+        .counter {
+            font-size: 0.8rem;
+            color: var(--text-gray);
+        }
+
+        .custom-terms-input {
+            width: 100%;
+            height: 80px;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+            font-size: 0.9rem;
+            resize: vertical;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            justify-content: center;
+        }
+
+        .result-section,
+        .restore-section {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .result-card {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .result-header {
+            background: var(--bg-light);
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .result-header h4 {
+            margin: 0;
+            color: var(--text-dark);
+            font-size: 1rem;
+        }
+
+        .result-content {
+            padding: 0.75rem;
+        }
+
+        .result-content textarea {
+            width: 100%;
+            height: 100px;
+            border: none;
+            resize: vertical;
+            font-family: inherit;
+            background: transparent;
+        }
+
+        .result-content textarea:focus {
+            outline: none;
+        }
+
+        .feedback-section {
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        /* Help Modal */
+        .help-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 2000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .help-content {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            margin: 1rem;
+        }
+
+        .help-content h3 {
+            margin: 0 0 1rem 0;
+            color: var(--text-dark);
+        }
+
+        .help-content .close-help {
+            float: right;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-gray);
+        }
+
+        @media (max-width: 768px) {
+            .guide-steps {
+                grid-template-columns: 1fr;
+            }
+            
+            .input-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .step-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .step-navigation {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+
         @media (max-width: 768px) {
             .app-container {
                 margin: 1rem;
@@ -416,6 +912,281 @@
             .feedback-compact {
                 flex-direction: column;
             }
+        }
+
+        /* Dropdown Menu Styles */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-btn {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 0.9rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .dropdown-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            background: white;
+            min-width: 160px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            border-radius: 6px;
+            z-index: 1000;
+            overflow: hidden;
+        }
+
+        .dropdown-content a {
+            color: #333;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+        }
+
+        .dropdown-content a:hover {
+            background: #f1f1f1;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        /* External AI Share Modal */
+        .share-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 2000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Input container with dictation */
+        .input-container {
+            position: relative;
+        }
+
+        .input-suggestion {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            right: 4rem;
+            color: var(--text-gray);
+            font-size: 0.9rem;
+            pointer-events: none;
+            opacity: 0.7;
+            line-height: 1.4;
+            z-index: 1;
+        }
+
+        .main-input:focus + .input-suggestion,
+        .main-input:not(:placeholder-shown) + .input-suggestion {
+            display: none;
+        }
+
+        .dictate-btn {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            background: var(--accent-green);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+            z-index: 2;
+        }
+
+        .dictate-btn:hover {
+            background: var(--dark-green);
+            transform: scale(1.1);
+        }
+
+        .dictate-btn.listening {
+            background: #e74c3c;
+            animation: pulse 1.5s infinite;
+        }
+
+        .dictate-btn.not-supported {
+            background: #95a5a6;
+            cursor: not-allowed;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .share-content {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 700px;
+            max-height: 90vh;
+            overflow-y: auto;
+            margin: 1rem;
+            position: relative;
+        }
+
+        .share-content h3 {
+            margin: 0 0 1.5rem 0;
+            color: var(--text-dark);
+            text-align: center;
+        }
+
+        .ai-services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .ai-service-card {
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: var(--white);
+        }
+
+        .ai-service-card:hover {
+            border-color: var(--accent-green);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .ai-service-card .service-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .ai-service-card .service-name {
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 0.25rem;
+        }
+
+        .ai-service-card .service-desc {
+            font-size: 0.8rem;
+            color: var(--text-gray);
+            margin-bottom: 0.5rem;
+        }
+
+        .ai-service-card .service-access {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+
+        .free-access {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .paid-access {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .copy-instructions {
+            background: var(--bg-light);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border-left: 4px solid var(--accent-green);
+        }
+
+        .copy-instructions h4 {
+            margin: 0 0 1rem 0;
+            color: var(--text-dark);
+        }
+
+        .copy-instructions ol {
+            margin: 0;
+            padding-left: 1.5rem;
+            color: var(--text-gray);
+        }
+
+        .copy-instructions li {
+            margin-bottom: 0.5rem;
+            line-height: 1.4;
+        }
+
+        .universal-copy-section {
+            background: var(--bg-light);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .universal-copy-section h4 {
+            margin: 0 0 0.5rem 0;
+            color: var(--text-dark);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .universal-copy-text {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 1rem;
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .close-share {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-gray);
+            padding: 0.25rem;
+        }
+
+        .close-share:hover {
+            color: var(--text-dark);
+        }
+
+        .share-footer {
+            text-align: center;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+            color: var(--text-gray);
+            font-size: 0.9rem;
         }
     </style>
 </head>
@@ -436,71 +1207,274 @@
                         <text x="256" y="290" text-anchor="middle" dominant-baseline="middle" fill="#fef3c7" font-family="serif" font-weight="bold" font-size="80">LDB</text>
                     </svg>
                 </div>
-                <h2>Ledebe Protector</h2>
+                <div>
+                    <h2>Ledebe Protector</h2>
+                    <div style="font-size: 0.8rem; opacity: 0.8; margin-top: -0.25rem;">Keep your personal info safe when using AI</div>
+                </div>
             </div>
             <div class="header-controls">
-                <label class="toggle">
+                <button id="help-btn" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; cursor: pointer; font-size: 0.9rem; padding: 0.5rem 1rem; border-radius: 6px; margin-right: 1rem;" title="Quick Help">❓ Help</button>
+                <button id="show-tutorial-btn" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; cursor: pointer; font-size: 0.9rem; padding: 0.5rem 1rem; border-radius: 6px; margin-right: rem;" title="Show Tutorial">📚 Tutorial</button>
+                <button id="ai-chat-btn" style="background: none; border: 1px solid rgba(255,255,255,0.2); color: white; cursor: pointer; font-size: 0.9rem; padding: 0.5rem 1rem; border-radius: 6px; margin-right: 0.5rem;" title="Chat with AI safely">Chat on App</button>
+                <label class="toggle" title="Switch between light and dark themes">
                     <input id="darkMode" type="checkbox">
                     <span class="slider"></span>
                 </label>
-                <span>Dark</span>
-                <label class="toggle">
-                    <input id="protect" type="checkbox" checked>
-                    <span class="slider"></span>
-                </label>
-                <span>Protection</span>
-                <span id="shield">🛡️</span>
-                <button id="settings-btn" style="background: none; border: none; color: white; cursor: pointer; font-size: 1.2rem; margin-left: 1rem;" title="Settings">⚙️</button>
+                <button id="settings-btn" style="background: none; border: none; color: white; cursor: pointer; font-size: 1.1rem; padding: 0.25rem; margin-left: 0.5rem;" title="Settings">⚙️</button>
             </div>
         </div>
         
         <div class="app-content">
+            <!-- Welcome Guide -->
+            <div id="welcome-guide" class="welcome-guide">
+                <button id="close-tutorial" style="position: absolute; top: 1rem; right: 1rem; background: rgba(255,255,255,0.2); border: none; color: white; font-size: 1.5rem; cursor: pointer; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">&times;</button>
+                <div class="guide-content">
+                    <h3>🛡️ Welcome! Here's how to protect your personal info:</h3>
+                    <div class="guide-steps">
+                        <div class="guide-step">
+                            <span class="step-number">1</span>
+                            <div class="step-content">
+                                <strong>Type your message</strong>
+                                <p>Paste any text that contains personal info like names, emails, or phone numbers</p>
+                            </div>
+                        </div>
+                        <div class="guide-step">
+                            <span class="step-number">2</span>
+                            <div class="step-content">
+                                <strong>Add custom terms to protect</strong>
+                                <p>Click <span style="background: #fbbf24; color: #000; padding: 0.2rem 0.4rem; border-radius: 4px; font-weight: 600;">"+ Add Custom Terms to Protect"</span> to add company names, project codes, or other sensitive terms</p>
+                            </div>
+                        </div>
+                        <div class="guide-step">
+                            <span class="step-number">3</span>
+                            <div class="step-content">
+                                <strong>Click "Protect My Info"</strong>
+                                <p>We'll automatically hide your personal details with safe placeholders</p>
+                            </div>
+                        </div>
+                        <div class="guide-step">
+                            <span class="step-number">4</span>
+                            <div class="step-content">
+                                <strong>Use the protected text safely</strong>
+                                <p>Copy the protected version to use with AI tools, then restore it back when needed</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="guide-navigation">
+                        <button id="skip-tutorial-btn" class="secondary-btn">Skip Tutorial</button>
+                        <button id="exit-tutorial-btn" class="secondary-btn" style="background: #e74c3c; color: white; border-color: #e74c3c;">✕ Exit Tutorial</button>
+                        <button id="got-it-btn" class="got-it-btn">Got it! Let's start →</button>
+                    </div>
+                </div>
+            </div>
 
+            <div class="main-workflow" id="main-workflow" style="display: none;">
+                <div class="workflow-step active" id="step-1">
+                    <div class="step-header">
+                        <div class="step-indicator">
+                            <span class="step-number">1</span>
+                            <div class="step-info">
+                                <h3>Enter Your Text</h3>
+                                <p>Paste any text that might contain personal information</p>
+                            </div>
+                        </div>
+                        <div class="step-navigation">
+                            <button id="protect-my-info-btn" class="primary-btn" disabled>🛡️ Protect My Info</button>
+                        </div>
+                    </div>
+                    
+                    <div class="input-section">
+                        <div class="input-container">
+                            <textarea id="input" class="main-input" data-i18n-placeholder="inputPlaceholder" placeholder="Type or paste your text here..."></textarea>
+                            <div class="input-suggestion" id="input-suggestion" data-i18n="inputPlaceholderSuggestion">✨ Try typing: "Hi, I'm John Smith. My email is john@company.com and my phone is +1-555-123-4567. I work at TechCorp on Project Alpha."</div>
+                            <button id="dictate-btn" class="dictate-btn" title="Voice input" data-i18n-title="dictateBtn">🎤</button>
+                        </div>
+                        
+                        <div class="input-actions">
+                            <div class="custom-terms-toggle">
+                                <button id="add-custom-terms" class="toggle-btn" data-i18n="addCustomTermsBtn">+ Add Custom Terms to Protect</button>
+                            </div>
+                            <button id="go-to-restore-btn" class="toggle-btn">🔄 Go to Restore</button>
+                        </div>
+                        
+                        <div class="custom-terms-section" id="custom-terms-section" style="display: none;">
+                            <div class="section-header">
+                                <h4>Custom Terms to Protect</h4>
+                                <span id="terms-counter" class="counter">0/50</span>
+                            </div>
+                            <p class="helper-text">Add company names, project codes, or other sensitive terms (one per line)</p>
+                            <textarea id="customTerms" class="custom-terms-input" placeholder="company-name
+project-alpha
+secret-key-2024"></textarea>
+                        </div>
+                    </div>
+                </div>
 
-            <div class="input-layout">
-                <div class="prompt-section">
-                    <h3 class="section-title">Your Prompt</h3>
-                    <textarea id="input" class="prompt-input" placeholder="Type or paste your text here for protection or restoration..."></textarea>
+                <div class="workflow-step" id="step-2">
+                    <div class="step-header">
+                        <div class="step-indicator">
+                            <span class="step-number">2</span>
+                            <div class="step-info">
+                                <h3>Your Protected Text</h3>
+                                <p>Personal info has been safely hidden with placeholders</p>
+                            </div>
+                        </div>
+                        <div class="step-navigation">
+                            <button id="prev-step-2" class="nav-btn">← Back</button>
+                            <button id="next-step-2" class="nav-btn">Next →</button>
+                        </div>
+                        <div class="protection-status" id="protection-status"></div>
+                    </div>
+                    
+                    <div class="result-section">
+                        <div class="result-card">
+                            <div class="result-header">
+                                <h4>✅ Safe to Use Anywhere</h4>
+                                <button class="copy-btn" data-target="protected-prompt">📋 Copy Protected Text</button>
+                            </div>
+                            <div class="result-content">
+                                <textarea id="protected-prompt" readonly placeholder="Your protected text will appear here..."></textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="action-buttons">
+                            <button id="use-with-ai-btn" class="secondary-btn">Chat on App</button>
+                            <button id="share-external-btn" class="secondary-btn">Chat outside App</button>
+                            <button id="start-over-btn" class="secondary-btn">↺ Protect Different Text</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="workflow-step" id="step-3">
+                    <div class="step-header">
+                        <div class="step-indicator">
+                            <span class="step-number">3</span>
+                            <div class="step-info">
+                                <h3>Restore Original Text</h3>
+                                <p>Paste AI response here to restore your personal info</p>
+                            </div>
+                        </div>
+                        <div class="step-navigation">
+                            <button id="prev-step-3" class="nav-btn">← Back</button>
+                            <button id="protect-new-btn" class="nav-btn" style="background: var(--primary-blue); color: white; border-color: var(--primary-blue);">🛡️ Protect New Text</button>
+                        </div>
+                    </div>
+                    
+                    <div class="restore-section">
+                        <div class="input-container">
+                            <textarea id="ai-response-input" class="main-input" data-i18n-placeholder="aiResponsePlaceholder" placeholder="Paste the AI's response here to restore your personal information..."></textarea>
+                            <button id="paste-btn" class="copy-btn" title="Paste from clipboard">📋 Paste</button>
+                        </div>
+                        <button id="restore-btn" class="primary-btn" disabled data-i18n="restoreBtn" onclick="
+                          const input = document.getElementById('ai-response-input');
+                          const output = document.getElementById('output');
+                          const result = document.getElementById('restored-result');
+                          if (input && output && input.value.trim()) {
+                            output.value = input.value;
+                            if (result) result.style.display = 'block';
+                          }
+                        ">🔄 Restore Personal Info</button>
+                        
+                        <div class="result-card" id="restored-result" style="display: none;">
+                            <div class="result-header">
+                                <h4>✨ Restored with Your Personal Info</h4>
+                                <button class="copy-btn" data-target="output">📋 Copy Restored Text</button>
+                            </div>
+                            <div class="result-content">
+                                <textarea id="output" readonly></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="feedback-section">
+                <div class="feedback-compact">
+                    <input type="text" id="feedback-text" placeholder="💬 How can we improve? Your feedback helps!">
+                    <button id="send-feedback" class="feedback-btn">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- External AI Share Modal -->
+    <div id="share-modal" class="share-modal" style="display: none;">
+        <div class="share-content">
+            <button class="close-share" id="close-share">&times;</button>
+            <h3>🌐 Chat outside App</h3>
+            
+            <div class="copy-instructions">
+                <h4>📝 Quick Instructions:</h4>
+                <ol>
+                    <li>Click any AI service below to open it in a new tab</li>
+                    <li>Your protected text is automatically copied to clipboard</li>
+                    <li>Paste it into the AI chat and get your response</li>
+                    <li>Copy the AI's response back to restore your personal info</li>
+                </ol>
+            </div>
+            
+            <div class="ai-services-grid">
+                <div class="ai-service-card" data-service="chatgpt">
+                    <div class="service-icon">🤖</div>
+                    <div class="service-name">ChatGPT</div>
+                    <div class="service-desc">OpenAI's conversational AI</div>
+                    <div class="service-access free-access">Free tier available</div>
+                    <button class="auth-btn" data-provider="openai">🔐 Sign In & Use</button>
                 </div>
                 
-                <div class="custom-terms-section">
-                    <h3 class="section-title">Custom Terms</h3>
-                    <p class="helper-text">One term per line</p>
-                    <textarea id="customTerms" class="custom-terms-input" placeholder="company-name&#10;project-code&#10;secret-key"></textarea>
-                </div>
-            </div>
-
-            <div class="button-container">
-                <button id="send" class="process-btn">Process Text</button>
-            </div>
-
-            <div class="results">
-                <div class="result-card">
-                    <div class="result-header">
-                        <h4>Protected Prompt</h4>
-                        <button class="copy-btn" data-target="protected-prompt">📋 Copy</button>
-                    </div>
-                    <div class="result-content">
-                        <textarea id="protected-prompt" readonly></textarea>
-                    </div>
+                <div class="ai-service-card" data-service="gemini">
+                    <div class="service-icon">🔮</div>
+                    <div class="service-name">Gemini</div>
+                    <div class="service-desc">Google's AI assistant</div>
+                    <div class="service-access free-access">Free tier available</div>
+                    <button class="auth-btn" data-provider="gemini">🔐 Sign In & Use</button>
                 </div>
                 
-                <div class="result-card">
-                    <div class="result-header">
-                        <h4>Restored Result</h4>
-                        <button class="copy-btn" data-target="output">📋 Copy</button>
-                    </div>
-                    <div class="result-content">
-                        <textarea id="output" readonly></textarea>
-                    </div>
+                <div class="ai-service-card" data-service="claude">
+                    <div class="service-icon">🤖</div>
+                    <div class="service-name">Claude</div>
+                    <div class="service-desc">Anthropic's AI assistant</div>
+                    <div class="service-access free-access">Free tier available</div>
+                    <button class="auth-btn" data-provider="claude">🔐 Sign In & Use</button>
+                </div>
+                
+                <div class="ai-service-card" data-service="copilot">
+                    <div class="service-icon">💻</div>
+                    <div class="service-name">Copilot</div>
+                    <div class="service-desc">Microsoft's AI assistant</div>
+                    <div class="service-access free-access">Free with Microsoft account</div>
+                    <button class="auth-btn" data-provider="copilot">🔐 Sign In & Use</button>
+                </div>
+                
+                <div class="ai-service-card" data-service="perplexity">
+                    <div class="service-icon">🔍</div>
+                    <div class="service-name">Perplexity</div>
+                    <div class="service-desc">AI-powered search</div>
+                    <div class="service-access free-access">Free tier available</div>
+                </div>
+                
+                <div class="ai-service-card" data-service="custom">
+                    <div class="service-icon">🌐</div>
+                    <div class="service-name">Other AI</div>
+                    <div class="service-desc">Any other AI service</div>
+                    <div class="service-access free-access">Just copy & paste</div>
+                    <button class="copy-btn" data-target="protected-prompt">📋 Copy Protected Text</button>
                 </div>
             </div>
-
-            <div class="feedback-compact">
-                <input type="text" id="feedback-text" placeholder="💬 Quick feedback or suggestions...">
-                <button id="send-feedback" class="feedback-btn">Send Feedback</button>
+            
+            <div class="universal-copy-section">
+                <h4>
+                    📋 Universal Copy Format
+                    <button class="copy-btn" id="copy-universal-format">📋 Copy</button>
+                </h4>
+                <div class="universal-copy-text" id="universal-copy-text">
+                    <!-- Protected text will be inserted here -->
+                </div>
             </div>
-
+            
+            <div class="share-footer">
+                🔒 Your personal information is safely hidden in the text above
+            </div>
         </div>
     </div>
     
@@ -513,9 +1487,33 @@
             </div>
             
             <div style="margin-bottom: 1.5rem;">
-                <h4 style="margin-bottom: 0.5rem; color: var(--text-dark);">Default Custom Terms</h4>
+                <h4 style="margin-bottom: 0.5rem; color: var(--text-dark);">Language / Idioma / Langue / اللغة / 语言</h4>
+                <select id="language-select" style="width: 100%; padding: 0.75rem; border: 2px solid var(--border); border-radius: 6px; font-family: inherit;">
+                    <option value="en">English</option>
+                    <option value="es">Español</option>
+                    <option value="fr">Français</option>
+                    <option value="ar">العربية</option>
+                    <option value="zh">中文</option>
+                </select>
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <h4 style="margin-bottom: 0; color: var(--text-dark);">Default Custom Terms</h4>
+                    <span id="settings-terms-counter" style="font-size: 0.8rem; color: var(--text-gray);">0/50</span>
+                </div>
                 <p style="font-size: 0.85rem; color: var(--text-gray); margin-bottom: 0.75rem;">These terms will be automatically loaded when the app starts</p>
-                <textarea id="settings-custom-terms" style="width: 100%; height: 120px; padding: 0.75rem; border: 2px solid var(--border); border-radius: 6px; font-family: inherit; resize: vertical;" placeholder="company-name&#10;project-code&#10;secret-key"></textarea>
+                <textarea id="settings-custom-terms" style="width: 100%; height: 120px; padding: 0.75rem 0.75rem 0.75rem 0.75rem; padding-top: 0.5rem; border: 2px solid var(--border); border-radius: 6px; font-family: 'Monaco', 'Menlo', 'Consolas', monospace; resize: vertical; line-height: 1.5; background-image: repeating-linear-gradient(transparent, transparent 1.4em, rgba(30, 58, 138, 0.15) 1.4em, rgba(30, 58, 138, 0.15) 1.5em);" placeholder="company-name&#10;project-code&#10;secret-key"></textarea>
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <h4 style="margin-bottom: 0.5rem; color: var(--text-dark);">Privacy & Analytics</h4>
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+                    <input type="checkbox" id="settings-analytics" style="margin: 0;">
+                    <label for="settings-analytics" style="color: var(--text-dark);">Share anonymous usage analytics</label>
+                </div>
+                <p style="font-size: 0.8rem; color: var(--text-gray); margin-left: 1.5rem; margin-bottom: 0.75rem;">Help improve the app by sharing anonymous plugin usage data. No personal information or content is collected.</p>
+                <button id="view-analytics" style="background: var(--primary-blue); color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">📊 View Analytics Dashboard</button>
             </div>
             
             <div style="margin-bottom: 1.5rem;">
@@ -524,9 +1522,14 @@
                     <input type="checkbox" id="settings-auto-save" style="margin: 0;">
                     <label for="settings-auto-save" style="color: var(--text-dark);">Auto-save custom terms</label>
                 </div>
-                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
                     <input type="checkbox" id="settings-notifications" style="margin: 0;">
                     <label for="settings-notifications" style="color: var(--text-dark);">Show notifications</label>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <label for="settings-history-limit" style="color: var(--text-dark);">Save last</label>
+                    <input type="number" id="settings-history-limit" min="1" max="10" value="3" style="width: 60px; padding: 0.25rem; border: 1px solid var(--border); border-radius: 4px;">
+                    <label for="settings-history-limit" style="color: var(--text-dark);">prompts</label>
                 </div>
             </div>
             
@@ -537,6 +1540,476 @@
         </div>
     </div>
     
-    <script type="module" src="/src/renderer.ts"></script>
+    <script>
+      // Inline minimal functionality for packaged app
+      document.addEventListener('DOMContentLoaded', function() {
+        // Dark mode toggle
+        const darkMode = document.getElementById('darkMode');
+        if (darkMode) {
+          darkMode.addEventListener('change', function() {
+            const theme = darkMode.checked ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('darkMode', darkMode.checked.toString());
+          });
+          
+          // Load saved dark mode
+          const saved = localStorage.getItem('darkMode') === 'true';
+          darkMode.checked = saved;
+          document.documentElement.setAttribute('data-theme', saved ? 'dark' : 'light');
+        }
+        
+        // Tutorial buttons
+        const showTutorialBtn = document.getElementById('show-tutorial-btn');
+        const gotItBtn = document.getElementById('got-it-btn');
+        const skipTutorialBtn = document.getElementById('skip-tutorial-btn');
+        const exitTutorialBtn = document.getElementById('exit-tutorial-btn');
+        const welcomeGuide = document.getElementById('welcome-guide');
+        const mainWorkflow = document.getElementById('main-workflow');
+        
+        function showWorkflow() {
+          if (welcomeGuide && mainWorkflow) {
+            welcomeGuide.style.display = 'none';
+            mainWorkflow.style.display = 'block';
+            localStorage.setItem('hasSeenWelcomeGuide', 'true');
+          }
+        }
+        
+        function showTutorial() {
+          if (welcomeGuide && mainWorkflow) {
+            welcomeGuide.style.display = 'block';
+            mainWorkflow.style.display = 'none';
+          }
+        }
+        
+        if (showTutorialBtn) showTutorialBtn.addEventListener('click', showTutorial);
+        if (gotItBtn) gotItBtn.addEventListener('click', showWorkflow);
+        if (skipTutorialBtn) skipTutorialBtn.addEventListener('click', showWorkflow);
+        if (exitTutorialBtn) exitTutorialBtn.addEventListener('click', showWorkflow);
+        
+        // Close tutorial button
+        const closeTutorialBtn = document.getElementById('close-tutorial');
+        if (closeTutorialBtn) closeTutorialBtn.addEventListener('click', showWorkflow);
+        
+        // Initialize workflow
+        const hasSeenGuide = localStorage.getItem('hasSeenWelcomeGuide') === 'true';
+        if (hasSeenGuide) {
+          showWorkflow();
+        }
+        
+        // Basic workflow navigation
+        const protectMyInfoBtn = document.getElementById('protect-my-info-btn');
+        const prevStep2 = document.getElementById('prev-step-2');
+        const nextStep2 = document.getElementById('next-step-2');
+        const prevStep3 = document.getElementById('prev-step-3');
+        const input = document.getElementById('input');
+        
+        // Quick action buttons
+        const goToRestoreBtn = document.getElementById('go-to-restore-btn');
+        
+        if (goToRestoreBtn) {
+          goToRestoreBtn.addEventListener('click', function() {
+            showStep(3);
+          });
+        }
+        
+        function showStep(stepNumber) {
+          document.querySelectorAll('.workflow-step').forEach(s => s.classList.remove('active'));
+          const step = document.getElementById('step-' + stepNumber);
+          if (step) {
+            step.classList.add('active');
+            step.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }
+        
+        if (input && protectMyInfoBtn) {
+          input.addEventListener('input', function() {
+            protectMyInfoBtn.disabled = !input.value.trim();
+          });
+          
+          protectMyInfoBtn.addEventListener('click', function() {
+            if (input.value.trim()) {
+              processProtection();
+            }
+          });
+        }
+        
+        // Protect button handler
+        if (protectMyInfoBtn) {
+          protectMyInfoBtn.addEventListener('click', function() {
+            if (input && input.value.trim()) {
+              processProtection();
+            }
+          });
+        }
+        
+        if (prevStep2) {
+          prevStep2.addEventListener('click', function() {
+            showStep(1);
+          });
+        }
+        
+        if (nextStep2) {
+          nextStep2.addEventListener('click', function() {
+            showStep(3);
+          });
+        }
+        
+        // Step 3 navigation
+        if (prevStep3) {
+          prevStep3.addEventListener('click', function() {
+            showStep(2);
+          });
+        }
+        
+        // Step 3 navigation (restore step)
+        const protectNewBtn = document.getElementById('protect-new-btn');
+        
+        if (protectNewBtn) {
+          protectNewBtn.addEventListener('click', function() {
+            // Clear inputs and go back to main menu
+            const input = document.getElementById('input');
+            const aiResponseInput = document.getElementById('ai-response-input');
+            const output = document.getElementById('output');
+            const restoredResult = document.getElementById('restored-result');
+            
+            if (input) input.value = '';
+            if (aiResponseInput) aiResponseInput.value = '';
+            if (output) output.value = '';
+            if (restoredResult) restoredResult.style.display = 'none';
+            
+            showStep(1);
+          });
+        }
+        
+        // Paste button handler
+        const pasteBtn = document.getElementById('paste-btn');
+        if (pasteBtn) {
+          pasteBtn.addEventListener('click', async function() {
+            try {
+              const text = await navigator.clipboard.readText();
+              const aiResponseInput = document.getElementById('ai-response-input');
+              if (aiResponseInput) {
+                aiResponseInput.value = text;
+                aiResponseInput.dispatchEvent(new Event('input'));
+              }
+            } catch (err) {
+              console.error('Failed to read clipboard:', err);
+            }
+          });
+        }
+        
+        // AI response input handler
+        const aiResponseInput = document.getElementById('ai-response-input');
+        const restoreBtn = document.getElementById('restore-btn');
+        
+        if (aiResponseInput && restoreBtn) {
+          aiResponseInput.addEventListener('input', function() {
+            restoreBtn.disabled = !aiResponseInput.value.trim();
+          });
+          
+          restoreBtn.addEventListener('click', function() {
+            processRestore();
+          });
+        }
+        
+        // Restore function
+        function processRestore() {
+          const aiResponseInput = document.getElementById('ai-response-input');
+          const output = document.getElementById('output');
+          const restoredResult = document.getElementById('restored-result');
+          
+          if (!aiResponseInput || !output) return;
+          
+          let restoredText = aiResponseInput.value;
+          
+          // Restore placeholders with original values
+          for (const placeholder in placeholderMap) {
+            const originalValue = placeholderMap[placeholder];
+            restoredText = restoredText.replace(new RegExp(placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), originalValue);
+          }
+          
+          output.value = restoredText;
+          
+          if (restoredResult) {
+            restoredResult.style.display = 'block';
+          }
+        }
+        
+        // Global placeholder map
+        let placeholderMap = {};
+        
+        // PII Protection function
+        function processProtection() {
+          const input = document.getElementById('input');
+          const customTerms = document.getElementById('customTerms');
+          const protectedPrompt = document.getElementById('protected-prompt');
+          const protectionStatus = document.getElementById('protection-status');
+          
+          if (!input || !protectedPrompt) return;
+          
+          let text = input.value;
+          let customTermsList = [];
+          
+          if (customTerms && customTerms.value) {
+            customTermsList = customTerms.value.split('\n').map(s => s.trim()).filter(Boolean);
+          }
+          
+          // Reset placeholder map
+          placeholderMap = {};
+          let maskedText = text;
+          let maskedCount = 0;
+          
+          // Email masking
+          maskedText = maskedText.replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, function(match) {
+            maskedCount++;
+            const placeholder = '[[LDB:EMAIL_' + maskedCount + ']]';
+            placeholderMap[placeholder] = match;
+            return placeholder;
+          });
+          
+          // Phone masking
+          maskedText = maskedText.replace(/\+?[1-9]\d{1,14}|\(?\d{3}\)?[-\s]?\d{3}[-\s]?\d{4}/g, function(match) {
+            maskedCount++;
+            const placeholder = '[[LDB:PHONE_' + maskedCount + ']]';
+            placeholderMap[placeholder] = match;
+            return placeholder;
+          });
+          
+          // Custom terms masking
+          customTermsList.forEach(function(term) {
+            if (term) {
+              const regex = new RegExp('\\b' + term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'gi');
+              maskedText = maskedText.replace(regex, function(match) {
+                maskedCount++;
+                const placeholder = '[[LDB:CUSTOM_' + maskedCount + ']]';
+                placeholderMap[placeholder] = match;
+                return placeholder;
+              });
+            }
+          });
+          
+          protectedPrompt.value = maskedText;
+          
+          if (protectionStatus) {
+            if (maskedCount > 0) {
+              protectionStatus.textContent = '🛡️ Protected ' + maskedCount + ' sensitive item' + (maskedCount > 1 ? 's' : '');
+              protectionStatus.style.background = 'var(--accent-green)';
+            } else {
+              protectionStatus.textContent = '✅ No sensitive info detected';
+              protectionStatus.style.background = '#6c757d';
+            }
+          }
+          
+          showStep(2);
+        }
+        
+        // Add custom terms toggle
+        const addCustomTermsBtn = document.getElementById('add-custom-terms');
+        const customTermsSection = document.getElementById('custom-terms-section');
+        if (addCustomTermsBtn && customTermsSection) {
+          addCustomTermsBtn.addEventListener('click', function() {
+            const isVisible = customTermsSection.style.display !== 'none';
+            customTermsSection.style.display = isVisible ? 'none' : 'block';
+            addCustomTermsBtn.textContent = isVisible ? '+ Add Custom Terms to Protect' : '- Hide Custom Terms';
+          });
+        }
+        
+        // Copy buttons
+        document.querySelectorAll('.copy-btn').forEach(function(btn) {
+          btn.addEventListener('click', function() {
+            const targetId = btn.getAttribute('data-target');
+            if (targetId) {
+              const textarea = document.getElementById(targetId);
+              if (textarea) {
+                textarea.select();
+                document.execCommand('copy');
+                const originalText = btn.textContent;
+                btn.textContent = '✅ Copied!';
+                setTimeout(function() {
+                  btn.textContent = originalText;
+                }, 2000);
+                
+                // If copying protected text in step 2, auto-advance to step 3
+                if (targetId === 'protected-prompt') {
+                  const currentStep = document.querySelector('.workflow-step.active');
+                  if (currentStep && currentStep.id === 'step-2') {
+                    setTimeout(function() {
+                      showStep(3);
+                    }, 1000);
+                  }
+                }
+                
+                // If copying restored text in step 3, go back to main menu for new action
+                if (targetId === 'output') {
+                  const currentStep = document.querySelector('.workflow-step.active');
+                  if (currentStep && currentStep.id === 'step-3') {
+                    setTimeout(function() {
+                      // Clear inputs and go back to main menu
+                      const input = document.getElementById('input');
+                      const aiResponseInput = document.getElementById('ai-response-input');
+                      const output = document.getElementById('output');
+                      const restoredResult = document.getElementById('restored-result');
+                      
+                      if (input) input.value = '';
+                      if (aiResponseInput) aiResponseInput.value = '';
+                      if (output) output.value = '';
+                      if (restoredResult) restoredResult.style.display = 'none';
+                      
+                      showStep(1);
+                    }, 1500);
+                  }
+                }
+              }
+            }
+          });
+        });
+        
+        // Start over button
+        const startOverBtn = document.getElementById('start-over-btn');
+        if (startOverBtn) {
+          startOverBtn.addEventListener('click', function() {
+            document.getElementById('input').value = '';
+            document.getElementById('protected-prompt').value = '';
+            showStep(1); // Go back to main menu
+          });
+        }
+        
+        // Help button
+        const helpBtn = document.getElementById('help-btn');
+        if (helpBtn) {
+          helpBtn.addEventListener('click', function() {
+            alert('Ledebe Protector helps protect your personal information when using AI tools.\n\n1. Enter your text\n2. Add custom terms (optional)\n3. Click "Protect My Info"\n4. Use the protected text safely');
+          });
+        }
+      });
+    </script>
+    
+    <script>
+        // External AI Share functionality
+        const aiServiceUrls = {
+            chatgpt: 'https://chat.openai.com/',
+            gemini: 'https://gemini.google.com/',
+            claude: 'https://claude.ai/',
+            copilot: 'https://copilot.microsoft.com/',
+            perplexity: 'https://www.perplexity.ai/',
+            custom: null
+        };
+        
+        function initializeExternalAIShare() {
+            const shareBtn = document.getElementById('share-external-btn');
+            const shareModal = document.getElementById('share-modal');
+            const closeShare = document.getElementById('close-share');
+            const copyUniversalBtn = document.getElementById('copy-universal-format');
+            const universalCopyText = document.getElementById('universal-copy-text');
+            
+            if (!shareBtn) return;
+            
+            shareBtn.addEventListener('click', () => {
+                const protectedText = document.getElementById('protected-prompt')?.value;
+                if (!protectedText) {
+                    alert('No protected text available to share');
+                    return;
+                }
+                
+                // Update universal copy text
+                const formattedText = `Here's my text with personal information safely protected:\n\n${protectedText}\n\nPlease help me with this text. When you respond, I'll restore my personal information back into your response.`;
+                universalCopyText.textContent = formattedText;
+                
+                shareModal.style.display = 'flex';
+            });
+            
+            closeShare?.addEventListener('click', () => {
+                shareModal.style.display = 'none';
+            });
+            
+            // Close modal when clicking outside
+            shareModal?.addEventListener('click', (e) => {
+                if (e.target === shareModal) {
+                    shareModal.style.display = 'none';
+                }
+            });
+            
+            // Copy universal format
+            copyUniversalBtn?.addEventListener('click', async () => {
+                const text = universalCopyText.textContent;
+                try {
+                    await navigator.clipboard.writeText(text);
+                    copyUniversalBtn.textContent = '✓ Copied!';
+                    setTimeout(() => {
+                        copyUniversalBtn.textContent = '📋 Copy';
+                    }, 2000);
+                } catch (err) {
+                    console.error('Failed to copy:', err);
+                    // Fallback for older browsers
+                    const textArea = document.createElement('textarea');
+                    textArea.value = text;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    copyUniversalBtn.textContent = '✓ Copied!';
+                    setTimeout(() => {
+                        copyUniversalBtn.textContent = '📋 Copy';
+                    }, 2000);
+                }
+            });
+            
+            // Handle AI service clicks
+            document.querySelectorAll('.ai-service-card').forEach(card => {
+                card.addEventListener('click', async () => {
+                    const service = card.dataset.service;
+                    const protectedText = document.getElementById('protected-prompt')?.value;
+                    
+                    if (!protectedText) {
+                        alert('No protected text available');
+                        return;
+                    }
+                    
+                    // Copy to clipboard first
+                    const formattedText = `Here's my text with personal information safely protected:\n\n${protectedText}\n\nPlease help me with this text. When you respond, I'll restore my personal information back into your response.`;
+                    
+                    try {
+                        await navigator.clipboard.writeText(formattedText);
+                        
+                        // Show success feedback
+                        const originalContent = card.innerHTML;
+                        card.innerHTML = `
+                            <div class="service-icon">✓</div>
+                            <div class="service-name">Copied!</div>
+                            <div class="service-desc">Opening ${card.querySelector('.service-name').textContent}...</div>
+                        `;
+                        
+                        setTimeout(() => {
+                            card.innerHTML = originalContent;
+                        }, 2000);
+                        
+                        // Open AI service if URL exists
+                        if (service !== 'custom' && aiServiceUrls[service]) {
+                            // Use electron API if available, otherwise fallback to window.open
+                            if (window.electronAPI?.openExternal) {
+                                window.electronAPI.openExternal(aiServiceUrls[service]);
+                            } else {
+                                window.open(aiServiceUrls[service], '_blank');
+                            }
+                        } else if (service === 'custom') {
+                            // For custom/other AI, just show a message
+                            alert('📋 Text copied to clipboard!\n\nNow open your preferred AI service and paste the text.');
+                        }
+                        
+                    } catch (err) {
+                        console.error('Failed to copy:', err);
+                        alert('Failed to copy text to clipboard. Please try the universal copy button below.');
+                    }
+                });
+            });
+        }
+        
+        // Initialize when DOM is loaded
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeExternalAIShare);
+        } else {
+            initializeExternalAIShare();
+        }
+    </script>
 </body>
 </html>

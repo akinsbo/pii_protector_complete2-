@@ -69,6 +69,16 @@ npm run test:e2e || print_warning "Tests failed, continuing deployment..."
 print_status "Building Electron app for all platforms..."
 npm run dist:all
 
+# Update website download links to match latest artifacts
+print_status "Updating website download links..."
+if [ -f "deployments/update-download-links.sh" ]; then
+    cd deployments
+    ./update-download-links.sh
+    cd ..
+else
+    print_warning "Download links update script not found"
+fi
+
 # Deploy management portal
 print_status "Deploying management portal..."
 cd management-portal
@@ -89,17 +99,6 @@ else
     print_warning "Crash storage setup script not found"
 fi
 
-# Deploy to server (if configured)
-if [ -f "deployments/deploy.sh" ]; then
-    print_status "Deploying website to server..."
-    cd deployments
-    chmod +x deploy.sh
-    ./deploy.sh
-    cd ..
-else
-    print_warning "Website deployment script not found"
-fi
-
 # Deploy built artifacts
 if [ -f "deployments/deploy-artifacts.sh" ]; then
     print_status "Deploying built artifacts..."
@@ -109,6 +108,17 @@ if [ -f "deployments/deploy-artifacts.sh" ]; then
     cd ..
 else
     print_warning "Artifact deployment script not found"
+fi
+
+# Deploy website
+if [ -f "deployments/deploy.sh" ]; then
+    print_status "Deploying website..."
+    cd deployments
+    chmod +x deploy.sh
+    ./deploy.sh
+    cd ..
+else
+    print_warning "Website deployment script not found"
 fi
 
 # Validate deployment

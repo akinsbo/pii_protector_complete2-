@@ -620,6 +620,13 @@ async function loadSettings() {
         
         // Initialize analytics with saved setting
         analytics.setEnabled(settingsData.analytics !== false);
+        
+        // Update counters after loading settings
+        const termsCounter = document.getElementById('terms-counter') as HTMLElement;
+        if (customTermsEl && termsCounter) {
+          const updateCounter = (window as any).updateCounter;
+          if (updateCounter) updateCounter(customTermsEl, termsCounter);
+        }
       }
     }
   } catch (error) {
@@ -765,16 +772,27 @@ function setupTermCounters() {
   function updateCounter(textarea: HTMLTextAreaElement, counter: HTMLElement) {
     const terms = textarea.value.split('\n').map(s => s.trim()).filter(Boolean);
     const count = terms.length;
-    counter.textContent = `${count}/${MAX_TERMS}`;
     
-    if (count > MAX_TERMS) {
+    // For custom terms counter, add defaults count
+    let totalCount = count;
+    if (textarea.id === 'customTerms') {
+      const settingsTerms = document.getElementById('settings-custom-terms') as HTMLTextAreaElement;
+      if (settingsTerms) {
+        const defaultTerms = settingsTerms.value.split('\n').map(s => s.trim()).filter(Boolean);
+        totalCount = defaultTerms.length + count;
+      }
+    }
+    
+    counter.textContent = `${totalCount}/${MAX_TERMS}`;
+    
+    if (totalCount > MAX_TERMS) {
       counter.style.color = '#e74c3c';
       textarea.style.borderColor = '#e74c3c';
       // Truncate to limit
       const limitedTerms = terms.slice(0, MAX_TERMS);
       textarea.value = limitedTerms.join('\n');
       counter.textContent = `${MAX_TERMS}/${MAX_TERMS}`;
-    } else if (count > MAX_TERMS * 0.8) {
+    } else if (totalCount > MAX_TERMS * 0.8) {
       counter.style.color = '#f39c12';
       textarea.style.borderColor = '';
     } else {
@@ -789,12 +807,25 @@ function setupTermCounters() {
   const settingsCounter = document.getElementById('settings-terms-counter') as HTMLElement;
   
   if (customTerms && termsCounter) {
-    customTerms.addEventListener('input', () => updateCounter(customTerms, termsCounter));
+    const updateCustomCounter = () => updateCounter(customTerms, termsCounter);
+    customTerms.addEventListener('input', updateCustomCounter);
+    customTerms.addEventListener('keyup', updateCustomCounter);
+    customTerms.addEventListener('paste', () => setTimeout(updateCustomCounter, 10));
+    // Force initial update with multiple attempts
     updateCounter(customTerms, termsCounter);
+    setTimeout(() => updateCounter(customTerms, termsCounter), 100);
+    setTimeout(() => updateCounter(customTerms, termsCounter), 500);
   }
   
   if (settingsTerms && settingsCounter) {
     settingsTerms.addEventListener('input', () => updateCounter(settingsTerms, settingsCounter));
-    updateCounter(settingsTerms, settingsCounter);
+    setTimeout(() => updateCounter(settingsTerms, settingsCounter), 100);
+  }
+  
+  // Update custom terms counter when settings change
+  if (settingsTerms && customTerms && termsCounter) {
+    settingsTerms.addEventListener('input', () => {
+      updateCounter(customTerms, termsCounter);
+    });
   }
 }

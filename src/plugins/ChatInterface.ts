@@ -6,6 +6,24 @@ import { PluginManager } from './PluginManager';
 import { ChatManager } from './ChatManager';
 import { LLMPlugin, ChatConversation, ChatFolder } from './types';
 
+// API key URLs for different providers
+const API_KEY_URLS = {
+  openai: 'https://platform.openai.com/api-keys',
+  gemini: 'https://aistudio.google.com/app/apikey',
+  claude: 'https://console.anthropic.com/account/keys'
+} as const;
+
+// Default model configurations
+const DEFAULT_MODELS = {
+  fallback: process.env.DEFAULT_AI_MODEL || 'gpt-3.5-turbo'
+} as const;
+
+// Input type constants
+const INPUT_TYPES = {
+  password: 'password',
+  text: 'text'
+} as const;
+
 export class ChatInterface {
   private pluginManager = new PluginManager();
   private chatManager = new ChatManager();
@@ -325,14 +343,14 @@ export class ChatInterface {
       
       if (errorMsg.includes('401') || errorMsg.includes('API key') || errorMsg.includes('Unauthorized')) {
         const pluginName = this.currentPlugin?.name.toLowerCase() || '';
-        let apiKeyUrl = 'https://platform.openai.com/api-keys';
+        let apiKeyUrl: string = API_KEY_URLS.openai;
         let buttonText = '🔑 Get OpenAI API Key';
         
         if (pluginName.includes('gemini') || pluginName.includes('google')) {
-          apiKeyUrl = 'https://aistudio.google.com/app/apikey';
+          apiKeyUrl = API_KEY_URLS.gemini;
           buttonText = '💎 Get Gemini API Key';
         } else if (pluginName.includes('claude') || pluginName.includes('anthropic')) {
-          apiKeyUrl = 'https://console.anthropic.com/account/keys';
+          apiKeyUrl = API_KEY_URLS.claude;
           buttonText = '🤖 Get Claude API Key';
         }
         
@@ -561,7 +579,7 @@ export class ChatInterface {
         });
       } else {
         input = document.createElement('input');
-        input.type = setting.type === 'password' ? 'password' : 'text';
+        input.type = setting.type === INPUT_TYPES.password ? INPUT_TYPES.password : INPUT_TYPES.text;
       }
       
       input.id = `setting-${setting.key}`;
@@ -615,9 +633,9 @@ export class ChatInterface {
           // @ts-ignore
           if (window.electronAPI?.openExternal) {
             // @ts-ignore
-            window.electronAPI.openExternal('https://platform.openai.com/api-keys');
+            window.electronAPI.openExternal(API_KEY_URLS.openai);
           } else {
-            window.open('https://platform.openai.com/api-keys', '_blank');
+            window.open(API_KEY_URLS.openai, '_blank');
           }
         });
         
@@ -711,7 +729,7 @@ export class ChatInterface {
     
     // Ensure we use gpt-3.5-turbo as fallback if no model selected or gpt-4 is selected without access
     if (!model || model === 'gpt-4') {
-      model = 'gpt-3.5-turbo';
+      model = DEFAULT_MODELS.fallback;
       modelSelect.value = model; // Update the UI to reflect the change
     }
     

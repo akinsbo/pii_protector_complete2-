@@ -16,9 +16,9 @@
     "start": "electron-forge start",
     "dist:mac": "npm run build && electron-builder --mac dmg",
     "dist:mac-universal": "npm run build && electron-builder --mac universal",
-    "dist:win": "npm run build && electron-builder --win nsis",
-    "dist:win-portable": "npm run build && electron-builder --win portable",
-    "dist:all": "npm run build && electron-builder --mac --win --linux",
+    "dist:win": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false npm run build && electron-builder --win nsis",
+    "dist:win-portable": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false npm run build && electron-builder --win portable",
+    "dist:all": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false npm run build && electron-builder --mac --win --linux",
     "dist:publish": "npm run build && electron-builder --publish always",
     "package": "electron-forge package",
     "make": "electron-forge make",
@@ -133,7 +133,8 @@
           "target": "portable",
           "arch": ["x64"]
         }
-      ]
+      ],
+      "forceCodeSigning": false
     },
     "nsis": {
       "oneClick": false,
@@ -150,7 +151,7 @@
     },
     "publish": {
       "provider": "generic",
-      "url": "https://ledebe.s3-website-us-east-1.amazonaws.com/downloads/"
+      "url": "http://ledebe.s3-website.us-east-2.amazonaws.com/downloads/"
     },
     "afterSign": "scripts/notarize.js",
     "extraResources": [

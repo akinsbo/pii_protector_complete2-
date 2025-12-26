@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PII Protector</title>
     <link rel="stylesheet" href="src/styles/auth.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         :root {
             --primary-blue: #1e3a8a;
@@ -281,6 +282,62 @@
             background: var(--white);
         }
 
+        .markdown-preview {
+            display: none;
+            padding: 1rem;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            background: var(--white);
+            min-height: 120px;
+            overflow-y: auto;
+        }
+
+        .markdown-preview h1, .markdown-preview h2, .markdown-preview h3 {
+            margin: 0.5rem 0;
+            color: var(--text-dark);
+        }
+
+        .markdown-preview p {
+            margin: 0.5rem 0;
+        }
+
+        .markdown-preview code {
+            background: var(--bg-light);
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+        }
+
+        .markdown-preview pre {
+            background: var(--bg-light);
+            padding: 1rem;
+            border-radius: 6px;
+            overflow-x: auto;
+        }
+
+        .markdown-toggle {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .toggle-btn {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-gray);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-btn.active {
+            background: var(--accent-green);
+            color: white;
+            border-color: var(--accent-green);
+        }
+
         .prompt-input {
             height: 100%;
             min-height: 120px;
@@ -388,25 +445,77 @@
             color: var(--text-dark);
         }
 
-        .copy-btn {
-            background: var(--accent-green);
-            color: white;
+        .icon-btn {
+            background: none;
             border: none;
-            padding: 0.5rem 1rem;
-            font-size: 0.85rem;
-            font-weight: 500;
-            border-radius: 6px;
+            color: var(--text-gray);
             cursor: pointer;
-            transition: all 0.3s ease;
+            font-size: 1.2rem;
+            padding: 0.25rem;
+            transition: color 0.2s ease;
+            position: relative;
+        }
+
+        .icon-btn:hover {
+            color: var(--text-dark);
+        }
+
+        .icon-btn.active {
+            color: var(--accent-green);
+        }
+
+        .copy-btn {
+            background: none;
+            border: none;
+            color: var(--text-gray);
+            cursor: pointer;
+            font-size: 1.1rem;
+            padding: 0.25rem;
+            transition: color 0.2s ease;
+            position: relative;
         }
 
         .copy-btn:hover {
-            background: var(--dark-green);
-            transform: translateY(-1px);
+            color: var(--text-dark);
         }
 
-        .copy-btn:active {
-            transform: translateY(0);
+        .nav-btn {
+            background: none;
+            color: var(--text-gray);
+            border: none;
+            padding: 0.5rem;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: color 0.2s ease;
+            position: relative;
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            color: var(--text-dark);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        /* Instant tooltip display */
+        .icon-btn[title]:hover::after,
+        .copy-btn[title]:hover::after,
+        .nav-btn[title]:hover::after {
+            content: attr(title);
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            z-index: 1000;
+            pointer-events: none;
         }
 
         .result-content {
@@ -728,6 +837,12 @@
             padding: 1.5rem;
             opacity: 0.5;
             transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .workflow-step:hover {
+            opacity: 0.8;
+            border-color: rgba(74, 222, 128, 0.5);
         }
 
         .workflow-step.active {
@@ -751,23 +866,21 @@
         }
 
         .nav-btn {
-            background: var(--white);
-            color: var(--text-dark);
-            border: 1px solid var(--border);
-            padding: 0.5rem 1rem;
-            font-size: 0.9rem;
-            border-radius: 6px;
+            background: none;
+            color: var(--text-gray);
+            border: none;
+            padding: 0.5rem;
+            font-size: 1.2rem;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: color 0.2s ease;
         }
 
         .nav-btn:hover:not(:disabled) {
-            border-color: var(--accent-green);
-            color: var(--accent-green);
+            color: var(--text-dark);
         }
 
         .nav-btn:disabled {
-            opacity: 0.5;
+            opacity: 0.3;
             cursor: not-allowed;
         }
 
@@ -803,12 +916,14 @@
         }
 
         .protection-status {
-            background: var(--accent-green);
+            background: linear-gradient(135deg, var(--accent-green) 0%, var(--dark-green) 100%);
             color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
+            padding: 0.75rem 1.25rem;
+            border-radius: 25px;
             font-size: 0.9rem;
             font-weight: 600;
+            box-shadow: 0 2px 8px rgba(74, 222, 128, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.2);
         }
 
         /* Input Styles */
@@ -853,6 +968,11 @@
         }
 
         .toggle-btn:hover {
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+        }
+
+        .toggle-btn:hover:not(:disabled) {
             border-color: var(--accent-green);
             color: var(--accent-green);
         }
@@ -1413,18 +1533,19 @@
                     
                     <div class="input-section">
                         <div class="input-container">
-                            <button id="paste-input-btn" class="copy-btn" title="Paste from clipboard" style="margin-bottom: 0.5rem; display: block;" data-i18n="pasteBtn">📋 Paste</button>
+                            <div class="markdown-toggle">
+                                <button id="paste-input-btn" class="icon-btn" title="Paste from clipboard">📋</button>
+                                <button class="icon-btn" onclick="toggleMarkdown('input', true)" title="Preview markdown">📄</button>
+                                <button id="add-custom-terms" class="toggle-btn" style="margin-left: auto;" data-i18n="addCustomTerms">+ Add Custom Terms to Protect</button>
+                            </div>
                             <textarea id="input" class="main-input" data-i18n-placeholder="inputPlaceholder" placeholder="Type or paste your text here...">Hi, I'm John Smith. My email is john@company.com and my phone is +1-555-123-4567. I work at TechCorp on Project Alpha.</textarea>
+                            <div id="input-preview" class="markdown-preview"></div>
 
                         </div>
                         
                         <div class="input-actions">
-                            <div class="custom-terms-toggle">
-                                <button id="add-custom-terms" class="toggle-btn" data-i18n="addCustomTerms">+ Add Custom Terms to Protect</button>
-                            </div>
                             <div class="quick-actions-group">
-                                <button id="view-last-restored-btn" class="toggle-btn" style="display: none;" data-i18n="viewLastRestored">📄 View Last Restored</button>
-                                <button id="go-to-restore-btn" class="toggle-btn" data-i18n="goToRestore">🔄 Go to Restore</button>
+                                <button id="view-last-restored-btn" class="toggle-btn" style="display: none;" data-i18n="viewLastRestored" title="View Last Restored">📄</button>
                             </div>
                         </div>
                         
@@ -1433,7 +1554,7 @@
                                 <h4 data-i18n="customTermsTitle">Custom Terms to Protect</h4>
                                 <div style="display: flex; align-items: center; gap: 0.5rem;">
                                     <button id="save-to-defaults-btn" class="copy-btn" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;" data-i18n="saveToDefaults">❤️ Save to Defaults</button>
-                                    <span id="terms-counter" class="counter">0/50</span>
+                                    <span id="terms-counter" class="counter">2/50</span>
                                 </div>
                             </div>
                             <p class="helper-text">Add company names, project codes, or other sensitive terms (one per line)</p>
@@ -1455,8 +1576,8 @@ Smith</textarea>
                             </div>
                         </div>
                         <div class="step-navigation">
-                            <button id="prev-step-2" class="nav-btn" data-i18n="backBtn">← Back</button>
-                            <button id="next-step-2" class="nav-btn" data-i18n="nextBtn">Next →</button>
+                            <button id="prev-step-2" class="icon-btn" title="Go back">←</button>
+                            <button id="next-step-2" class="icon-btn" title="Next step">→</button>
                         </div>
                         <div class="protection-status" id="protection-status"></div>
                     </div>
@@ -1465,15 +1586,19 @@ Smith</textarea>
                         <div class="result-card">
                             <div class="result-header">
                                 <h4>✅ Safe to Use Anywhere</h4>
-                                <button class="copy-btn" data-target="protected-prompt">📋 Copy Protected Text</button>
+                                <div class="result-actions">
+                                    <button id="share-external-btn" class="secondary-btn" style="padding: 0.5rem 1rem; font-size: 0.85rem; margin-right: 0.5rem;">Chat outside App</button>
+                                    <div class="markdown-toggle">
+                                        <button class="icon-btn" onclick="toggleMarkdown('protected-prompt', false)" title="Edit text">✏️</button>
+                                        <button class="icon-btn" onclick="toggleMarkdown('protected-prompt', true)" title="Preview markdown">📄</button>
+                                    </div>
+                                    <button class="copy-btn" data-target="protected-prompt" title="Copy protected text">📋</button>
+                                </div>
                             </div>
                             <div class="result-content">
                                 <textarea id="protected-prompt" readonly placeholder="Your protected text will appear here..."></textarea>
+                                <div id="protected-prompt-preview" class="markdown-preview"></div>
                             </div>
-                        </div>
-                        
-                        <div class="action-buttons">
-                            <button id="share-external-btn" class="secondary-btn">Chat outside App</button>
                         </div>
                     </div>
                 </div>
@@ -1488,14 +1613,19 @@ Smith</textarea>
                             </div>
                         </div>
                         <div class="step-navigation">
-                            <button id="prev-step-3" class="nav-btn">← Back</button>
-                            <button id="paste-btn" class="copy-btn" title="Paste from clipboard" data-i18n="pasteBtn">📋 Paste</button>
+                            <button id="prev-step-3" class="icon-btn" title="Go back">←</button>
+                            <button id="paste-btn" class="icon-btn" title="Paste from clipboard">📋</button>
                         </div>
                     </div>
                     
                     <div class="restore-section">
                         <div class="input-container">
+                            <div class="markdown-toggle">
+                                <button class="icon-btn" onclick="toggleMarkdown('ai-response-input', false)" title="Edit text">✏️</button>
+                                <button class="icon-btn" onclick="toggleMarkdown('ai-response-input', true)" title="Preview markdown">📄</button>
+                            </div>
                             <textarea id="ai-response-input" class="main-input" data-i18n-placeholder="aiResponsePlaceholder" placeholder="Paste the AI's response here to restore your personal information..."></textarea>
+                            <div id="ai-response-input-preview" class="markdown-preview"></div>
                         </div>
                         <button id="restore-btn" class="primary-btn" disabled data-i18n="restoreBtn" onclick="
                           const input = document.getElementById('ai-response-input');
@@ -1511,14 +1641,19 @@ Smith</textarea>
                             <div class="result-header">
                                 <h4>✨ Restored with Your Personal Info</h4>
                                 <div class="result-actions">
-                                    <button class="copy-btn" data-target="output">📋 Copy Current Text</button>
-                                    <button id="undo-edit-btn" class="copy-btn" title="Undo last edit">↶ Undo</button>
-                                    <button id="redo-edit-btn" class="copy-btn" title="Redo last edit">↷ Redo</button>
-                                    <button id="protect-new-btn" class="nav-btn" style="background: var(--primary-blue); color: white; border-color: var(--primary-blue);">🛡️ Protect New Text</button>
+                                    <div class="markdown-toggle">
+                                        <button class="icon-btn" onclick="toggleMarkdown('output', false)" title="Edit text">✏️</button>
+                                        <button class="icon-btn" onclick="toggleMarkdown('output', true)" title="Preview markdown">📄</button>
+                                    </div>
+                                    <button class="copy-btn" data-target="output" title="Copy current text">📋</button>
+                                    <button id="undo-edit-btn" class="icon-btn" title="Undo last edit">↶</button>
+                                    <button id="redo-edit-btn" class="icon-btn" title="Redo last edit">↷</button>
+                                    <button id="protect-new-btn" class="nav-btn" style="background: var(--primary-blue); color: white; border-color: var(--primary-blue);" title="Protect new text">🛡️</button>
                                 </div>
                             </div>
                             <div class="result-content">
                                 <textarea id="output"></textarea>
+                                <div id="output-preview" class="markdown-preview"></div>
                             </div>
                         </div>
                     </div>
@@ -1715,7 +1850,7 @@ Smith</textarea>
     <script>
       // Internationalization
       const translations = {
-        en: { appTitle: 'Ledebe Protector', appSubtitle: 'Keep your personal info safe when using AI', helpBtn: 'Help', tutorialBtn: 'Tutorial', chatBtn: 'Chat on App', settingsBtn: 'Settings', historyTitle: 'History', welcomeTitle: '🛡️ Welcome! Here\'s how to protect your personal info:', protectBtn: '🛡️ Protect My Info', inputPlaceholder: 'Type or paste your text here...', addCustomTerms: '+ Add Custom Terms to Protect', customTermsTitle: 'Custom Terms to Protect', saveToDefaults: '❤️ Save to Defaults', protectedText: 'Your Protected Text', backBtn: '← Back', nextBtn: 'Next →', restoreTitle: 'Restore Original Text', restoreBtn: '🔄 Restore Personal Info', feedbackPlaceholder: '💬 How can we improve? Your feedback helps!', sendBtn: 'Send', recentPrompts: 'Recent Prompts', recentRestored: 'Recent Restored', noPrompts: '📝 No prompts yet', noRestores: '🔄 No restores yet', enterText: 'Enter Your Text', enterTextDesc: 'Paste any text that might contain personal information', protectedDesc: 'Personal info has been safely hidden with placeholders', restoreDesc: 'Paste AI response here to restore your personal info', pasteBtn: '📋 Paste', viewLastRestored: '📄 View Last Restored', goToRestore: '🔄 Go to Restore', settingsTitle: 'Settings', fontFamily: 'Font Family', languageTitle: 'Language / Idioma / Langue / اللغة / 语言', defaultCustomTerms: 'Default Custom Terms', defaultCustomTermsDesc: 'These terms will be automatically loaded when the app starts', privacyAnalytics: 'Privacy & Analytics', shareAnalytics: 'Share anonymous usage analytics', analyticsDesc: 'Help improve the app by sharing anonymous plugin usage data. No personal information or content is collected.', preferences: 'Preferences', autoSaveTerms: 'Auto-save custom terms', showNotifications: 'Show notifications', saveLast: 'Save last', prompts: 'prompts', cancelBtn: 'Cancel', saveSettingsBtn: 'Save Settings' },
+        en: { appTitle: 'Ledebe Protector', appSubtitle: 'Keep your personal info safe when using AI', helpBtn: 'Help', tutorialBtn: 'Tutorial', chatBtn: 'Chat on App', settingsBtn: 'Settings', historyTitle: 'History', welcomeTitle: '🛡️ Welcome! Here\'s how to protect your personal info:', protectBtn: '🛡️ Protect My Info', inputPlaceholder: 'Type or paste your text here...', addCustomTerms: '⚙️ Custom Terms', customTermsTitle: 'Custom Terms to Protect', saveToDefaults: '❤️ Save to Defaults', protectedText: 'Your Protected Text', backBtn: '← Back', nextBtn: 'Next →', restoreTitle: 'Restore Original Text', restoreBtn: '🔄 Restore Personal Info', feedbackPlaceholder: '💬 How can we improve? Your feedback helps!', sendBtn: 'Send', recentPrompts: 'Recent Prompts', recentRestored: 'Recent Restored', noPrompts: '📝 No prompts yet', noRestores: '🔄 No restores yet', enterText: 'Enter Your Text', enterTextDesc: 'Paste any text that might contain personal information', protectedDesc: 'Personal info has been safely hidden with placeholders', restoreDesc: 'Paste AI response here to restore your personal info', pasteBtn: '📋', viewLastRestored: '📄', goToRestore: '🔄', settingsTitle: 'Settings', fontFamily: 'Font Family', languageTitle: 'Language / Idioma / Langue / اللغة / 语言', defaultCustomTerms: 'Default Custom Terms', defaultCustomTermsDesc: 'These terms will be automatically loaded when the app starts', privacyAnalytics: 'Privacy & Analytics', shareAnalytics: 'Share anonymous usage analytics', analyticsDesc: 'Help improve the app by sharing anonymous plugin usage data. No personal information or content is collected.', preferences: 'Preferences', autoSaveTerms: 'Auto-save custom terms', showNotifications: 'Show notifications', saveLast: 'Save last', prompts: 'prompts', cancelBtn: 'Cancel', saveSettingsBtn: 'Save Settings' },
         es: { appTitle: 'Protector Ledebe', appSubtitle: 'Mantén tu información personal segura al usar IA', helpBtn: 'Ayuda', tutorialBtn: 'Tutorial', chatBtn: 'Chat en App', settingsBtn: 'Configuración', historyTitle: 'Historial', welcomeTitle: '🛡️ ¡Bienvenido! Así es como proteger tu información personal:', protectBtn: '🛡️ Proteger Mi Información', inputPlaceholder: 'Escribe o pega tu texto aquí...', addCustomTerms: '+ Agregar Términos Personalizados', customTermsTitle: 'Términos Personalizados a Proteger', saveToDefaults: '❤️ Guardar por Defecto', protectedText: 'Tu Texto Protegido', backBtn: '← Atrás', nextBtn: 'Siguiente →', restoreTitle: 'Restaurar Texto Original', restoreBtn: '🔄 Restaurar Información Personal', feedbackPlaceholder: '💬 ¿Cómo podemos mejorar? ¡Tus comentarios ayudan!', sendBtn: 'Enviar', recentPrompts: 'Prompts Recientes', recentRestored: 'Restaurados Recientes', noPrompts: '📝 No hay prompts aún', noRestores: '🔄 No hay restauraciones aún', enterText: 'Ingresa Tu Texto', enterTextDesc: 'Pega cualquier texto que pueda contener información personal', protectedDesc: 'La información personal ha sido ocultada de forma segura con marcadores', restoreDesc: 'Pega la respuesta de IA aquí para restaurar tu información personal', pasteBtn: '📋 Pegar', viewLastRestored: '📄 Ver Último Restaurado', goToRestore: '🔄 Ir a Restaurar', settingsTitle: 'Configuración', fontFamily: 'Familia de Fuente', languageTitle: 'Idioma / Language / Langue / اللغة / 语言', defaultCustomTerms: 'Términos Personalizados por Defecto', defaultCustomTermsDesc: 'Estos términos se cargarán automáticamente al iniciar la aplicación', privacyAnalytics: 'Privacidad y Análisis', shareAnalytics: 'Compartir análisis de uso anónimo', analyticsDesc: 'Ayuda a mejorar la aplicación compartiendo datos de uso anónimos. No se recopila información personal ni contenido.', preferences: 'Preferencias', autoSaveTerms: 'Guardar automáticamente términos personalizados', showNotifications: 'Mostrar notificaciones', saveLast: 'Guardar últimos', prompts: 'prompts', cancelBtn: 'Cancelar', saveSettingsBtn: 'Guardar Configuración' },
         fr: { appTitle: 'Protecteur Ledebe', appSubtitle: 'Gardez vos informations personnelles en sécurité', helpBtn: 'Aide', tutorialBtn: 'Tutoriel', chatBtn: 'Chat dans l\'App', settingsBtn: 'Paramètres', historyTitle: 'Historique', welcomeTitle: '🛡️ Bienvenue ! Voici comment protéger vos informations:', protectBtn: '🛡️ Protéger Mes Informations', inputPlaceholder: 'Tapez ou collez votre texte ici...', addCustomTerms: '+ Ajouter des Termes Personnalisés', customTermsTitle: 'Termes Personnalisés à Protéger', saveToDefaults: '❤️ Sauvegarder par Défaut', protectedText: 'Votre Texte Protégé', backBtn: '← Retour', nextBtn: 'Suivant →', restoreTitle: 'Restaurer le Texte Original', restoreBtn: '🔄 Restaurer les Informations', feedbackPlaceholder: '💬 Comment améliorer ? Vos commentaires aident !', sendBtn: 'Envoyer', recentPrompts: 'Prompts Récents', recentRestored: 'Restaurés Récents', noPrompts: '📝 Pas encore de prompts', noRestores: '🔄 Pas encore de restaurations', enterText: 'Entrez Votre Texte', enterTextDesc: 'Collez tout texte pouvant contenir des informations personnelles', protectedDesc: 'Les informations personnelles ont été cachées en toute sécurité avec des espaces réservés', restoreDesc: 'Collez la réponse IA ici pour restaurer vos informations personnelles', pasteBtn: '📋 Coller', viewLastRestored: '📄 Voir le Dernier Restauré', goToRestore: '🔄 Aller à Restaurer', settingsTitle: 'Paramètres', fontFamily: 'Famille de Police', languageTitle: 'Langue / Language / Idioma / اللغة / 语言', defaultCustomTerms: 'Termes Personnalisés par Défaut', defaultCustomTermsDesc: 'Ces termes seront automatiquement chargés au démarrage de l\'application', privacyAnalytics: 'Confidentialité et Analyses', shareAnalytics: 'Partager les analyses d\'utilisation anonymes', analyticsDesc: 'Aidez à améliorer l\'application en partageant des données d\'utilisation anonymes. Aucune information personnelle ou contenu n\'est collecté.', preferences: 'Préférences', autoSaveTerms: 'Sauvegarde automatique des termes personnalisés', showNotifications: 'Afficher les notifications', saveLast: 'Sauvegarder les derniers', prompts: 'prompts', cancelBtn: 'Annuler', saveSettingsBtn: 'Sauvegarder les Paramètres' },
         ar: { appTitle: 'حامي ليديبي', appSubtitle: 'احتفظ بمعلوماتك الشخصية آمنة', helpBtn: 'مساعدة', tutorialBtn: 'دليل', chatBtn: 'محادثة في التطبيق', settingsBtn: 'الإعدادات', historyTitle: 'التاريخ', welcomeTitle: '🛡️ مرحباً! إليك كيفية حماية معلوماتك:', protectBtn: '🛡️ احم معلوماتي', inputPlaceholder: 'اكتب أو الصق نصك هنا...', addCustomTerms: '+ إضافة مصطلحات مخصصة', customTermsTitle: 'المصطلحات المخصصة للحماية', saveToDefaults: '❤️ حفظ كافتراضي', protectedText: 'نصك المحمي', backBtn: '← رجوع', nextBtn: 'التالي →', restoreTitle: 'استعادة النص الأصلي', restoreBtn: '🔄 استعادة المعلومات الشخصية', feedbackPlaceholder: '💬 كيف يمكننا التحسين؟ ملاحظاتك تساعد!', sendBtn: 'إرسال', recentPrompts: 'الطلبات الأخيرة', recentRestored: 'المستعاد الأخير', noPrompts: '📝 لا توجد طلبات بعد', noRestores: '🔄 لا توجد استعادات بعد', enterText: 'أدخل نصك', enterTextDesc: 'الصق أي نص قد يحتوي على معلومات شخصية', protectedDesc: 'تم إخفاء المعلومات الشخصية بأمان بعلامات', restoreDesc: 'الصق رد الذكاء الاصطناعي هنا لاستعادة معلوماتك الشخصية', pasteBtn: '📋 لصق', viewLastRestored: '📄 عرض آخر استعادة', goToRestore: '🔄 الذهاب للاستعادة', settingsTitle: 'الإعدادات', fontFamily: 'عائلة الخط', languageTitle: 'اللغة / Language / Idioma / Langue / 语言', defaultCustomTerms: 'المصطلحات المخصصة الافتراضية', defaultCustomTermsDesc: 'سيتم تحميل هذه المصطلحات تلقائياً عند بدء تشغيل التطبيق', privacyAnalytics: 'الخصوصية والتحليلات', shareAnalytics: 'مشاركة تحليلات الاستخدام المجهولة', analyticsDesc: 'ساعد في تحسين التطبيق من خلال مشاركة بيانات الاستخدام المجهولة. لا يتم جمع أي معلومات شخصية أو محتوى.', preferences: 'التفضيلات', autoSaveTerms: 'حفظ تلقائي للمصطلحات المخصصة', showNotifications: 'إظهار الإشعارات', saveLast: 'حفظ آخر', prompts: 'طلبات', cancelBtn: 'إلغاء', saveSettingsBtn: 'حفظ الإعدادات' },
@@ -1848,6 +1983,13 @@ Smith</textarea>
             step.scrollIntoView({ behavior: 'smooth', block: 'start' });
           }
         }
+        
+        // Add click handlers to workflow steps
+        document.querySelectorAll('.workflow-step').forEach((step, index) => {
+          step.addEventListener('click', () => {
+            showStep(index + 1);
+          });
+        });
         
         if (input && protectMyInfoBtn) {
           // Clear default text on first click
@@ -2024,6 +2166,15 @@ Smith</textarea>
         
         function saveToHistory(type, text, customTerms = '') {
           const history = type === 'prompt' ? promptHistory : restoreHistory;
+          
+          // Check for duplicates to prevent noise
+          const isDuplicate = history.some(item => 
+            item.text === text && 
+            Math.abs(new Date(item.date).getTime() - new Date().getTime()) < 60000 // Within 1 minute
+          );
+          
+          if (isDuplicate) return;
+          
           const item = {
             text: text,
             customTerms: customTerms,
@@ -2031,7 +2182,7 @@ Smith</textarea>
           };
           
           history.unshift(item);
-          if (history.length > 10) history.pop(); // Keep only last 10
+          if (history.length > 5) history.pop(); // Keep only last 5
           
           localStorage.setItem(type + 'History', JSON.stringify(history));
           if (type === 'prompt') promptHistory = history;
@@ -2105,11 +2256,11 @@ Smith</textarea>
           
           if (protectionStatus) {
             if (maskedCount > 0) {
-              protectionStatus.textContent = '🛡️ Protected ' + maskedCount + ' sensitive item' + (maskedCount > 1 ? 's' : '');
-              protectionStatus.style.background = 'var(--accent-green)';
+              protectionStatus.textContent = '✨ Protected ' + maskedCount + ' sensitive item' + (maskedCount > 1 ? 's' : '');
+              protectionStatus.style.background = 'linear-gradient(135deg, var(--accent-green) 0%, var(--dark-green) 100%)';
             } else {
               protectionStatus.textContent = '✅ No sensitive info detected';
-              protectionStatus.style.background = '#6c757d';
+              protectionStatus.style.background = 'linear-gradient(135deg, #6c757d 0%, #495057 100%)';
             }
           }
           
@@ -2122,8 +2273,15 @@ Smith</textarea>
         if (addCustomTermsBtn && customTermsSection) {
           addCustomTermsBtn.addEventListener('click', function() {
             const isVisible = customTermsSection.style.display !== 'none';
-            customTermsSection.style.display = isVisible ? 'none' : 'block';
-            addCustomTermsBtn.textContent = isVisible ? '+ Add Custom Terms to Protect' : '- Hide Custom Terms';
+            if (isVisible) {
+              // Hide and save
+              customTermsSection.style.display = 'none';
+              addCustomTermsBtn.innerHTML = '+ Add Custom Terms to Protect';
+            } else {
+              // Show
+              customTermsSection.style.display = 'block';
+              addCustomTermsBtn.innerHTML = '💾 Save & Close';
+            }
           });
         }
         
@@ -2223,7 +2381,7 @@ Smith</textarea>
           
           if (sidebarPromptHistory) {
             sidebarPromptHistory.innerHTML = promptHistory.length ? 
-              promptHistory.slice(0, 8).map(item => `
+              promptHistory.slice(0, 5).map(item => `
                 <div class="history-item" onclick="loadPrompt('${item.text.replace(/'/g, "\\'")}')"> 
                   <div class="history-item-text">${item.text}</div>
                   <div class="history-item-date">${item.date}</div>
@@ -2233,7 +2391,7 @@ Smith</textarea>
           
           if (sidebarRestoreHistory) {
             sidebarRestoreHistory.innerHTML = restoreHistory.length ?
-              restoreHistory.slice(0, 8).map(item => `
+              restoreHistory.slice(0, 5).map(item => `
                 <div class="history-item" onclick="loadRestore('${item.text.replace(/'/g, "\\'")}')"> 
                   <div class="history-item-text">${item.text}</div>
                   <div class="history-item-date">${item.date}</div>
@@ -2600,6 +2758,56 @@ Smith</textarea>
         } else {
             initializeExternalAIShare();
         }
+        
+        // Markdown toggle functionality
+        window.toggleMarkdown = function(textareaId, showPreview) {
+          const textarea = document.getElementById(textareaId);
+          const preview = document.getElementById(textareaId + '-preview');
+          const toggleBtns = document.querySelectorAll(`[onclick*="${textareaId}"]`);
+          
+          if (!textarea || !preview) return;
+          
+          if (showPreview) {
+            // Show preview
+            textarea.style.display = 'none';
+            preview.style.display = 'block';
+            
+            // Convert markdown to HTML
+            if (typeof marked !== 'undefined') {
+              preview.innerHTML = marked.parse(textarea.value || 'Nothing to preview...');
+            } else {
+              // Fallback simple markdown
+              let html = textarea.value || 'Nothing to preview...';
+              html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+              html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+              html = html.replace(/`(.*?)`/g, '<code>$1</code>');
+              html = html.replace(/\n/g, '<br>');
+              preview.innerHTML = html;
+            }
+            
+            // Update button states
+            toggleBtns.forEach(btn => {
+              if (btn.textContent.includes('📄') || btn.textContent.includes('Preview')) {
+                btn.classList.add('active');
+              } else {
+                btn.classList.remove('active');
+              }
+            });
+          } else {
+            // Show textarea
+            textarea.style.display = 'block';
+            preview.style.display = 'none';
+            
+            // Update button states
+            toggleBtns.forEach(btn => {
+              if (btn.textContent.includes('✏️') || btn.textContent.includes('Edit')) {
+                btn.classList.add('active');
+              } else {
+                btn.classList.remove('active');
+              }
+            });
+          }
+        };
     </script>
 </body>
 </html>

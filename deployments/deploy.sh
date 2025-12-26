@@ -48,10 +48,16 @@ npm run test:e2e || echo "⚠️ Some E2E tests failed"
 
 echo "✅ Pre-deployment checks completed!"
 
+# Update download links to latest artifacts
+echo "🔗 Updating download links to latest artifacts..."
+if [ -f "$SCRIPT_DIR/update-download-links.sh" ]; then
+    $SCRIPT_DIR/update-download-links.sh
+else
+    echo "⚠️ Download links update script not found"
+fi
+
 echo "🚀 Deploying website to S3..."
-aws s3 sync $SOURCE s3://$BUCKET/ --exclude "downloads/*" --exclude "management/*"
+aws s3 sync $SOURCE s3://$BUCKET/ --exclude "downloads/*" --exclude "management/*" --exclude "*.backup"
 
 echo "✅ Website deployed!"
-REGION=$(aws s3api get-bucket-location --bucket $BUCKET --output text)
-if [ "$REGION" = "None" ]; then REGION="us-east-1"; fi
-echo "🌐 Visit: http://$BUCKET.s3-website-$REGION.amazonaws.com"
+echo "🌐 Visit: http://$BUCKET.s3-website.us-east-2.amazonaws.com"

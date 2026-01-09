@@ -369,12 +369,14 @@ export class ChatInterface {
         
         const apiBtn = errorDiv.querySelector('button');
         apiBtn?.addEventListener('click', () => {
+          // Ensure HTTPS for security
+          const secureUrl = apiKeyUrl.startsWith('http://') ? apiKeyUrl.replace('http://', 'https://') : apiKeyUrl;
           // @ts-ignore
           if (window.electronAPI?.openExternal) {
             // @ts-ignore
-            window.electronAPI.openExternal(apiKeyUrl);
+            window.electronAPI.openExternal(secureUrl);
           } else {
-            window.open(apiKeyUrl, '_blank');
+            window.open(secureUrl, '_blank');
           }
         });
         
@@ -630,12 +632,14 @@ export class ChatInterface {
         link.textContent = '🔑 Get your API key from OpenAI →';
         
         link.addEventListener('click', () => {
+          // Ensure HTTPS for security
+          const secureUrl = API_KEY_URLS.openai.startsWith('http://') ? API_KEY_URLS.openai.replace('http://', 'https://') : API_KEY_URLS.openai;
           // @ts-ignore
           if (window.electronAPI?.openExternal) {
             // @ts-ignore
-            window.electronAPI.openExternal(API_KEY_URLS.openai);
+            window.electronAPI.openExternal(secureUrl);
           } else {
-            window.open(API_KEY_URLS.openai, '_blank');
+            window.open(secureUrl, '_blank');
           }
         });
         

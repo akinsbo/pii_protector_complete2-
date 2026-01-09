@@ -1423,16 +1423,101 @@
             color: var(--text-dark);
         }
 
-        .share-footer {
-            text-align: center;
-            padding-top: 1rem;
-            border-top: 1px solid var(--border);
+        /* Guided Tour Styles */
+        .tour-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 3000;
+            display: none;
+        }
+
+        .tour-spotlight {
+            position: absolute;
+            border: 3px solid var(--accent-green);
+            border-radius: 8px;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7);
+            transition: all 0.5s ease;
+            pointer-events: none;
+        }
+
+        .tour-hand {
+            position: absolute;
+            font-size: 2rem;
+            z-index: 3001;
+            animation: pointAndClick 2s infinite;
+            pointer-events: none;
+        }
+
+        @keyframes pointAndClick {
+            0%, 50% { transform: scale(1); }
+            25% { transform: scale(1.2); }
+        }
+
+        .tour-tooltip {
+            position: absolute;
+            background: var(--white);
+            border: 2px solid var(--accent-green);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            max-width: 300px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            z-index: 3002;
+        }
+
+        .tour-tooltip h4 {
+            margin: 0 0 0.5rem 0;
+            color: var(--text-dark);
+            font-size: 1.1rem;
+        }
+
+        .tour-tooltip p {
+            margin: 0 0 1rem 0;
             color: var(--text-gray);
             font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .tour-controls {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+        }
+
+        .tour-btn {
+            background: var(--accent-green);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .tour-btn.secondary {
+            background: var(--border);
+            color: var(--text-dark);
         }
     </style>
 </head>
 <body>
+    <!-- Guided Tour Overlay -->
+    <div id="tour-overlay" class="tour-overlay">
+        <div id="tour-spotlight" class="tour-spotlight"></div>
+        <div id="tour-hand" class="tour-hand">👆</div>
+        <div id="tour-tooltip" class="tour-tooltip">
+            <h4 id="tour-title">Welcome!</h4>
+            <p id="tour-description">Let's get started with protecting your personal information.</p>
+            <div class="tour-controls">
+                <button id="tour-skip" class="tour-btn secondary">Skip Tour</button>
+                <button id="tour-next" class="tour-btn">Next</button>
+            </div>
+        </div>
+    </div>
     <div class="app-container">
         <div class="app-header">
             <div class="header-left">
@@ -2627,6 +2712,122 @@ Smith</textarea>
         if (helpBtn) {
           helpBtn.addEventListener('click', function() {
             alert('Ledebe Protector helps protect your personal information when using AI tools.\n\n1. Enter your text\n2. Add custom terms (optional)\n3. Click "Protect My Info"\n4. Use the protected text safely');
+          });
+        }
+        
+        // Guided Tour
+        const tourSteps = [
+          {
+            target: '#input',
+            title: 'Step 1: Enter Your Text',
+            description: 'Type or paste any text that contains personal information like names, emails, or phone numbers.',
+            position: 'bottom'
+          },
+          {
+            target: '#add-custom-terms',
+            title: 'Step 2: Add Custom Terms (Optional)',
+            description: 'Click here to add company names, project codes, or other sensitive terms you want to protect.',
+            position: 'left'
+          },
+          {
+            target: '#protect-my-info-btn',
+            title: 'Step 3: Protect Your Info',
+            description: 'Click this button to automatically hide your personal information with safe placeholders.',
+            position: 'left'
+          },
+          {
+            target: '#protected-prompt',
+            title: 'Step 4: Use Protected Text',
+            description: 'Your text is now safe to use with AI tools. Copy it and use it anywhere!',
+            position: 'top'
+          },
+          {
+            target: '#share-external-btn',
+            title: 'Step 5: Chat Outside App',
+            description: 'Click here to easily share your protected text with external AI services.',
+            position: 'bottom'
+          }
+        ];
+        
+        let currentTourStep = 0;
+        
+        function startTour() {
+          currentTourStep = 0;
+          showTourStep();
+          document.getElementById('tour-overlay').style.display = 'block';
+        }
+        
+        function showTourStep() {
+          const step = tourSteps[currentTourStep];
+          const target = document.querySelector(step.target);
+          const spotlight = document.getElementById('tour-spotlight');
+          const hand = document.getElementById('tour-hand');
+          const tooltip = document.getElementById('tour-tooltip');
+          
+          if (!target) return;
+          
+          const rect = target.getBoundingClientRect();
+          
+          // Position spotlight
+          spotlight.style.left = (rect.left - 10) + 'px';
+          spotlight.style.top = (rect.top - 10) + 'px';
+          spotlight.style.width = (rect.width + 20) + 'px';
+          spotlight.style.height = (rect.height + 20) + 'px';
+          
+          // Position hand
+          hand.style.left = (rect.left + rect.width / 2 - 15) + 'px';
+          hand.style.top = (rect.top - 40) + 'px';
+          
+          // Position tooltip
+          let tooltipLeft = rect.left;
+          let tooltipTop = rect.bottom + 20;
+          
+          if (step.position === 'top') {
+            tooltipTop = rect.top - 120;
+          } else if (step.position === 'left') {
+            tooltipLeft = rect.left - 320;
+            tooltipTop = rect.top;
+          }
+          
+          tooltip.style.left = Math.max(20, tooltipLeft) + 'px';
+          tooltip.style.top = Math.max(20, tooltipTop) + 'px';
+          
+          // Update content
+          document.getElementById('tour-title').textContent = step.title;
+          document.getElementById('tour-description').textContent = step.description;
+          
+          // Update button
+          const nextBtn = document.getElementById('tour-next');
+          nextBtn.textContent = currentTourStep === tourSteps.length - 1 ? 'Finish' : 'Next';
+        }
+        
+        function nextTourStep() {
+          currentTourStep++;
+          if (currentTourStep >= tourSteps.length) {
+            endTour();
+          } else {
+            showTourStep();
+          }
+        }
+        
+        function endTour() {
+          document.getElementById('tour-overlay').style.display = 'none';
+          localStorage.setItem('hasSeenTour', 'true');
+        }
+        
+        // Tour event listeners
+        document.getElementById('tour-next').addEventListener('click', nextTourStep);
+        document.getElementById('tour-skip').addEventListener('click', endTour);
+        
+        // Start tour for new users
+        if (!localStorage.getItem('hasSeenTour') && hasSeenGuide) {
+          setTimeout(startTour, 1000);
+        }
+        
+        // Add tour button to help
+        if (helpBtn) {
+          helpBtn.addEventListener('click', function() {
+            startTour();
           });
         }
       });

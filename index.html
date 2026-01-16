@@ -67,7 +67,7 @@
             border-right: 1px solid var(--border);
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            overflow: visible;
             box-shadow: inset -1px 0 0 rgba(0,0,0,0.05);
         }
 
@@ -274,11 +274,10 @@
             border-radius: 0 !important;
             background: transparent !important;
             outline: none !important;
-            resize: none !important;
-            overflow: visible !important;
-            height: auto !important;
-            min-height: auto !important;
-            max-height: none !important;
+            resize: vertical !important;
+            overflow-y: auto !important;
+            min-height: 120px !important;
+            color: var(--text-dark) !important;
         }
 
         .markdown-preview {
@@ -744,6 +743,7 @@
         .history-content {
             flex: 1;
             overflow-y: auto;
+            overflow-x: visible;
             padding: 0;
             background: transparent;
         }
@@ -770,7 +770,7 @@
 
         .history-list {
             max-height: none;
-            overflow-y: visible;
+            overflow: visible;
             padding: 0.5rem 0;
         }
 
@@ -785,17 +785,32 @@
             transition: all 0.3s ease;
             border-bottom: 1px solid rgba(0,0,0,0.03);
             position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.5rem;
+            z-index: 1;
         }
 
         .history-item:hover {
             background: rgba(74, 222, 128, 0.05);
             border-left-color: var(--accent-green);
             transform: translateX(2px);
+            z-index: 10001;
+        }
+        
+        .history-item:hover .history-item-menu {
+            opacity: 1;
         }
 
         .history-item:active {
             background: rgba(74, 222, 128, 0.1);
             transform: translateX(1px);
+        }
+        
+        .history-item-content {
+            flex: 1;
+            min-width: 0;
         }
 
         .history-item-text {
@@ -815,6 +830,76 @@
             color: var(--text-gray);
             font-weight: 400;
             opacity: 0.8;
+        }
+        
+        .history-item-menu {
+            position: relative;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .history-menu-btn {
+            background: none;
+            border: none;
+            color: var(--text-gray);
+            cursor: pointer;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 1.2rem;
+            transition: all 0.2s;
+            line-height: 1;
+            font-weight: bold;
+        }
+        
+        .history-menu-btn:hover {
+            background: rgba(0,0,0,0.1);
+            color: var(--text-dark);
+        }
+        
+        .history-menu-dropdown {
+            position: absolute;
+            right: 0;
+            top: calc(100% + 5px);
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+            min-width: 160px;
+            z-index: 10000;
+            display: none;
+            padding: 0.5rem 0;
+        }
+        
+        .history-menu-dropdown.show {
+            display: block;
+        }
+        
+        .history-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            border: none;
+            background: white;
+            width: 100%;
+            text-align: left;
+            font-size: 0.9rem;
+            color: var(--text-dark);
+            white-space: nowrap;
+        }
+        
+        .history-menu-item:hover {
+            background: #f5f5f5;
+        }
+        
+        .history-menu-item.delete {
+            color: #e74c3c;
+        }
+        
+        .history-menu-item.delete:hover {
+            background: #fee;
         }
 
         .history-empty {
@@ -947,9 +1032,9 @@
             line-height: 1.6;
             letter-spacing: 0.01em;
             font-weight: 400;
-            resize: none;
+            resize: vertical;
             transition: all 0.3s ease;
-            overflow: visible;
+            overflow-y: auto;
             background: transparent;
             outline: none;
         }
@@ -1522,17 +1607,18 @@
             border-radius: 0 !important;
             background: transparent !important;
             outline: none !important;
-            resize: none !important;
-            overflow: visible !important;
-            box-shadow: none !important;
+            resize: vertical !important;
+            overflow-y: auto !important;
+            min-height: 120px !important;
+            color: var(--text-dark) !important;
         }
         
         /* Specific fix for protected text area */
         #protected-prompt {
-            height: auto !important;
-            min-height: auto !important;
-            max-height: none !important;
-            overflow-y: visible !important;
+            min-height: 200px !important;
+            max-height: 600px !important;
+            resize: vertical !important;
+            overflow-y: auto !important;
         }
     </style>
 </head>
@@ -2134,20 +2220,6 @@ Smith</textarea>
           });
         }
         
-        // Protect button handler
-        if (protectMyInfoBtn) {
-          protectMyInfoBtn.addEventListener('click', function() {
-            if (input && input.value.trim()) {
-              // Don't save default example text to history
-              const defaultText = "Hi, I'm John Smith. My email is john@company.com and my phone is +1-555-123-4567. I work at TechCorp on Project Alpha.";
-              if (input.value !== defaultText) {
-                saveToHistory('prompt', input.value);
-              }
-              processProtection();
-            }
-          });
-        }
-        
         if (prevStep2) {
           prevStep2.addEventListener('click', function() {
             showStep(1);
@@ -2371,15 +2443,11 @@ Smith</textarea>
           
           protectedPrompt.value = maskedText;
           
-          // Force immediate resize of protected text area
-          protectedPrompt.style.height = 'auto';
-          protectedPrompt.style.height = protectedPrompt.scrollHeight + 'px';
-          protectedPrompt.style.overflow = 'visible';
-          protectedPrompt.style.overflowY = 'visible';
-          
-          // Auto-resize the protected text area
+          // Force immediate resize of protected text area to show all content
           setTimeout(() => {
-            autoResizeTextarea(protectedPrompt);
+            protectedPrompt.style.height = 'auto';
+            const newHeight = Math.max(protectedPrompt.scrollHeight + 20, 200);
+            protectedPrompt.style.height = newHeight + 'px';
           }, 10);
           
           if (protectionStatus) {
@@ -2513,10 +2581,22 @@ Smith</textarea>
                 const div = document.createElement('div');
                 div.className = 'history-item';
                 div.innerHTML = `
-                  <div class="history-item-text">${item.text}</div>
-                  <div class="history-item-date">${item.date}</div>
+                  <div class="history-item-content">
+                    <div class="history-item-text">${item.text}</div>
+                    <div class="history-item-date">${item.date}</div>
+                  </div>
+                  <div class="history-item-menu">
+                    <button class="history-menu-btn" title="Options">⋯</button>
+                    <div class="history-menu-dropdown">
+                      <button class="history-menu-item rename-btn">
+                        ✏️ Rename
+                      </button>
+                      <button class="history-menu-item delete-btn delete">
+                        🗑️ Delete
+                      </button>
+                    </div>
+                  </div>
                 `;
-                div.onclick = () => loadPrompt(item.text, item.customTerms || '');
                 return div.outerHTML;
               }).join('') : '<div class="history-empty"><span data-i18n="noPrompts">📝 No prompts yet</span><br><small>Your protected texts will appear here</small></div>';
           }
@@ -2527,10 +2607,22 @@ Smith</textarea>
                 const div = document.createElement('div');
                 div.className = 'history-item';
                 div.innerHTML = `
-                  <div class="history-item-text">${item.text}</div>
-                  <div class="history-item-date">${item.date}</div>
+                  <div class="history-item-content">
+                    <div class="history-item-text">${item.text}</div>
+                    <div class="history-item-date">${item.date}</div>
+                  </div>
+                  <div class="history-item-menu">
+                    <button class="history-menu-btn" title="Options">⋯</button>
+                    <div class="history-menu-dropdown">
+                      <button class="history-menu-item rename-btn">
+                        ✏️ Rename
+                      </button>
+                      <button class="history-menu-item delete-btn delete">
+                        🗑️ Delete
+                      </button>
+                    </div>
+                  </div>
                 `;
-                div.onclick = () => loadRestore(item.text);
                 return div.outerHTML;
               }).join('') : '<div class="history-empty"><span data-i18n="noRestores">🔄 No restores yet</span><br><small>Your restored texts will appear here</small></div>';
           }
@@ -2539,13 +2631,87 @@ Smith</textarea>
           setTimeout(() => {
             document.querySelectorAll('#sidebar-prompt-history .history-item').forEach((el, idx) => {
               if (promptHistory[idx]) {
-                el.addEventListener('click', () => loadPrompt(promptHistory[idx].text, promptHistory[idx].customTerms || ''));
+                const content = el.querySelector('.history-item-content');
+                const menuBtn = el.querySelector('.history-menu-btn');
+                const dropdown = el.querySelector('.history-menu-dropdown');
+                const renameBtn = el.querySelector('.rename-btn');
+                const deleteBtn = el.querySelector('.delete-btn');
+                
+                content.addEventListener('click', () => loadPrompt(promptHistory[idx].text, promptHistory[idx].customTerms || ''));
+                
+                menuBtn.addEventListener('click', (e) => {
+                  e.stopPropagation();
+                  // Close all other dropdowns
+                  document.querySelectorAll('.history-menu-dropdown').forEach(d => d.classList.remove('show'));
+                  dropdown.classList.toggle('show');
+                });
+                
+                renameBtn.addEventListener('click', (e) => {
+                  e.stopPropagation();
+                  dropdown.classList.remove('show');
+                  const newText = prompt('Rename:', promptHistory[idx].text.substring(0, 50));
+                  if (newText && newText.trim()) {
+                    promptHistory[idx].text = newText.trim();
+                    localStorage.setItem('promptHistory', JSON.stringify(promptHistory));
+                    updateSidebarHistory();
+                  }
+                });
+                
+                deleteBtn.addEventListener('click', (e) => {
+                  e.stopPropagation();
+                  dropdown.classList.remove('show');
+                  if (confirm('Delete this item?')) {
+                    promptHistory.splice(idx, 1);
+                    localStorage.setItem('promptHistory', JSON.stringify(promptHistory));
+                    updateSidebarHistory();
+                  }
+                });
               }
             });
+            
             document.querySelectorAll('#sidebar-restore-history .history-item').forEach((el, idx) => {
               if (restoreHistory[idx]) {
-                el.addEventListener('click', () => loadRestore(restoreHistory[idx].text));
+                const content = el.querySelector('.history-item-content');
+                const menuBtn = el.querySelector('.history-menu-btn');
+                const dropdown = el.querySelector('.history-menu-dropdown');
+                const renameBtn = el.querySelector('.rename-btn');
+                const deleteBtn = el.querySelector('.delete-btn');
+                
+                content.addEventListener('click', () => loadRestore(restoreHistory[idx].text));
+                
+                menuBtn.addEventListener('click', (e) => {
+                  e.stopPropagation();
+                  // Close all other dropdowns
+                  document.querySelectorAll('.history-menu-dropdown').forEach(d => d.classList.remove('show'));
+                  dropdown.classList.toggle('show');
+                });
+                
+                renameBtn.addEventListener('click', (e) => {
+                  e.stopPropagation();
+                  dropdown.classList.remove('show');
+                  const newText = prompt('Rename:', restoreHistory[idx].text.substring(0, 50));
+                  if (newText && newText.trim()) {
+                    restoreHistory[idx].text = newText.trim();
+                    localStorage.setItem('restoreHistory', JSON.stringify(restoreHistory));
+                    updateSidebarHistory();
+                  }
+                });
+                
+                deleteBtn.addEventListener('click', (e) => {
+                  e.stopPropagation();
+                  dropdown.classList.remove('show');
+                  if (confirm('Delete this item?')) {
+                    restoreHistory.splice(idx, 1);
+                    localStorage.setItem('restoreHistory', JSON.stringify(restoreHistory));
+                    updateSidebarHistory();
+                  }
+                });
               }
+            });
+            
+            // Close dropdowns when clicking outside
+            document.addEventListener('click', () => {
+              document.querySelectorAll('.history-menu-dropdown').forEach(d => d.classList.remove('show'));
             });
           }, 10);
         }
@@ -3027,8 +3193,9 @@ Smith</textarea>
         
         // Auto-resize textarea functionality (ChatGPT-style)
         function autoResizeTextarea(textarea) {
+            if (!textarea) return;
             textarea.style.height = 'auto';
-            textarea.style.height = textarea.scrollHeight + 'px';
+            textarea.style.height = Math.max(textarea.scrollHeight, 60) + 'px';
         }
         
         // Initialize auto-resize for all textareas
@@ -3054,20 +3221,14 @@ Smith</textarea>
                     autoResizeTextarea(textarea);
                 });
                 
-                // Handle value changes (for readonly textareas)
-                const observer = new MutationObserver(() => {
-                    autoResizeTextarea(textarea);
-                });
-                observer.observe(textarea, { attributes: true, attributeFilter: ['value'] });
-                
-                // Watch for value property changes
+                // Poll for changes (for programmatic updates)
                 let lastValue = textarea.value;
                 setInterval(() => {
                     if (textarea.value !== lastValue) {
                         lastValue = textarea.value;
                         autoResizeTextarea(textarea);
                     }
-                }, 100);
+                }, 200);
             });
         }
         

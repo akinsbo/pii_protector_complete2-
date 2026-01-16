@@ -499,32 +499,17 @@ export class ChatInterface {
     if (this.currentConversation?.id === conversation.id) {
       convDiv.classList.add('active');
     }
-    convDiv.style.cursor = 'pointer';
-    convDiv.style.userSelect = 'none';
-    convDiv.setAttribute('role', 'button');
-    convDiv.setAttribute('tabindex', '0');
     convDiv.innerHTML = `
       <div class="conversation-title">${conversation.title}</div>
       <div class="conversation-meta">${conversation.model} • ${conversation.messages.length} messages</div>
     `;
     
-    const clickHandler = (e: Event) => {
-      e.preventDefault();
-      e.stopPropagation();
+    convDiv.onclick = () => {
       console.log('Conversation clicked:', conversation.title);
-      // Remove active class from all items
       document.querySelectorAll('.conversation-item').forEach(item => item.classList.remove('active'));
-      // Add active class to clicked item
       convDiv.classList.add('active');
       this.selectConversation(conversation);
     };
-    
-    convDiv.addEventListener('click', clickHandler);
-    convDiv.addEventListener('keypress', (e: KeyboardEvent) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        clickHandler(e);
-      }
-    });
     
     container.appendChild(convDiv);
   }

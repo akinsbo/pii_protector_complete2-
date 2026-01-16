@@ -187,7 +187,7 @@ export class ChatManager {
     return Date.now().toString(36) + Math.random().toString(36).substr(2);
   }
 
-  private saveData(): void {
+  public saveData(): void {
     if (typeof window !== 'undefined') {
       const data = {
         conversations: Object.fromEntries(this.conversations),

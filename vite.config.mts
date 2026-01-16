@@ -11,6 +11,7 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
+    root: './',
     server: {
         port: 5173,
         host: '0.0.0.0',
@@ -19,7 +20,7 @@ export default defineConfig({
         outDir: 'dist',
         rollupOptions: {
             input: {
-                renderer: 'src/renderer.ts'
+                main: './index.html'
             }
         }
     }

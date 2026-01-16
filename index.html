@@ -267,19 +267,18 @@
             font-style: italic;
         }
 
+        /* Force all textareas to expand */
         textarea {
-            width: 100%;
-            padding: 1rem;
-            border: 2px solid var(--border);
-            border-radius: 8px;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'Roboto', sans-serif;
-            font-size: 1rem;
-            line-height: 1.6;
-            letter-spacing: 0.01em;
-            resize: vertical;
-            transition: all 0.3s ease;
-            color: var(--text-dark);
-            background: var(--white);
+            width: 100% !important;
+            border: none !important;
+            border-radius: 0 !important;
+            background: transparent !important;
+            outline: none !important;
+            resize: none !important;
+            overflow: visible !important;
+            height: auto !important;
+            min-height: auto !important;
+            max-height: none !important;
         }
 
         .markdown-preview {
@@ -427,7 +426,7 @@
         .result-card {
             border: 1px solid var(--border);
             border-radius: 8px;
-            overflow: hidden;
+            overflow: visible;
         }
 
         .result-header {
@@ -505,27 +504,37 @@
         .nav-btn[title]:hover::after {
             content: attr(title);
             position: absolute;
-            top: -30px;
+            top: 100%;
             left: 50%;
             transform: translateX(-50%);
             background: rgba(0, 0, 0, 0.9);
             color: white;
-            padding: 0.25rem 0.5rem;
+            padding: 0.4rem 0.6rem;
             border-radius: 4px;
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             white-space: nowrap;
-            z-index: 1000;
+            z-index: 99999;
             pointer-events: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            margin-top: 5px;
         }
 
         .result-content {
             padding: 0.75rem;
-            height: 120px;
+            overflow: visible;
         }
 
         .result-content textarea {
-            height: 100%;
-            min-height: unset;
+            width: 100%;
+            border: none;
+            resize: none;
+            font-family: inherit;
+            background: transparent;
+            outline: none;
+            overflow: visible !important;
+            height: auto !important;
+            min-height: auto !important;
+            max-height: none !important;
         }
 
         .feedback-section {
@@ -918,9 +927,9 @@
         .protection-status {
             background: linear-gradient(135deg, var(--accent-green) 0%, var(--dark-green) 100%);
             color: white;
-            padding: 0.75rem 1.25rem;
-            border-radius: 25px;
-            font-size: 0.9rem;
+            padding: 0.3rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.7rem;
             font-weight: 600;
             box-shadow: 0 2px 8px rgba(74, 222, 128, 0.3);
             border: 2px solid rgba(255, 255, 255, 0.2);
@@ -931,15 +940,18 @@
             width: 100%;
             min-height: 120px;
             padding: 1rem;
-            border: 2px solid var(--border);
-            border-radius: 8px;
+            border: none;
+            border-radius: 0;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'Roboto', sans-serif;
             font-size: 1rem;
             line-height: 1.6;
             letter-spacing: 0.01em;
             font-weight: 400;
-            resize: vertical;
+            resize: none;
             transition: all 0.3s ease;
+            overflow: visible;
+            background: transparent;
+            outline: none;
         }
 
         .main-input:focus {
@@ -981,8 +993,8 @@
             background: var(--accent-green);
             color: white;
             border: none;
-            padding: 0.75rem 1.5rem;
-            font-size: 1rem;
+            padding: 1rem 1.5rem;
+            font-size: 1.1rem;
             font-weight: 600;
             border-radius: 8px;
             cursor: pointer;
@@ -1004,8 +1016,8 @@
             background: var(--white);
             color: var(--text-dark);
             border: 2px solid var(--border);
-            padding: 0.75rem 1.5rem;
-            font-size: 1rem;
+            padding: 1rem 1.5rem;
+            font-size: 1.1rem;
             font-weight: 600;
             border-radius: 8px;
             cursor: pointer;
@@ -1501,6 +1513,26 @@
         .tour-btn.secondary {
             background: var(--border);
             color: var(--text-dark);
+        }
+        
+        /* Force textarea styles */
+        textarea, .main-input, #input, #protected-prompt, #ai-response-input, #output {
+            width: 100% !important;
+            border: none !important;
+            border-radius: 0 !important;
+            background: transparent !important;
+            outline: none !important;
+            resize: none !important;
+            overflow: visible !important;
+            box-shadow: none !important;
+        }
+        
+        /* Specific fix for protected text area */
+        #protected-prompt {
+            height: auto !important;
+            min-height: auto !important;
+            max-height: none !important;
+            overflow-y: visible !important;
         }
     </style>
 </head>
@@ -2339,6 +2371,17 @@ Smith</textarea>
           
           protectedPrompt.value = maskedText;
           
+          // Force immediate resize of protected text area
+          protectedPrompt.style.height = 'auto';
+          protectedPrompt.style.height = protectedPrompt.scrollHeight + 'px';
+          protectedPrompt.style.overflow = 'visible';
+          protectedPrompt.style.overflowY = 'visible';
+          
+          // Auto-resize the protected text area
+          setTimeout(() => {
+            autoResizeTextarea(protectedPrompt);
+          }, 10);
+          
           if (protectionStatus) {
             if (maskedCount > 0) {
               protectionStatus.textContent = '✨ Protected ' + maskedCount + ' sensitive item' + (maskedCount > 1 ? 's' : '');
@@ -2466,23 +2509,45 @@ Smith</textarea>
           
           if (sidebarPromptHistory) {
             sidebarPromptHistory.innerHTML = promptHistory.length ? 
-              promptHistory.slice(0, 5).map(item => `
-                <div class="history-item" onclick="loadPrompt('${item.text.replace(/'/g, "\\'")}')"> 
+              promptHistory.slice(0, 5).map((item, idx) => {
+                const div = document.createElement('div');
+                div.className = 'history-item';
+                div.innerHTML = `
                   <div class="history-item-text">${item.text}</div>
                   <div class="history-item-date">${item.date}</div>
-                </div>
-              `).join('') : '<div class="history-empty"><span data-i18n="noPrompts">📝 No prompts yet</span><br><small>Your protected texts will appear here</small></div>';
+                `;
+                div.onclick = () => loadPrompt(item.text, item.customTerms || '');
+                return div.outerHTML;
+              }).join('') : '<div class="history-empty"><span data-i18n="noPrompts">📝 No prompts yet</span><br><small>Your protected texts will appear here</small></div>';
           }
           
           if (sidebarRestoreHistory) {
             sidebarRestoreHistory.innerHTML = restoreHistory.length ?
-              restoreHistory.slice(0, 5).map(item => `
-                <div class="history-item" onclick="loadRestore('${item.text.replace(/'/g, "\\'")}')"> 
+              restoreHistory.slice(0, 5).map((item, idx) => {
+                const div = document.createElement('div');
+                div.className = 'history-item';
+                div.innerHTML = `
                   <div class="history-item-text">${item.text}</div>
                   <div class="history-item-date">${item.date}</div>
-                </div>
-              `).join('') : '<div class="history-empty"><span data-i18n="noRestores">🔄 No restores yet</span><br><small>Your restored texts will appear here</small></div>';
+                `;
+                div.onclick = () => loadRestore(item.text);
+                return div.outerHTML;
+              }).join('') : '<div class="history-empty"><span data-i18n="noRestores">🔄 No restores yet</span><br><small>Your restored texts will appear here</small></div>';
           }
+          
+          // Re-attach click handlers after innerHTML update
+          setTimeout(() => {
+            document.querySelectorAll('#sidebar-prompt-history .history-item').forEach((el, idx) => {
+              if (promptHistory[idx]) {
+                el.addEventListener('click', () => loadPrompt(promptHistory[idx].text, promptHistory[idx].customTerms || ''));
+              }
+            });
+            document.querySelectorAll('#sidebar-restore-history .history-item').forEach((el, idx) => {
+              if (restoreHistory[idx]) {
+                el.addEventListener('click', () => loadRestore(restoreHistory[idx].text));
+              }
+            });
+          }, 10);
         }
         
         // Make functions global so they can be called from onclick handlers
@@ -2958,6 +3023,59 @@ Smith</textarea>
             document.addEventListener('DOMContentLoaded', initializeExternalAIShare);
         } else {
             initializeExternalAIShare();
+        }
+        
+        // Auto-resize textarea functionality (ChatGPT-style)
+        function autoResizeTextarea(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = textarea.scrollHeight + 'px';
+        }
+        
+        // Initialize auto-resize for all textareas
+        function initializeAutoResize() {
+            document.querySelectorAll('textarea').forEach(textarea => {
+                // Set initial height
+                autoResizeTextarea(textarea);
+                
+                // Add input event listener
+                textarea.addEventListener('input', () => {
+                    autoResizeTextarea(textarea);
+                });
+                
+                // Handle paste events
+                textarea.addEventListener('paste', () => {
+                    setTimeout(() => {
+                        autoResizeTextarea(textarea);
+                    }, 10);
+                });
+                
+                // Handle focus events
+                textarea.addEventListener('focus', () => {
+                    autoResizeTextarea(textarea);
+                });
+                
+                // Handle value changes (for readonly textareas)
+                const observer = new MutationObserver(() => {
+                    autoResizeTextarea(textarea);
+                });
+                observer.observe(textarea, { attributes: true, attributeFilter: ['value'] });
+                
+                // Watch for value property changes
+                let lastValue = textarea.value;
+                setInterval(() => {
+                    if (textarea.value !== lastValue) {
+                        lastValue = textarea.value;
+                        autoResizeTextarea(textarea);
+                    }
+                }, 100);
+            });
+        }
+        
+        // Initialize auto-resize when DOM is loaded
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeAutoResize);
+        } else {
+            initializeAutoResize();
         }
         
         // Markdown toggle functionality

@@ -320,9 +320,10 @@ export class ChatInterface {
     }
 
     // Add user message
-    this.chatManager.addMessage(this.currentConversation.id, message, 'user');
-    this.displayMessage(message, 'user');
+    const userMessage = this.chatManager.addMessage(this.currentConversation.id, message, 'user');
+    this.displayMessage(message, 'user', userMessage.id);
     chatInput.value = '';
+    this.loadConversations(); // Refresh sidebar
 
     // Show typing indicator
     this.showTypingIndicator();
@@ -335,8 +336,9 @@ export class ChatInterface {
       const response = await this.currentPlugin.chat(message, settings);
       
       // Add AI response
-      this.chatManager.addMessage(this.currentConversation.id, response, 'assistant');
-      this.displayMessage(response, 'assistant');
+      const aiMessage = this.chatManager.addMessage(this.currentConversation.id, response, 'assistant');
+      this.displayMessage(response, 'assistant', aiMessage.id);
+      this.loadConversations(); // Refresh sidebar
     } catch (error) {
       console.error('Chat error:', error);
       const errorMsg = error instanceof Error ? error.message : String(error);
@@ -393,16 +395,35 @@ export class ChatInterface {
     }
   }
 
-  private displayMessage(content: string, role: 'user' | 'assistant' | 'error'): void {
+  private displayMessage(content: string, role: 'user' | 'assistant' | 'error', messageId?: string): void {
     const messagesContainer = document.getElementById('chat-messages');
     if (!messagesContainer) return;
 
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${role}`;
+    if (messageId) messageDiv.dataset.messageId = messageId;
+    
+    const actionsHtml = role === 'user' ? `
+      <div class="message-actions">
+        <button class="edit-btn" title="Edit message">✏️</button>
+        <button class="delete-btn" title="Delete message">🗑️</button>
+      </div>
+    ` : '';
+    
     messageDiv.innerHTML = `
       <div class="message-content">${this.formatMessage(content)}</div>
       <div class="message-time">${new Date().toLocaleTimeString()}</div>
+      ${actionsHtml}
     `;
+    
+    // Add event listeners for edit/delete
+    if (role === 'user' && messageId) {
+      const editBtn = messageDiv.querySelector('.edit-btn');
+      const deleteBtn = messageDiv.querySelector('.delete-btn');
+      
+      editBtn?.addEventListener('click', () => this.editMessage(messageId, content));
+      deleteBtn?.addEventListener('click', () => this.deleteMessage(messageId));
+    }
     
     messagesContainer.appendChild(messageDiv);
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
@@ -474,13 +495,35 @@ export class ChatInterface {
   private addConversationToList(conversation: ChatConversation, container: HTMLElement): void {
     const convDiv = document.createElement('div');
     convDiv.className = 'conversation-item';
+    convDiv.dataset.conversationId = conversation.id;
+    if (this.currentConversation?.id === conversation.id) {
+      convDiv.classList.add('active');
+    }
+    convDiv.style.cursor = 'pointer';
+    convDiv.style.userSelect = 'none';
+    convDiv.setAttribute('role', 'button');
+    convDiv.setAttribute('tabindex', '0');
     convDiv.innerHTML = `
       <div class="conversation-title">${conversation.title}</div>
       <div class="conversation-meta">${conversation.model} • ${conversation.messages.length} messages</div>
     `;
     
-    convDiv.addEventListener('click', () => {
+    const clickHandler = (e: Event) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('Conversation clicked:', conversation.title);
+      // Remove active class from all items
+      document.querySelectorAll('.conversation-item').forEach(item => item.classList.remove('active'));
+      // Add active class to clicked item
+      convDiv.classList.add('active');
       this.selectConversation(conversation);
+    };
+    
+    convDiv.addEventListener('click', clickHandler);
+    convDiv.addEventListener('keypress', (e: KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        clickHandler(e);
+      }
     });
     
     container.appendChild(convDiv);
@@ -517,7 +560,7 @@ export class ChatInterface {
         ? message.originalContent 
         : message.content;
       const role = message.role === 'system' ? 'assistant' : message.role;
-      this.displayMessage(content, role);
+      this.displayMessage(content, role, message.id);
     });
   }
 
@@ -761,6 +804,40 @@ export class ChatInterface {
     const chatInterface = document.getElementById('chat-interface');
     if (chatInterface) {
       chatInterface.style.display = 'none';
+    }
+  }
+
+  private editMessage(messageId: string, currentContent: string): void {
+    if (!this.currentConversation) return;
+    
+    const newContent = prompt('Edit your message:', currentContent);
+    if (!newContent || newContent === currentContent) return;
+    
+    // Find and update the message
+    const message = this.currentConversation.messages.find(m => m.id === messageId);
+    if (message) {
+      message.originalContent = newContent;
+      const maskResult = new (require('../pii/Anonymizer').Anonymizer)().mask(newContent);
+      message.content = maskResult.maskedText;
+      message.maskedContent = maskResult.maskedText;
+      
+      this.chatManager.saveData();
+      this.loadMessages();
+    }
+  }
+
+  private deleteMessage(messageId: string): void {
+    if (!this.currentConversation) return;
+    
+    if (!confirm('Delete this message?')) return;
+    
+    // Remove message and all subsequent messages
+    const messageIndex = this.currentConversation.messages.findIndex(m => m.id === messageId);
+    if (messageIndex !== -1) {
+      this.currentConversation.messages.splice(messageIndex);
+      this.chatManager.saveData();
+      this.loadMessages();
+      this.loadConversations(); // Refresh sidebar
     }
   }
 }

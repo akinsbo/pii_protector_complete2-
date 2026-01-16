@@ -59,13 +59,14 @@
 
 .conversation-controls button {
   flex: 1;
-  padding: 10px;
+  padding: 14px;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   background: #27ae60;
   color: white;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .conversation-controls button:hover {
@@ -123,10 +124,21 @@
   border-radius: 4px;
   cursor: pointer;
   transition: background 0.2s;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  border: 2px solid transparent;
 }
 
 .conversation-item:hover {
   background: #3498db;
+  border-color: #2980b9;
+}
+
+.conversation-item.active {
+  background: #2980b9;
+  border-color: #1abc9c;
 }
 
 .conversation-title {
@@ -220,6 +232,34 @@
   color: white;
 }
 
+.message.user:hover .message-actions {
+  opacity: 1;
+}
+
+.message-actions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.message-actions button {
+  background: rgba(0, 0, 0, 0.2);
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  color: white;
+}
+
+.message-actions button:hover {
+  background: rgba(0, 0, 0, 0.4);
+}
+
 .message.assistant {
   align-self: flex-start;
   background: #ecf0f1;
@@ -272,11 +312,12 @@
   padding: 12px;
   border: 1px solid #bdc3c7;
   border-radius: 8px;
-  resize: none;
+  resize: vertical;
   font-family: inherit;
   font-size: 14px;
-  min-height: 20px;
-  max-height: 100px;
+  min-height: 60px;
+  max-height: 200px;
+  overflow-y: auto;
 }
 
 .chat-input-container textarea:focus {
@@ -290,13 +331,14 @@
 }
 
 .chat-input-container button {
-  padding: 12px 20px;
+  padding: 14px 24px;
   border: none;
   border-radius: 8px;
   background: #3498db;
   color: white;
   cursor: pointer;
   font-weight: 500;
+  font-size: 15px;
 }
 
 .chat-input-container button:hover:not(:disabled) {

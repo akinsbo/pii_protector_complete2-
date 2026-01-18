@@ -1,0 +1,3299 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PII Protector</title>
+    <link rel="stylesheet" href="src/styles/auth.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        :root {
+            --primary-blue: #1e3a8a;
+            --accent-green: #4ade80;
+            --dark-green: #16a34a;
+            --text-dark: #1f2937;
+            --text-gray: #6b7280;
+            --bg-light: #f8fafc;
+            --white: #ffffff;
+            --border: #e2e8f0;
+        }
+
+        [data-theme="dark"] {
+            --primary-blue: #3b82f6;
+            --accent-green: #10b981;
+            --dark-green: #059669;
+            --text-dark: #f9fafb;
+            --text-gray: #d1d5db;
+            --bg-light: #1f2937;
+            --white: #111827;
+            --border: #374151;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-light);
+            color: var(--text-dark);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            max-width: 1200px;
+            margin: 1rem auto;
+            background: var(--white);
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            overflow: hidden;
+            height: calc(100vh - 2rem);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .app-body {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .history-sidebar {
+            width: 320px;
+            background: linear-gradient(135deg, var(--bg-light) 0%, rgba(248, 250, 252, 0.8) 100%);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: visible;
+            box-shadow: inset -1px 0 0 rgba(0,0,0,0.05);
+        }
+
+        .history-sidebar h3 {
+            margin: 0;
+            padding: 1.5rem 1.25rem;
+            background: var(--primary-blue);
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            text-align: center;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        @media (max-width: 900px) {
+            .app-container {
+                margin: 0.5rem;
+                height: calc(100vh - 1rem);
+                border-radius: 8px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .app-container {
+                margin: 0;
+                height: 100vh;
+                border-radius: 0;
+            }
+            
+            .app-header {
+                padding: 0.5rem 1rem;
+            }
+            
+            .header-left {
+                flex-direction: column;
+                gap: 0.25rem;
+            }
+            
+            .header-controls {
+                gap: 0.5rem;
+                font-size: 0.8rem;
+            }
+            
+            .guide-steps {
+                grid-template-columns: 1fr;
+            }
+            
+            .step-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+            
+            .step-navigation {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+
+        .app-header {
+            background: var(--primary-blue);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: white;
+            font-size: 0.9rem;
+        }
+
+        .app-header h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .app-content {
+            padding: 1rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .control-section {
+            background: var(--bg-light);
+            border-radius: 6px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border);
+        }
+
+        .row {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .toggle {
+            position: relative;
+            width: 50px;
+            height: 28px;
+        }
+
+        .toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #cbd5e1;
+            transition: 0.3s;
+            border-radius: 28px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--accent-green);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(22px);
+        }
+
+        .input-layout {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .prompt-section {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .custom-terms-section {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .helper-text {
+            font-size: 0.85rem;
+            color: var(--text-gray);
+            margin-bottom: 0.75rem;
+            font-style: italic;
+        }
+
+        /* Force all textareas to expand */
+        textarea {
+            width: 100% !important;
+            border: none !important;
+            border-radius: 0 !important;
+            background: transparent !important;
+            outline: none !important;
+            resize: vertical !important;
+            overflow-y: auto !important;
+            min-height: 120px !important;
+            color: var(--text-dark) !important;
+        }
+
+        .markdown-preview {
+            display: none;
+            padding: 1rem;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            background: var(--white);
+            min-height: 120px;
+            overflow-y: auto;
+        }
+
+        .markdown-preview h1, .markdown-preview h2, .markdown-preview h3 {
+            margin: 0.5rem 0;
+            color: var(--text-dark);
+        }
+
+        .markdown-preview p {
+            margin: 0.5rem 0;
+        }
+
+        .markdown-preview code {
+            background: var(--bg-light);
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+        }
+
+        .markdown-preview pre {
+            background: var(--bg-light);
+            padding: 1rem;
+            border-radius: 6px;
+            overflow-x: auto;
+        }
+
+        .markdown-toggle {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .toggle-btn {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-gray);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-btn.active {
+            background: var(--accent-green);
+            color: white;
+            border-color: var(--accent-green);
+        }
+
+        .prompt-input {
+            height: 100%;
+            min-height: 120px;
+            border-color: var(--accent-green);
+            box-shadow: 0 0 0 1px rgba(74, 222, 128, 0.1);
+        }
+
+        .custom-terms-input {
+            height: 100%;
+            min-height: 80px;
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 1px rgba(30, 58, 138, 0.1);
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+            line-height: 1.5;
+            padding-top: 0.5rem;
+            background-image: repeating-linear-gradient(
+                transparent,
+                transparent 1.4em,
+                rgba(30, 58, 138, 0.15) 1.4em,
+                rgba(30, 58, 138, 0.15) 1.5em
+            );
+        }
+
+        textarea:focus {
+            outline: none;
+            transform: scale(1.01);
+        }
+
+        .prompt-input:focus {
+            border-color: var(--dark-green);
+            box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.2);
+        }
+
+        .custom-terms-input:focus {
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.2);
+        }
+
+        textarea[readonly] {
+            background: var(--bg-light);
+            color: var(--text-gray);
+            cursor: default;
+            border-color: var(--border);
+            box-shadow: none;
+        }
+
+        textarea[readonly]:focus {
+            transform: none;
+            box-shadow: none;
+        }
+
+        .button-container {
+            text-align: center;
+            margin: 0.75rem 0;
+        }
+
+        .process-btn {
+            background: var(--accent-green);
+            color: white;
+            border: none;
+            padding: 0.75rem 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .process-btn:hover {
+            background: var(--dark-green);
+            transform: translateY(-2px);
+        }
+
+        .results {
+            display: grid;
+            gap: 1rem;
+            flex: 1;
+            min-height: 0;
+        }
+
+        @media (min-width: 768px) {
+            .results {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .result-card {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: visible;
+        }
+
+        .result-header {
+            background: var(--bg-light);
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .result-header h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            color: var(--text-gray);
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 0.25rem;
+            transition: color 0.2s ease;
+            position: relative;
+        }
+
+        .icon-btn:hover {
+            color: var(--text-dark);
+        }
+
+        .icon-btn.active {
+            color: var(--accent-green);
+        }
+
+        .copy-btn {
+            background: none;
+            border: none;
+            color: var(--text-gray);
+            cursor: pointer;
+            font-size: 1.1rem;
+            padding: 0.25rem;
+            transition: color 0.2s ease;
+            position: relative;
+        }
+
+        .copy-btn:hover {
+            color: var(--text-dark);
+        }
+
+        .nav-btn {
+            background: none;
+            color: var(--text-gray);
+            border: none;
+            padding: 0.5rem;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: color 0.2s ease;
+            position: relative;
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            color: var(--text-dark);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        /* Instant tooltip display */
+        .icon-btn[title]:hover::after,
+        .copy-btn[title]:hover::after,
+        .nav-btn[title]:hover::after {
+            content: attr(title);
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 0.4rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            z-index: 99999;
+            pointer-events: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            margin-top: 5px;
+        }
+
+        .result-content {
+            padding: 0.75rem;
+            overflow: visible;
+        }
+
+        .result-content textarea {
+            width: 100%;
+            border: none;
+            resize: none;
+            font-family: inherit;
+            background: transparent;
+            outline: none;
+            overflow: visible !important;
+            height: auto !important;
+            min-height: auto !important;
+            max-height: none !important;
+        }
+
+        .feedback-section {
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .feedback-form {
+            background: var(--bg-light);
+            border-radius: 8px;
+            padding: 1.5rem;
+            border: 1px solid var(--border);
+        }
+
+        .feedback-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        #feedback-email {
+            flex: 1;
+            padding: 0.75rem;
+            border: 2px solid var(--border);
+            border-radius: 6px;
+            font-family: inherit;
+        }
+
+        #feedback-email:focus {
+            outline: none;
+            border-color: var(--accent-green);
+        }
+
+        .feedback-btn {
+            background: var(--accent-green);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .feedback-btn:hover {
+            background: var(--dark-green);
+        }
+
+        .feedback-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .feedback-compact {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            padding: 0.75rem;
+            background: var(--bg-light);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .feedback-compact #feedback-text {
+            flex: 1;
+            padding: 0.5rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        .feedback-compact .feedback-btn {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+
+        /* Welcome Guide Styles */
+        .welcome-guide {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .welcome-guide h3 {
+            margin: 0 0 1.5rem 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .guide-steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .guide-step {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: left;
+        }
+
+        .step-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+
+        .step-content strong {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .step-content p {
+            margin: 0;
+            opacity: 0.9;
+            line-height: 1.4;
+        }
+
+        .got-it-btn {
+            background: var(--accent-green);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .got-it-btn:hover {
+            background: var(--dark-green);
+            transform: translateY(-2px);
+        }
+
+        .guide-navigation {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .guide-navigation .secondary-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .guide-navigation .secondary-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+            justify-content: center;
+        }
+
+        @media (max-width: 768px) {
+            .quick-actions {
+                flex-direction: column;
+            }
+        }
+
+        /* Quick Actions Group */
+        .quick-actions-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .quick-actions-group {
+                flex-direction: column;
+            }
+        }
+
+        .result-actions {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        @media (max-width: 768px) {
+            .result-actions {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+        }
+
+        .history-content {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: visible;
+            padding: 0;
+            background: transparent;
+        }
+
+        .history-section {
+            margin-bottom: 0;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .history-section:last-child {
+            border-bottom: none;
+        }
+
+        .history-section h4 {
+            margin: 0;
+            padding: 1rem 1.25rem 0.75rem;
+            color: #1f2937;
+            font-size: 0.95rem;
+            font-weight: 600;
+            background: rgba(255,255,255,0.6);
+            border-bottom: 1px solid rgba(0,0,0,0.08);
+            letter-spacing: 0.3px;
+        }
+        
+        [data-theme="dark"] .history-section h4 {
+            color: #f9fafb;
+            background: rgba(0,0,0,0.3);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .history-list {
+            max-height: none;
+            overflow: visible;
+            padding: 0.5rem 0;
+        }
+
+        .history-item {
+            background: var(--white);
+            border: none;
+            border-left: 3px solid transparent;
+            border-radius: 0;
+            padding: 1rem 1.25rem;
+            margin-bottom: 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-bottom: 1px solid rgba(0,0,0,0.03);
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.5rem;
+            z-index: 1;
+        }
+
+        .history-item:hover {
+            background: rgba(74, 222, 128, 0.05);
+            border-left-color: var(--accent-green);
+            transform: translateX(2px);
+            z-index: 10001;
+        }
+        
+        .history-item:hover .history-item-menu {
+            opacity: 1;
+        }
+
+        .history-item:active {
+            background: rgba(74, 222, 128, 0.1);
+            transform: translateX(1px);
+        }
+        
+        .history-item-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .history-item-text {
+            font-size: 0.85rem;
+            color: var(--text-dark);
+            line-height: 1.4;
+            margin-bottom: 0.5rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            font-weight: 500;
+        }
+
+        .history-item-date {
+            font-size: 0.75rem;
+            color: var(--text-gray);
+            font-weight: 400;
+            opacity: 0.8;
+        }
+        
+        .history-item-menu {
+            position: relative;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .history-menu-btn {
+            background: none;
+            border: none;
+            color: var(--text-gray);
+            cursor: pointer;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 1.2rem;
+            transition: all 0.2s;
+            line-height: 1;
+            font-weight: bold;
+        }
+        
+        .history-menu-btn:hover {
+            background: rgba(0,0,0,0.1);
+            color: var(--text-dark);
+        }
+        
+        .history-menu-dropdown {
+            position: absolute;
+            right: 0;
+            top: calc(100% + 5px);
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+            min-width: 160px;
+            z-index: 10000;
+            display: none;
+            padding: 0.5rem 0;
+        }
+        
+        .history-menu-dropdown.show {
+            display: block;
+        }
+        
+        .history-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            border: none;
+            background: white;
+            width: 100%;
+            text-align: left;
+            font-size: 0.9rem;
+            color: var(--text-dark);
+            white-space: nowrap;
+        }
+        
+        .history-menu-item:hover {
+            background: #f5f5f5;
+        }
+        
+        .history-menu-item.delete {
+            color: #e74c3c;
+        }
+        
+        .history-menu-item.delete:hover {
+            background: #fee;
+        }
+
+        .history-empty {
+            padding: 2rem 1.25rem;
+            text-align: center;
+            color: var(--text-gray);
+            font-style: italic;
+            font-size: 0.85rem;
+            opacity: 0.7;
+        }
+
+        @media (max-width: 1024px) {
+            .history-sidebar {
+                display: none;
+            }
+        }
+
+        /* Workflow Styles */
+        .main-workflow {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .workflow-step {
+            background: var(--white);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            opacity: 0.5;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .workflow-step:hover {
+            opacity: 0.8;
+            border-color: rgba(74, 222, 128, 0.5);
+        }
+
+        .workflow-step.active {
+            opacity: 1;
+            border-color: var(--accent-green);
+            box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.1);
+        }
+
+        .step-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .step-navigation {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .nav-btn {
+            background: none;
+            color: var(--text-gray);
+            border: none;
+            padding: 0.5rem;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            color: var(--text-dark);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .step-indicator {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .step-indicator .step-number {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background: var(--accent-green);
+            color: white;
+            border-radius: 50%;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .step-info h3 {
+            margin: 0 0 0.25rem 0;
+            color: var(--text-dark);
+            font-size: 1.3rem;
+        }
+
+        .step-info p {
+            margin: 0;
+            color: var(--text-gray);
+            font-size: 0.95rem;
+        }
+
+        .protection-status {
+            background: linear-gradient(135deg, var(--accent-green) 0%, var(--dark-green) 100%);
+            color: white;
+            padding: 0.3rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(74, 222, 128, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* Input Styles */
+        .main-input {
+            width: 100%;
+            min-height: 120px;
+            padding: 1rem;
+            border: none;
+            border-radius: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'Roboto', sans-serif;
+            font-size: 1rem;
+            line-height: 1.6;
+            letter-spacing: 0.01em;
+            font-weight: 400;
+            resize: vertical;
+            transition: all 0.3s ease;
+            overflow-y: auto;
+            background: transparent;
+            outline: none;
+        }
+
+        .main-input:focus {
+            outline: none;
+            border-color: var(--accent-green);
+            box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.1);
+        }
+
+        .input-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+            gap: 1rem;
+        }
+
+        .toggle-btn {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-gray);
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-btn:hover {
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+        }
+
+        .toggle-btn:hover:not(:disabled) {
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+        }
+
+        .primary-btn {
+            background: var(--accent-green);
+            color: white;
+            border: none;
+            padding: 1rem 1.5rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .primary-btn:hover:not(:disabled) {
+            background: var(--dark-green);
+            transform: translateY(-1px);
+        }
+
+        .primary-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .secondary-btn {
+            background: var(--white);
+            color: var(--text-dark);
+            border: 2px solid var(--border);
+            padding: 1rem 1.5rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .secondary-btn:hover {
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+        }
+
+        .custom-terms-section {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: var(--bg-light);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .section-header h4 {
+            margin: 0;
+            color: var(--text-dark);
+            font-size: 1.1rem;
+        }
+
+        .counter {
+            font-size: 0.8rem;
+            color: var(--text-gray);
+        }
+
+        .custom-terms-input {
+            width: 100%;
+            height: 80px;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+            font-size: 0.9rem;
+            resize: vertical;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            justify-content: center;
+        }
+
+        .result-section,
+        .restore-section {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .result-card {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .result-header {
+            background: var(--bg-light);
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .result-header h4 {
+            margin: 0;
+            color: var(--text-dark);
+            font-size: 1rem;
+        }
+
+        .result-content {
+            padding: 0.75rem;
+        }
+
+        .result-content textarea {
+            width: 100%;
+            height: 100px;
+            border: none;
+            resize: vertical;
+            font-family: inherit;
+            background: transparent;
+        }
+
+        .result-content textarea:focus {
+            outline: none;
+        }
+
+        .feedback-section {
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        /* Help Modal */
+        .help-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 2000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .help-content {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            margin: 1rem;
+        }
+
+        .help-content h3 {
+            margin: 0 0 1rem 0;
+            color: var(--text-dark);
+        }
+
+        .help-content .close-help {
+            float: right;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-gray);
+        }
+
+        @media (max-width: 768px) {
+            .guide-steps {
+                grid-template-columns: 1fr;
+            }
+            
+            .input-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .step-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .step-navigation {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .app-container {
+                margin: 1rem;
+            }
+            .input-layout {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            .feedback-actions {
+                flex-direction: column;
+            }
+            .feedback-compact {
+                flex-direction: column;
+            }
+        }
+
+        /* Dropdown Menu Styles */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-btn {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 0.9rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .dropdown-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            background: white;
+            min-width: 160px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            border-radius: 6px;
+            z-index: 1000;
+            overflow: hidden;
+        }
+
+        .dropdown-content a {
+            color: #333;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+        }
+
+        .dropdown-content a:hover {
+            background: #f1f1f1;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        /* External AI Share Modal */
+        .share-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 2000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Input container with dictation */
+        .input-container {
+            position: relative;
+        }
+
+        .input-suggestion {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            right: 4rem;
+            color: var(--text-gray);
+            font-size: 0.9rem;
+            pointer-events: none;
+            opacity: 0.7;
+            line-height: 1.4;
+            z-index: 1;
+        }
+
+        .main-input:focus + .input-suggestion,
+        .main-input:not(:placeholder-shown) + .input-suggestion {
+            display: none;
+        }
+
+
+
+        .share-content {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 700px;
+            max-height: 90vh;
+            overflow-y: auto;
+            margin: 1rem;
+            position: relative;
+        }
+
+        .share-content h3 {
+            margin: 0 0 1.5rem 0;
+            color: var(--text-dark);
+            text-align: center;
+        }
+
+        .ai-services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .ai-service-card {
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: var(--white);
+        }
+
+        .ai-service-card:hover {
+            border-color: var(--accent-green);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .ai-service-card .service-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .ai-service-card .service-name {
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 0.25rem;
+        }
+
+        .ai-service-card .service-desc {
+            font-size: 0.8rem;
+            color: var(--text-gray);
+            margin-bottom: 0.5rem;
+        }
+
+        .ai-service-card .service-access {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+
+        .free-access {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .paid-access {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .copy-instructions {
+            background: var(--bg-light);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border-left: 4px solid var(--accent-green);
+        }
+
+        .copy-instructions h4 {
+            margin: 0 0 1rem 0;
+            color: var(--text-dark);
+        }
+
+        .copy-instructions ol {
+            margin: 0;
+            padding-left: 1.5rem;
+            color: var(--text-gray);
+        }
+
+        .copy-instructions li {
+            margin-bottom: 0.5rem;
+            line-height: 1.4;
+        }
+
+        .universal-copy-section {
+            background: var(--bg-light);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .universal-copy-section h4 {
+            margin: 0 0 0.5rem 0;
+            color: var(--text-dark);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .universal-copy-text {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 1rem;
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .close-share {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-gray);
+            padding: 0.25rem;
+        }
+
+        .close-share:hover {
+            color: var(--text-dark);
+        }
+
+        /* Guided Tour Styles */
+        .tour-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 3000;
+            display: none;
+        }
+
+        .tour-spotlight {
+            position: absolute;
+            border: 3px solid var(--accent-green);
+            border-radius: 8px;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7);
+            transition: all 0.5s ease;
+            pointer-events: none;
+        }
+
+        .tour-hand {
+            position: absolute;
+            font-size: 2rem;
+            z-index: 3001;
+            animation: pointAndClick 2s infinite;
+            pointer-events: none;
+        }
+
+        @keyframes pointAndClick {
+            0%, 50% { transform: scale(1); }
+            25% { transform: scale(1.2); }
+        }
+
+        .tour-tooltip {
+            position: absolute;
+            background: var(--white);
+            border: 2px solid var(--accent-green);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            max-width: 300px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            z-index: 3002;
+        }
+
+        .tour-tooltip h4 {
+            margin: 0 0 0.5rem 0;
+            color: var(--text-dark);
+            font-size: 1.1rem;
+        }
+
+        .tour-tooltip p {
+            margin: 0 0 1rem 0;
+            color: var(--text-gray);
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .tour-controls {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+        }
+
+        .tour-btn {
+            background: var(--accent-green);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .tour-btn.secondary {
+            background: var(--border);
+            color: var(--text-dark);
+        }
+        
+        /* Force textarea styles */
+        textarea, .main-input, #input, #protected-prompt, #ai-response-input, #output {
+            width: 100% !important;
+            border: none !important;
+            border-radius: 0 !important;
+            background: transparent !important;
+            outline: none !important;
+            resize: vertical !important;
+            overflow-y: auto !important;
+            min-height: 120px !important;
+            color: var(--text-dark) !important;
+        }
+        
+        /* Specific fix for protected text area */
+        #protected-prompt {
+            min-height: 200px !important;
+            max-height: 600px !important;
+            resize: vertical !important;
+            overflow-y: auto !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- Guided Tour Overlay -->
+    <div id="tour-overlay" class="tour-overlay">
+        <div id="tour-spotlight" class="tour-spotlight"></div>
+        <div id="tour-hand" class="tour-hand">👆</div>
+        <div id="tour-tooltip" class="tour-tooltip">
+            <h4 id="tour-title">Welcome!</h4>
+            <p id="tour-description">Let's get started with protecting your personal information.</p>
+            <div class="tour-controls">
+                <button id="tour-skip" class="tour-btn secondary">Skip Tour</button>
+                <button id="tour-next" class="tour-btn">Next</button>
+            </div>
+        </div>
+    </div>
+    <div class="app-container">
+        <div class="app-header">
+            <div class="header-left">
+                <div class="logo">
+                    <img src="assets/ledebe-logo.png" alt="Ledebe Logo" style="width: 32px; height: 32px; background: #6b7280; border-radius: 6px; padding: 4px;">
+                </div>
+                <div>
+                    <h2 data-i18n="appTitle">Ledebe Protector</h2>
+                    <div style="font-size: 0.8rem; opacity: 0.8; margin-top: -0.25rem;" data-i18n="appSubtitle">Keep your personal info safe when using AI</div>
+                </div>
+            </div>
+            <div class="header-controls">
+                <button id="help-btn" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; cursor: pointer; font-size: 0.9rem; padding: 0.5rem 1rem; border-radius: 6px; margin-right: 1rem;" title="Quick Help" data-i18n="helpBtn">❓ Help</button>
+                <button id="show-tutorial-btn" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; cursor: pointer; font-size: 0.9rem; padding: 0.5rem 1rem; border-radius: 6px; margin-right: rem;" title="Show Tutorial" data-i18n="tutorialBtn">📚 Tutorial</button>
+                <label class="toggle" title="Switch between light and dark themes">
+                    <input id="darkMode" type="checkbox">
+                    <span class="slider"></span>
+                </label>
+                <button id="settings-btn" style="background: none; border: none; color: white; cursor: pointer; font-size: 1.1rem; padding: 0.25rem; margin-left: 0.5rem;" title="Settings">⚙️</button>
+            </div>
+        </div>
+        
+        <div class="app-body">
+            <div class="history-sidebar">
+                <h3 data-i18n="historyTitle">📚 History</h3>
+                <div class="history-content">
+                    <div class="history-section">
+                        <h4 data-i18n="recentPrompts">Recent Prompts</h4>
+                        <div id="sidebar-prompt-history" class="history-list"></div>
+                    </div>
+                    
+                    <div class="history-section">
+                        <h4 data-i18n="recentRestored">Recent Restored</h4>
+                        <div id="sidebar-restore-history" class="history-list"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="main-content">
+        <div class="app-content">
+            <!-- Welcome Guide -->
+            <div id="welcome-guide" class="welcome-guide">
+                <button id="close-tutorial" style="position: absolute; top: 1rem; right: 1rem; background: rgba(255,255,255,0.2); border: none; color: white; font-size: 1.5rem; cursor: pointer; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">&times;</button>
+                <div class="guide-content">
+                    <h3 data-i18n="welcomeTitle">🛡️ Welcome! Here's how to protect your personal info:</h3>
+                    <div class="guide-steps">
+                        <div class="guide-step">
+                            <span class="step-number">1</span>
+                            <div class="step-content">
+                                <strong>Type your message</strong>
+                                <p>Paste any text that contains personal info like names, emails, or phone numbers</p>
+                            </div>
+                        </div>
+                        <div class="guide-step">
+                            <span class="step-number">2</span>
+                            <div class="step-content">
+                                <strong>Add custom terms to protect</strong>
+                                <p>Click <span style="background: #fbbf24; color: #000; padding: 0.2rem 0.4rem; border-radius: 4px; font-weight: 600;">"+ Add Custom Terms to Protect"</span> to add company names, project codes, or other sensitive terms</p>
+                            </div>
+                        </div>
+                        <div class="guide-step">
+                            <span class="step-number">3</span>
+                            <div class="step-content">
+                                <strong>Click "Protect My Info"</strong>
+                                <p>We'll automatically hide your personal details with safe placeholders</p>
+                            </div>
+                        </div>
+                        <div class="guide-step">
+                            <span class="step-number">4</span>
+                            <div class="step-content">
+                                <strong>Use the protected text safely</strong>
+                                <p>Copy the protected version to use with AI tools, then restore it back when needed</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="guide-navigation">
+                        <button id="skip-tutorial-btn" class="secondary-btn">Skip Tutorial</button>
+                        <button id="exit-tutorial-btn" class="secondary-btn" style="background: #e74c3c; color: white; border-color: #e74c3c;">✕ Exit Tutorial</button>
+                        <button id="got-it-btn" class="got-it-btn">Got it! Let's start →</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="main-workflow" id="main-workflow" style="display: none;">
+                <div class="workflow-step active" id="step-1">
+                    <div class="step-header">
+                        <div class="step-indicator">
+                            <span class="step-number">1</span>
+                            <div class="step-info">
+                                <h3 data-i18n="enterText">Enter Your Text</h3>
+                                <p data-i18n="enterTextDesc">Paste any text that might contain personal information</p>
+                            </div>
+                        </div>
+                        <div class="step-navigation">
+                            <button id="protect-my-info-btn" class="primary-btn" data-i18n="protectBtn">🛡️ Protect My Info</button>
+                        </div>
+                    </div>
+                    
+                    <div class="input-section">
+                        <div class="input-container">
+                            <div class="markdown-toggle">
+                                <button id="paste-input-btn" class="icon-btn" title="Paste from clipboard">📋</button>
+                                <button class="icon-btn" onclick="toggleMarkdown('input', true)" title="Preview markdown">📄</button>
+                                <button id="add-custom-terms" class="toggle-btn" style="margin-left: auto;" data-i18n="addCustomTerms">+ Add Custom Terms to Protect</button>
+                            </div>
+                            <textarea id="input" class="main-input" data-i18n-placeholder="inputPlaceholder" placeholder="Type or paste your text here...">Hi, I'm John Smith. My email is john@company.com and my phone is +1-555-123-4567. I work at TechCorp on Project Alpha.</textarea>
+                            <div id="input-preview" class="markdown-preview"></div>
+
+                        </div>
+                        
+                        <div class="input-actions">
+                            <div class="quick-actions-group">
+                                <button id="view-last-restored-btn" class="toggle-btn" style="display: none;" data-i18n="viewLastRestored" title="View Last Restored">📄</button>
+                            </div>
+                        </div>
+                        
+                        <div class="custom-terms-section" id="custom-terms-section" style="display: none;">
+                            <div class="section-header">
+                                <h4 data-i18n="customTermsTitle">Custom Terms to Protect</h4>
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <button id="save-to-defaults-btn" class="copy-btn" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;" data-i18n="saveToDefaults">❤️ Save to Defaults</button>
+                                    <span id="terms-counter" class="counter">2/50</span>
+                                </div>
+                            </div>
+                            <p class="helper-text">Add company names, project codes, or other sensitive terms (one per line)</p>
+                            <textarea id="customTerms" class="custom-terms-input" placeholder="company-name
+project-alpha
+secret-key-2024">John
+Smith</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="workflow-step" id="step-2">
+                    <div class="step-header">
+                        <div class="step-indicator">
+                            <span class="step-number">2</span>
+                            <div class="step-info">
+                                <h3 data-i18n="protectedText">Your Protected Text</h3>
+                                <p data-i18n="protectedDesc">Personal info has been safely hidden with placeholders</p>
+                            </div>
+                        </div>
+                        <div class="step-navigation">
+                            <button id="prev-step-2" class="icon-btn" title="Go back">←</button>
+                            <button id="next-step-2" class="icon-btn" title="Next step">→</button>
+                        </div>
+                        <div class="protection-status" id="protection-status"></div>
+                    </div>
+                    
+                    <div class="result-section">
+                        <div class="result-card">
+                            <div class="result-header">
+                                <h4>✅ Safe to Use Anywhere</h4>
+                                <div class="result-actions">
+                                    <button id="share-external-btn" class="secondary-btn" style="padding: 0.5rem 1rem; font-size: 0.85rem; margin-right: 0.5rem;">Chat outside App</button>
+                                    <div class="markdown-toggle">
+                                        <button class="icon-btn" onclick="toggleMarkdown('protected-prompt', false)" title="Edit text">✏️</button>
+                                        <button class="icon-btn" onclick="toggleMarkdown('protected-prompt', true)" title="Preview markdown">📄</button>
+                                    </div>
+                                    <button class="copy-btn" data-target="protected-prompt" title="Copy protected text">📋</button>
+                                </div>
+                            </div>
+                            <div class="result-content">
+                                <textarea id="protected-prompt" readonly placeholder="Your protected text will appear here..."></textarea>
+                                <div id="protected-prompt-preview" class="markdown-preview"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="workflow-step" id="step-3">
+                    <div class="step-header">
+                        <div class="step-indicator">
+                            <span class="step-number">3</span>
+                            <div class="step-info">
+                                <h3 data-i18n="restoreTitle">Restore Original Text</h3>
+                                <p data-i18n="restoreDesc">Paste AI response here to restore your personal info</p>
+                            </div>
+                        </div>
+                        <div class="step-navigation">
+                            <button id="prev-step-3" class="icon-btn" title="Go back">←</button>
+                            <button id="paste-btn" class="icon-btn" title="Paste from clipboard">📋</button>
+                        </div>
+                    </div>
+                    
+                    <div class="restore-section">
+                        <div class="input-container">
+                            <div class="markdown-toggle">
+                                <button class="icon-btn" onclick="toggleMarkdown('ai-response-input', false)" title="Edit text">✏️</button>
+                                <button class="icon-btn" onclick="toggleMarkdown('ai-response-input', true)" title="Preview markdown">📄</button>
+                            </div>
+                            <textarea id="ai-response-input" class="main-input" data-i18n-placeholder="aiResponsePlaceholder" placeholder="Paste the AI's response here to restore your personal information..."></textarea>
+                            <div id="ai-response-input-preview" class="markdown-preview"></div>
+                        </div>
+                        <button id="restore-btn" class="primary-btn" disabled data-i18n="restoreBtn" onclick="
+                          const input = document.getElementById('ai-response-input');
+                          const output = document.getElementById('output');
+                          const result = document.getElementById('restored-result');
+                          if (input && output && input.value.trim()) {
+                            output.value = input.value;
+                            if (result) result.style.display = 'block';
+                          }
+                        ">🔄 Restore Personal Info</button>
+                        
+                        <div class="result-card" id="restored-result" style="display: none;">
+                            <div class="result-header">
+                                <h4>✨ Restored with Your Personal Info</h4>
+                                <div class="result-actions">
+                                    <div class="markdown-toggle">
+                                        <button class="icon-btn" onclick="toggleMarkdown('output', false)" title="Edit text">✏️</button>
+                                        <button class="icon-btn" onclick="toggleMarkdown('output', true)" title="Preview markdown">📄</button>
+                                    </div>
+                                    <button class="copy-btn" data-target="output" title="Copy current text">📋</button>
+                                    <button id="undo-edit-btn" class="icon-btn" title="Undo last edit">↶</button>
+                                    <button id="redo-edit-btn" class="icon-btn" title="Redo last edit">↷</button>
+                                    <button id="protect-new-btn" class="nav-btn" style="background: var(--primary-blue); color: white; border-color: var(--primary-blue);" title="Protect new text">🛡️</button>
+                                </div>
+                            </div>
+                            <div class="result-content">
+                                <textarea id="output"></textarea>
+                                <div id="output-preview" class="markdown-preview"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="feedback-section">
+                <div class="feedback-compact">
+                    <input type="text" id="feedback-text" data-i18n-placeholder="feedbackPlaceholder" placeholder="💬 How can we improve? Your feedback helps!">
+                    <button id="send-feedback" class="feedback-btn" data-i18n="sendBtn">Send</button>
+                </div>
+            </div>
+        </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- History Modal -->
+    <div id="history-modal" class="share-modal" style="display: none;">
+        <div class="share-content">
+            <button class="close-share" id="close-history">&times;</button>
+            <h3>📅 History</h3>
+            
+            <div id="history-content">
+                <div class="history-section">
+                    <h4>Recent Prompts</h4>
+                    <div id="prompt-history" class="history-list"></div>
+                </div>
+                
+                <div class="history-section">
+                    <h4>Recent Restored Texts</h4>
+                    <div id="restore-history" class="history-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- External AI Share Modal -->
+    <div id="share-modal" class="share-modal" style="display: none;">
+        <div class="share-content">
+            <button class="close-share" id="close-share">&times;</button>
+            <h3>🌐 Chat outside App</h3>
+            
+            <div class="copy-instructions">
+                <h4>📝 Quick Instructions:</h4>
+                <ol>
+                    <li>Click any AI service below to open it in a new tab</li>
+                    <li>Your protected text is automatically copied to clipboard</li>
+                    <li>Paste it into the AI chat and get your response</li>
+                    <li>Copy the AI's response back to restore your personal info</li>
+                </ol>
+            </div>
+            
+            <div class="ai-services-grid">
+                <div class="ai-service-card" data-service="chatgpt">
+                    <div class="service-icon">🤖</div>
+                    <div class="service-name">ChatGPT</div>
+                    <div class="service-desc">OpenAI's conversational AI</div>
+                    <div class="service-access free-access">Free tier available</div>
+                    <button class="auth-btn" data-provider="openai">🔐 Sign In & Use</button>
+                </div>
+                
+                <div class="ai-service-card" data-service="gemini">
+                    <div class="service-icon">🔮</div>
+                    <div class="service-name">Gemini</div>
+                    <div class="service-desc">Google's AI assistant</div>
+                    <div class="service-access free-access">Free tier available</div>
+                    <button class="auth-btn" data-provider="gemini">🔐 Sign In & Use</button>
+                </div>
+                
+                <div class="ai-service-card" data-service="claude">
+                    <div class="service-icon">🤖</div>
+                    <div class="service-name">Claude</div>
+                    <div class="service-desc">Anthropic's AI assistant</div>
+                    <div class="service-access free-access">Free tier available</div>
+                    <button class="auth-btn" data-provider="claude">🔐 Sign In & Use</button>
+                </div>
+                
+                <div class="ai-service-card" data-service="copilot">
+                    <div class="service-icon">💻</div>
+                    <div class="service-name">Copilot</div>
+                    <div class="service-desc">Microsoft's AI assistant</div>
+                    <div class="service-access free-access">Free with Microsoft account</div>
+                    <button class="auth-btn" data-provider="copilot">🔐 Sign In & Use</button>
+                </div>
+                
+                <div class="ai-service-card" data-service="perplexity">
+                    <div class="service-icon">🔍</div>
+                    <div class="service-name">Perplexity</div>
+                    <div class="service-desc">AI-powered search</div>
+                    <div class="service-access free-access">Free tier available</div>
+                </div>
+                
+                <div class="ai-service-card" data-service="custom">
+                    <div class="service-icon">🌐</div>
+                    <div class="service-name">Other AI</div>
+                    <div class="service-desc">Any other AI service</div>
+                    <div class="service-access free-access">Just copy & paste</div>
+                    <button class="copy-btn" data-target="protected-prompt">📋 Copy Protected Text</button>
+                </div>
+            </div>
+            
+            <div class="universal-copy-section">
+                <h4>
+                    📋 Universal Copy Format
+                    <button class="copy-btn" id="copy-universal-format">📋 Copy</button>
+                </h4>
+                <div class="universal-copy-text" id="universal-copy-text">
+                    <!-- Protected text will be inserted here -->
+                </div>
+            </div>
+            
+            <div class="share-footer">
+                🔒 Your personal information is safely hidden in the text above
+            </div>
+        </div>
+    </div>
+    
+    <!-- Settings Modal -->
+    <div id="settings-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+        <div style="background: var(--white); margin: 2rem auto; padding: 2rem; border-radius: 8px; max-width: 500px; max-height: 80vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border);">
+                <h3 data-i18n="settingsTitle">Settings</h3>
+                <button id="close-settings" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-gray);">&times;</button>
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <h4 style="margin-bottom: 0.5rem; color: var(--text-dark);" data-i18n="fontFamily">Font Family</h4>
+                <select id="font-select" style="width: 100%; padding: 0.75rem; border: 2px solid var(--border); border-radius: 6px; font-family: inherit;">
+                    <option value="arial" style="font-family: Arial, sans-serif;">Arial</option>
+                    <option value="calibri" style="font-family: Calibri, sans-serif;">Calibri</option>
+                    <option value="georgia" style="font-family: Georgia, serif;">Georgia</option>
+                    <option value="palatino" style="font-family: 'Palatino Linotype', Palatino, serif;">Palatino Linotype</option>
+                    <option value="system" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">System Default</option>
+                    <option value="times" style="font-family: 'Times New Roman', serif;">Times New Roman</option>
+                    <option value="verdana" style="font-family: Verdana, sans-serif;">Verdana</option>
+                </select>
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <h4 style="margin-bottom: 0.5rem; color: var(--text-dark);" data-i18n="languageTitle">Language / Idioma / Langue / اللغة / 语言</h4>
+                <select id="language-select" style="width: 100%; padding: 0.75rem; border: 2px solid var(--border); border-radius: 6px; font-family: inherit;">
+                    <option value="en">English</option>
+                    <option value="es">Español</option>
+                    <option value="fr">Français</option>
+                    <option value="ar">العربية</option>
+                    <option value="zh">中文</option>
+                </select>
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <h4 style="margin-bottom: 0; color: var(--text-dark);" data-i18n="defaultCustomTerms">Default Custom Terms</h4>
+                    <span id="settings-terms-counter" style="font-size: 0.8rem; color: var(--text-gray);">0/50</span>
+                </div>
+                <p style="font-size: 0.85rem; color: var(--text-gray); margin-bottom: 0.75rem;" data-i18n="defaultCustomTermsDesc">These terms will be automatically loaded when the app starts</p>
+                <textarea id="settings-custom-terms" style="width: 100%; height: 120px; padding: 0.75rem 0.75rem 0.75rem 0.75rem; padding-top: 0.5rem; border: 2px solid var(--border); border-radius: 6px; font-family: 'Monaco', 'Menlo', 'Consolas', monospace; resize: vertical; line-height: 1.5; background-image: repeating-linear-gradient(transparent, transparent 1.4em, rgba(30, 58, 138, 0.15) 1.4em, rgba(30, 58, 138, 0.15) 1.5em);" placeholder="company-name&#10;project-code&#10;secret-key"></textarea>
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <h4 style="margin-bottom: 0.5rem; color: var(--text-dark);" data-i18n="privacyAnalytics">Privacy & Analytics</h4>
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+                    <input type="checkbox" id="settings-analytics" style="margin: 0;">
+                    <label for="settings-analytics" style="color: var(--text-dark);" data-i18n="shareAnalytics">Share anonymous usage analytics</label>
+                </div>
+                <p style="font-size: 0.8rem; color: var(--text-gray); margin-left: 1.5rem; margin-bottom: 0.75rem;" data-i18n="analyticsDesc">Help improve the app by sharing anonymous plugin usage data. No personal information or content is collected.</p>
+                <button id="view-analytics" style="background: var(--primary-blue); color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">📊 View Storage Analytics</button>
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <h4 style="margin-bottom: 0.5rem; color: var(--text-dark);" data-i18n="preferences">Preferences</h4>
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+                    <input type="checkbox" id="settings-auto-save" style="margin: 0;">
+                    <label for="settings-auto-save" style="color: var(--text-dark);" data-i18n="autoSaveTerms">Auto-save custom terms</label>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+                    <input type="checkbox" id="settings-notifications" style="margin: 0;">
+                    <label for="settings-notifications" style="color: var(--text-dark);" data-i18n="showNotifications">Show notifications</label>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <label for="settings-history-limit" style="color: var(--text-dark);" data-i18n="saveLast">Save last</label>
+                    <input type="number" id="settings-history-limit" min="1" max="10" value="3" style="width: 60px; padding: 0.25rem; border: 1px solid var(--border); border-radius: 4px;">
+                    <label for="settings-history-limit" style="color: var(--text-dark);" data-i18n="prompts">prompts</label>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                <button id="cancel-settings" style="background: var(--border); color: var(--text-dark); border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer;" data-i18n="cancelBtn">Cancel</button>
+                <button id="save-settings" style="background: var(--accent-green); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer;" data-i18n="saveSettingsBtn">Save Settings</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+      // Internationalization
+      const translations = {
+        en: { appTitle: 'Ledebe Protector', appSubtitle: 'Keep your personal info safe when using AI', helpBtn: 'Help', tutorialBtn: 'Tutorial', chatBtn: 'Chat on App', settingsBtn: 'Settings', historyTitle: 'History', welcomeTitle: '🛡️ Welcome! Here\'s how to protect your personal info:', protectBtn: '🛡️ Protect My Info', inputPlaceholder: 'Type or paste your text here...', addCustomTerms: '⚙️ Custom Terms', customTermsTitle: 'Custom Terms to Protect', saveToDefaults: '❤️ Save to Defaults', protectedText: 'Your Protected Text', backBtn: '← Back', nextBtn: 'Next →', restoreTitle: 'Restore Original Text', restoreBtn: '🔄 Restore Personal Info', feedbackPlaceholder: '💬 How can we improve? Your feedback helps!', sendBtn: 'Send', recentPrompts: 'Recent Prompts', recentRestored: 'Recent Restored', noPrompts: '📝 No prompts yet', noRestores: '🔄 No restores yet', enterText: 'Enter Your Text', enterTextDesc: 'Paste any text that might contain personal information', protectedDesc: 'Personal info has been safely hidden with placeholders', restoreDesc: 'Paste AI response here to restore your personal info', pasteBtn: '📋', viewLastRestored: '📄', goToRestore: '🔄', settingsTitle: 'Settings', fontFamily: 'Font Family', languageTitle: 'Language / Idioma / Langue / اللغة / 语言', defaultCustomTerms: 'Default Custom Terms', defaultCustomTermsDesc: 'These terms will be automatically loaded when the app starts', privacyAnalytics: 'Privacy & Analytics', shareAnalytics: 'Share anonymous usage analytics', analyticsDesc: 'Help improve the app by sharing anonymous plugin usage data. No personal information or content is collected.', preferences: 'Preferences', autoSaveTerms: 'Auto-save custom terms', showNotifications: 'Show notifications', saveLast: 'Save last', prompts: 'prompts', cancelBtn: 'Cancel', saveSettingsBtn: 'Save Settings' },
+        es: { appTitle: 'Protector Ledebe', appSubtitle: 'Mantén tu información personal segura al usar IA', helpBtn: 'Ayuda', tutorialBtn: 'Tutorial', chatBtn: 'Chat en App', settingsBtn: 'Configuración', historyTitle: 'Historial', welcomeTitle: '🛡️ ¡Bienvenido! Así es como proteger tu información personal:', protectBtn: '🛡️ Proteger Mi Información', inputPlaceholder: 'Escribe o pega tu texto aquí...', addCustomTerms: '+ Agregar Términos Personalizados', customTermsTitle: 'Términos Personalizados a Proteger', saveToDefaults: '❤️ Guardar por Defecto', protectedText: 'Tu Texto Protegido', backBtn: '← Atrás', nextBtn: 'Siguiente →', restoreTitle: 'Restaurar Texto Original', restoreBtn: '🔄 Restaurar Información Personal', feedbackPlaceholder: '💬 ¿Cómo podemos mejorar? ¡Tus comentarios ayudan!', sendBtn: 'Enviar', recentPrompts: 'Prompts Recientes', recentRestored: 'Restaurados Recientes', noPrompts: '📝 No hay prompts aún', noRestores: '🔄 No hay restauraciones aún', enterText: 'Ingresa Tu Texto', enterTextDesc: 'Pega cualquier texto que pueda contener información personal', protectedDesc: 'La información personal ha sido ocultada de forma segura con marcadores', restoreDesc: 'Pega la respuesta de IA aquí para restaurar tu información personal', pasteBtn: '📋 Pegar', viewLastRestored: '📄 Ver Último Restaurado', goToRestore: '🔄 Ir a Restaurar', settingsTitle: 'Configuración', fontFamily: 'Familia de Fuente', languageTitle: 'Idioma / Language / Langue / اللغة / 语言', defaultCustomTerms: 'Términos Personalizados por Defecto', defaultCustomTermsDesc: 'Estos términos se cargarán automáticamente al iniciar la aplicación', privacyAnalytics: 'Privacidad y Análisis', shareAnalytics: 'Compartir análisis de uso anónimo', analyticsDesc: 'Ayuda a mejorar la aplicación compartiendo datos de uso anónimos. No se recopila información personal ni contenido.', preferences: 'Preferencias', autoSaveTerms: 'Guardar automáticamente términos personalizados', showNotifications: 'Mostrar notificaciones', saveLast: 'Guardar últimos', prompts: 'prompts', cancelBtn: 'Cancelar', saveSettingsBtn: 'Guardar Configuración' },
+        fr: { appTitle: 'Protecteur Ledebe', appSubtitle: 'Gardez vos informations personnelles en sécurité', helpBtn: 'Aide', tutorialBtn: 'Tutoriel', chatBtn: 'Chat dans l\'App', settingsBtn: 'Paramètres', historyTitle: 'Historique', welcomeTitle: '🛡️ Bienvenue ! Voici comment protéger vos informations:', protectBtn: '🛡️ Protéger Mes Informations', inputPlaceholder: 'Tapez ou collez votre texte ici...', addCustomTerms: '+ Ajouter des Termes Personnalisés', customTermsTitle: 'Termes Personnalisés à Protéger', saveToDefaults: '❤️ Sauvegarder par Défaut', protectedText: 'Votre Texte Protégé', backBtn: '← Retour', nextBtn: 'Suivant →', restoreTitle: 'Restaurer le Texte Original', restoreBtn: '🔄 Restaurer les Informations', feedbackPlaceholder: '💬 Comment améliorer ? Vos commentaires aident !', sendBtn: 'Envoyer', recentPrompts: 'Prompts Récents', recentRestored: 'Restaurés Récents', noPrompts: '📝 Pas encore de prompts', noRestores: '🔄 Pas encore de restaurations', enterText: 'Entrez Votre Texte', enterTextDesc: 'Collez tout texte pouvant contenir des informations personnelles', protectedDesc: 'Les informations personnelles ont été cachées en toute sécurité avec des espaces réservés', restoreDesc: 'Collez la réponse IA ici pour restaurer vos informations personnelles', pasteBtn: '📋 Coller', viewLastRestored: '📄 Voir le Dernier Restauré', goToRestore: '🔄 Aller à Restaurer', settingsTitle: 'Paramètres', fontFamily: 'Famille de Police', languageTitle: 'Langue / Language / Idioma / اللغة / 语言', defaultCustomTerms: 'Termes Personnalisés par Défaut', defaultCustomTermsDesc: 'Ces termes seront automatiquement chargés au démarrage de l\'application', privacyAnalytics: 'Confidentialité et Analyses', shareAnalytics: 'Partager les analyses d\'utilisation anonymes', analyticsDesc: 'Aidez à améliorer l\'application en partageant des données d\'utilisation anonymes. Aucune information personnelle ou contenu n\'est collecté.', preferences: 'Préférences', autoSaveTerms: 'Sauvegarde automatique des termes personnalisés', showNotifications: 'Afficher les notifications', saveLast: 'Sauvegarder les derniers', prompts: 'prompts', cancelBtn: 'Annuler', saveSettingsBtn: 'Sauvegarder les Paramètres' },
+        ar: { appTitle: 'حامي ليديبي', appSubtitle: 'احتفظ بمعلوماتك الشخصية آمنة', helpBtn: 'مساعدة', tutorialBtn: 'دليل', chatBtn: 'محادثة في التطبيق', settingsBtn: 'الإعدادات', historyTitle: 'التاريخ', welcomeTitle: '🛡️ مرحباً! إليك كيفية حماية معلوماتك:', protectBtn: '🛡️ احم معلوماتي', inputPlaceholder: 'اكتب أو الصق نصك هنا...', addCustomTerms: '+ إضافة مصطلحات مخصصة', customTermsTitle: 'المصطلحات المخصصة للحماية', saveToDefaults: '❤️ حفظ كافتراضي', protectedText: 'نصك المحمي', backBtn: '← رجوع', nextBtn: 'التالي →', restoreTitle: 'استعادة النص الأصلي', restoreBtn: '🔄 استعادة المعلومات الشخصية', feedbackPlaceholder: '💬 كيف يمكننا التحسين؟ ملاحظاتك تساعد!', sendBtn: 'إرسال', recentPrompts: 'الطلبات الأخيرة', recentRestored: 'المستعاد الأخير', noPrompts: '📝 لا توجد طلبات بعد', noRestores: '🔄 لا توجد استعادات بعد', enterText: 'أدخل نصك', enterTextDesc: 'الصق أي نص قد يحتوي على معلومات شخصية', protectedDesc: 'تم إخفاء المعلومات الشخصية بأمان بعلامات', restoreDesc: 'الصق رد الذكاء الاصطناعي هنا لاستعادة معلوماتك الشخصية', pasteBtn: '📋 لصق', viewLastRestored: '📄 عرض آخر استعادة', goToRestore: '🔄 الذهاب للاستعادة', settingsTitle: 'الإعدادات', fontFamily: 'عائلة الخط', languageTitle: 'اللغة / Language / Idioma / Langue / 语言', defaultCustomTerms: 'المصطلحات المخصصة الافتراضية', defaultCustomTermsDesc: 'سيتم تحميل هذه المصطلحات تلقائياً عند بدء تشغيل التطبيق', privacyAnalytics: 'الخصوصية والتحليلات', shareAnalytics: 'مشاركة تحليلات الاستخدام المجهولة', analyticsDesc: 'ساعد في تحسين التطبيق من خلال مشاركة بيانات الاستخدام المجهولة. لا يتم جمع أي معلومات شخصية أو محتوى.', preferences: 'التفضيلات', autoSaveTerms: 'حفظ تلقائي للمصطلحات المخصصة', showNotifications: 'إظهار الإشعارات', saveLast: 'حفظ آخر', prompts: 'طلبات', cancelBtn: 'إلغاء', saveSettingsBtn: 'حفظ الإعدادات' },
+        zh: { appTitle: 'Ledebe 保护器', appSubtitle: '使用AI时保护您的个人信息安全', helpBtn: '帮助', tutorialBtn: '教程', chatBtn: '应用内聊天', settingsBtn: '设置', historyTitle: '历史记录', welcomeTitle: '🛡️ 欢迎！以下是如何保护您的个人信息：', protectBtn: '🛡️ 保护我的信息', inputPlaceholder: '在此输入或粘贴您的文本...', addCustomTerms: '+ 添加自定义保护条款', customTermsTitle: '自定义保护条款', saveToDefaults: '❤️ 保存为默认', protectedText: '您的受保护文本', backBtn: '← 返回', nextBtn: '下一步 →', restoreTitle: '恢复原始文本', restoreBtn: '🔄 恢复个人信息', feedbackPlaceholder: '💬 我们如何改进？您的反馈很有帮助！', sendBtn: '发送', recentPrompts: '最近的提示', recentRestored: '最近恢复的', noPrompts: '📝 还没有提示', noRestores: '🔄 还没有恢复', enterText: '输入您的文本', enterTextDesc: '粘贴任何可能包含个人信息的文本', protectedDesc: '个人信息已安全地用占位符隐藏', restoreDesc: '在此粘贴AI响应以恢复您的个人信息', pasteBtn: '📋 粘贴', viewLastRestored: '📄 查看最后恢复的', goToRestore: '🔄 转到恢复', settingsTitle: '设置', fontFamily: '字体系列', languageTitle: '语言 / Language / Idioma / Langue / اللغة', defaultCustomTerms: '默认自定义条款', defaultCustomTermsDesc: '这些条款将在应用程序启动时自动加载', privacyAnalytics: '隐私和分析', shareAnalytics: '分享匿名使用分析', analyticsDesc: '通过分享匿名使用数据帮助改进应用程序。不会收集个人信息或内容。', preferences: '首选项', autoSaveTerms: '自动保存自定义条款', showNotifications: '显示通知', saveLast: '保存最后', prompts: '个提示', cancelBtn: '取消', saveSettingsBtn: '保存设置' }
+      };
+      
+      let currentLanguage = localStorage.getItem('selectedLanguage') || 'en';
+      
+      function translateApp() {
+        const t = translations[currentLanguage] || translations.en;
+        document.title = t.appTitle;
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+          const key = el.getAttribute('data-i18n');
+          if (t[key]) el.textContent = t[key];
+        });
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+          const key = el.getAttribute('data-i18n-placeholder');
+          if (t[key]) el.placeholder = t[key];
+        });
+      }
+      
+      // Inline minimal functionality for packaged app
+      document.addEventListener('DOMContentLoaded', function() {
+        translateApp();
+        
+        const languageSelect = document.getElementById('language-select');
+        if (languageSelect) {
+          languageSelect.value = currentLanguage;
+          languageSelect.addEventListener('change', function() {
+            currentLanguage = languageSelect.value;
+            localStorage.setItem('selectedLanguage', currentLanguage);
+            translateApp();
+          });
+        }
+        // Dark mode toggle
+        const darkMode = document.getElementById('darkMode');
+        if (darkMode) {
+          darkMode.addEventListener('change', function() {
+            const theme = darkMode.checked ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('darkMode', darkMode.checked.toString());
+          });
+          
+          // Load saved dark mode
+          const saved = localStorage.getItem('darkMode') === 'true';
+          darkMode.checked = saved;
+          document.documentElement.setAttribute('data-theme', saved ? 'dark' : 'light');
+        }
+        
+        // Tutorial buttons
+        const showTutorialBtn = document.getElementById('show-tutorial-btn');
+        const gotItBtn = document.getElementById('got-it-btn');
+        const skipTutorialBtn = document.getElementById('skip-tutorial-btn');
+        const exitTutorialBtn = document.getElementById('exit-tutorial-btn');
+        const welcomeGuide = document.getElementById('welcome-guide');
+        const mainWorkflow = document.getElementById('main-workflow');
+        
+        function showWorkflow() {
+          if (welcomeGuide && mainWorkflow) {
+            welcomeGuide.style.display = 'none';
+            mainWorkflow.style.display = 'block';
+            localStorage.setItem('hasSeenWelcomeGuide', 'true');
+          }
+        }
+        
+        function showTutorial() {
+          if (welcomeGuide && mainWorkflow) {
+            welcomeGuide.style.display = 'block';
+            mainWorkflow.style.display = 'none';
+          }
+        }
+        
+        if (showTutorialBtn) showTutorialBtn.addEventListener('click', showTutorial);
+        if (gotItBtn) gotItBtn.addEventListener('click', showWorkflow);
+        if (skipTutorialBtn) skipTutorialBtn.addEventListener('click', showWorkflow);
+        if (exitTutorialBtn) exitTutorialBtn.addEventListener('click', showWorkflow);
+        
+        // Close tutorial button
+        const closeTutorialBtn = document.getElementById('close-tutorial');
+        if (closeTutorialBtn) closeTutorialBtn.addEventListener('click', showWorkflow);
+        
+        // Initialize workflow
+        const hasSeenGuide = localStorage.getItem('hasSeenWelcomeGuide') === 'true';
+        if (hasSeenGuide) {
+          showWorkflow();
+        }
+        
+        // Basic workflow navigation
+        const protectMyInfoBtn = document.getElementById('protect-my-info-btn');
+        const prevStep2 = document.getElementById('prev-step-2');
+        const nextStep2 = document.getElementById('next-step-2');
+        const prevStep3 = document.getElementById('prev-step-3');
+        const input = document.getElementById('input');
+        
+        // Quick action buttons
+        const goToRestoreBtn = document.getElementById('go-to-restore-btn');
+        const viewLastRestoredBtn = document.getElementById('view-last-restored-btn');
+        const viewHistoryBtn = document.getElementById('view-history-btn');
+        
+        if (goToRestoreBtn) {
+          goToRestoreBtn.addEventListener('click', function() {
+            showStep(3);
+          });
+        }
+        
+        if (viewLastRestoredBtn) {
+          viewLastRestoredBtn.addEventListener('click', function() {
+            const output = document.getElementById('output');
+            if (output && output.value) {
+              showStep(3);
+              const restoredResult = document.getElementById('restored-result');
+              if (restoredResult) {
+                restoredResult.style.display = 'block';
+              }
+            }
+          });
+        }
+        
+        if (viewHistoryBtn) {
+          viewHistoryBtn.addEventListener('click', function() {
+            showHistoryModal();
+          });
+        }
+        
+        function showStep(stepNumber) {
+          document.querySelectorAll('.workflow-step').forEach(s => s.classList.remove('active'));
+          const step = document.getElementById('step-' + stepNumber);
+          if (step) {
+            step.classList.add('active');
+            step.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }
+        
+        // Add click handlers to workflow steps
+        document.querySelectorAll('.workflow-step').forEach((step, index) => {
+          step.addEventListener('click', () => {
+            showStep(index + 1);
+          });
+        });
+        
+        if (input && protectMyInfoBtn) {
+          // Clear default text on first click
+          let hasCleared = false;
+          input.addEventListener('focus', function() {
+            if (!hasCleared && input.value === "Hi, I'm John Smith. My email is john@company.com and my phone is +1-555-123-4567. I work at TechCorp on Project Alpha.") {
+              input.value = '';
+              hasCleared = true;
+            }
+          });
+          
+          input.addEventListener('input', function() {
+            protectMyInfoBtn.disabled = !input.value.trim();
+          });
+          
+          protectMyInfoBtn.addEventListener('click', function() {
+            if (input.value.trim()) {
+              // Don't save default example text to history
+              const defaultText = "Hi, I'm John Smith. My email is john@company.com and my phone is +1-555-123-4567. I work at TechCorp on Project Alpha.";
+              if (input.value !== defaultText) {
+                saveToHistory('prompt', input.value);
+              }
+              processProtection();
+            }
+          });
+        }
+        
+        if (prevStep2) {
+          prevStep2.addEventListener('click', function() {
+            showStep(1);
+          });
+        }
+        
+        if (nextStep2) {
+          nextStep2.addEventListener('click', function() {
+            showStep(3);
+          });
+        }
+        
+        // Step 3 navigation
+        if (prevStep3) {
+          prevStep3.addEventListener('click', function() {
+            showStep(2);
+          });
+        }
+        
+        // Step 3 navigation (restore step)
+        const protectNewBtn = document.getElementById('protect-new-btn');
+        
+        if (protectNewBtn) {
+          protectNewBtn.addEventListener('click', function() {
+            // Clear inputs and go back to main menu
+            const input = document.getElementById('input');
+            const aiResponseInput = document.getElementById('ai-response-input');
+            const output = document.getElementById('output');
+            const restoredResult = document.getElementById('restored-result');
+            
+            if (input) input.value = '';
+            if (aiResponseInput) aiResponseInput.value = '';
+            if (output) output.value = '';
+            if (restoredResult) restoredResult.style.display = 'none';
+            
+            showStep(1);
+          });
+        }
+        
+        // Paste button for input
+        const pasteInputBtn = document.getElementById('paste-input-btn');
+        if (pasteInputBtn) {
+          pasteInputBtn.addEventListener('click', async function() {
+            try {
+              const text = await navigator.clipboard.readText();
+              const input = document.getElementById('input');
+              if (input) {
+                input.value = text;
+                input.dispatchEvent(new Event('input'));
+              }
+            } catch (err) {
+              console.error('Failed to read clipboard:', err);
+            }
+          });
+        }
+        
+        // Paste button handler
+        const pasteBtn = document.getElementById('paste-btn');
+        if (pasteBtn) {
+          pasteBtn.addEventListener('click', async function() {
+            try {
+              const text = await navigator.clipboard.readText();
+              const aiResponseInput = document.getElementById('ai-response-input');
+              if (aiResponseInput) {
+                aiResponseInput.value = text;
+                aiResponseInput.dispatchEvent(new Event('input'));
+              }
+            } catch (err) {
+              console.error('Failed to read clipboard:', err);
+            }
+          });
+        }
+        
+        // AI response input handler
+        const aiResponseInput = document.getElementById('ai-response-input');
+        const restoreBtn = document.getElementById('restore-btn');
+        
+        if (aiResponseInput && restoreBtn) {
+          aiResponseInput.addEventListener('input', function() {
+            restoreBtn.disabled = !aiResponseInput.value.trim();
+          });
+          
+          restoreBtn.addEventListener('click', function() {
+            processRestore();
+          });
+        }
+        
+        // Restore function
+        function processRestore() {
+          const aiResponseInput = document.getElementById('ai-response-input');
+          const output = document.getElementById('output');
+          const restoredResult = document.getElementById('restored-result');
+          const protectNewBtn = document.getElementById('protect-new-btn');
+          
+          if (!aiResponseInput || !output) return;
+          
+          let restoredText = aiResponseInput.value;
+          
+          // Restore placeholders with original values
+          for (const placeholder in placeholderMap) {
+            const originalValue = placeholderMap[placeholder];
+            restoredText = restoredText.replace(new RegExp(placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), originalValue);
+          }
+          
+          output.value = restoredText;
+          
+          // Save initial restored state to edit history
+          saveEditState(restoredText);
+          saveToHistory('restore', restoredText);
+          
+          if (restoredResult) {
+            restoredResult.style.display = 'block';
+          }
+          
+          // Show protect new text button after restore
+          if (protectNewBtn) {
+            protectNewBtn.style.display = 'block';
+          }
+          
+          // Show view last restored button in step 1
+          const viewLastRestoredBtn = document.getElementById('view-last-restored-btn');
+          if (viewLastRestoredBtn) {
+            viewLastRestoredBtn.style.display = 'block';
+          }
+        }
+        
+        // Global placeholder map, edit history, and app history
+        let placeholderMap = {};
+        let editHistory = [];
+        let editHistoryIndex = -1;
+        let promptHistory = JSON.parse(localStorage.getItem('promptHistory') || '[]');
+        let restoreHistory = JSON.parse(localStorage.getItem('restoreHistory') || '[]');
+        
+        function saveToHistory(type, text, customTerms = '') {
+          const history = type === 'prompt' ? promptHistory : restoreHistory;
+          
+          // Check for duplicates to prevent noise
+          const isDuplicate = history.some(item => 
+            item.text === text && 
+            Math.abs(new Date(item.date).getTime() - new Date().getTime()) < 60000 // Within 1 minute
+          );
+          
+          if (isDuplicate) return;
+          
+          const item = {
+            text: text,
+            customTerms: customTerms,
+            date: new Date().toLocaleString()
+          };
+          
+          history.unshift(item);
+          if (history.length > 5) history.pop(); // Keep only last 5
+          
+          localStorage.setItem(type + 'History', JSON.stringify(history));
+          if (type === 'prompt') promptHistory = history;
+          else restoreHistory = history;
+          
+          updateSidebarHistory();
+        }
+        
+        function saveEditState(text) {
+          editHistory = editHistory.slice(0, editHistoryIndex + 1);
+          editHistory.push(text);
+          editHistoryIndex = editHistory.length - 1;
+          
+          const undoBtn = document.getElementById('undo-edit-btn');
+          const redoBtn = document.getElementById('redo-edit-btn');
+          if (undoBtn) undoBtn.disabled = editHistoryIndex <= 0;
+          if (redoBtn) redoBtn.disabled = editHistoryIndex >= editHistory.length - 1;
+        }
+        
+        // PII Protection function
+        function processProtection() {
+          const input = document.getElementById('input');
+          const customTerms = document.getElementById('customTerms');
+          const protectedPrompt = document.getElementById('protected-prompt');
+          const protectionStatus = document.getElementById('protection-status');
+          
+          if (!input || !protectedPrompt) return;
+          
+          let text = input.value;
+          let customTermsList = [];
+          
+          if (customTerms && customTerms.value) {
+            customTermsList = customTerms.value.split('\n').map(s => s.trim()).filter(Boolean);
+          }
+          
+          // Reset placeholder map
+          placeholderMap = {};
+          let maskedText = text;
+          let maskedCount = 0;
+          
+          // Email masking
+          maskedText = maskedText.replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, function(match) {
+            maskedCount++;
+            const placeholder = '[[LDB:EMAIL_' + maskedCount + ']]';
+            placeholderMap[placeholder] = match;
+            return placeholder;
+          });
+          
+          // Phone masking
+          maskedText = maskedText.replace(/\+?[1-9]\d{1,14}|\(?\d{3}\)?[-\s]?\d{3}[-\s]?\d{4}/g, function(match) {
+            maskedCount++;
+            const placeholder = '[[LDB:PHONE_' + maskedCount + ']]';
+            placeholderMap[placeholder] = match;
+            return placeholder;
+          });
+          
+          // Custom terms masking
+          customTermsList.forEach(function(term) {
+            if (term) {
+              const regex = new RegExp('\\b' + term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'gi');
+              maskedText = maskedText.replace(regex, function(match) {
+                maskedCount++;
+                const placeholder = '[[LDB:CUSTOM_' + maskedCount + ']]';
+                placeholderMap[placeholder] = match;
+                return placeholder;
+              });
+            }
+          });
+          
+          protectedPrompt.value = maskedText;
+          
+          // Force immediate resize of protected text area to show all content
+          setTimeout(() => {
+            protectedPrompt.style.height = 'auto';
+            const newHeight = Math.max(protectedPrompt.scrollHeight + 20, 200);
+            protectedPrompt.style.height = newHeight + 'px';
+          }, 10);
+          
+          if (protectionStatus) {
+            if (maskedCount > 0) {
+              protectionStatus.textContent = '✨ Protected ' + maskedCount + ' sensitive item' + (maskedCount > 1 ? 's' : '');
+              protectionStatus.style.background = 'linear-gradient(135deg, var(--accent-green) 0%, var(--dark-green) 100%)';
+            } else {
+              protectionStatus.textContent = '✅ No sensitive info detected';
+              protectionStatus.style.background = 'linear-gradient(135deg, #6c757d 0%, #495057 100%)';
+            }
+          }
+          
+          showStep(2);
+        }
+        
+        // Add custom terms toggle
+        const addCustomTermsBtn = document.getElementById('add-custom-terms');
+        const customTermsSection = document.getElementById('custom-terms-section');
+        if (addCustomTermsBtn && customTermsSection) {
+          addCustomTermsBtn.addEventListener('click', function() {
+            const isVisible = customTermsSection.style.display !== 'none';
+            if (isVisible) {
+              // Hide and save
+              customTermsSection.style.display = 'none';
+              addCustomTermsBtn.innerHTML = '+ Add Custom Terms to Protect';
+            } else {
+              // Show
+              customTermsSection.style.display = 'block';
+              addCustomTermsBtn.innerHTML = '💾 Save & Close';
+            }
+          });
+        }
+        
+        // Copy buttons
+        document.querySelectorAll('.copy-btn').forEach(function(btn) {
+          btn.addEventListener('click', function() {
+            const targetId = btn.getAttribute('data-target');
+            if (targetId) {
+              const textarea = document.getElementById(targetId);
+              if (textarea) {
+                textarea.select();
+                document.execCommand('copy');
+                const originalText = btn.textContent;
+                btn.textContent = '✅ Copied!';
+                setTimeout(function() {
+                  btn.textContent = originalText;
+                }, 2000);
+                
+                // If copying protected text in step 2, auto-advance to step 3
+                if (targetId === 'protected-prompt') {
+                  const currentStep = document.querySelector('.workflow-step.active');
+                  if (currentStep && currentStep.id === 'step-2') {
+                    setTimeout(function() {
+                      showStep(3);
+                    }, 1000);
+                  }
+                }
+                
+                // If copying restored text in step 3, go back to main menu for new action
+                if (targetId === 'output') {
+                  const currentStep = document.querySelector('.workflow-step.active');
+                  if (currentStep && currentStep.id === 'step-3') {
+                    setTimeout(function() {
+                      // Clear inputs and go back to main menu
+                      const input = document.getElementById('input');
+                      const aiResponseInput = document.getElementById('ai-response-input');
+                      const output = document.getElementById('output');
+                      const restoredResult = document.getElementById('restored-result');
+                      
+                      if (input) input.value = '';
+                      if (aiResponseInput) aiResponseInput.value = '';
+                      if (output) output.value = '';
+                      if (restoredResult) restoredResult.style.display = 'none';
+                      
+                      showStep(1);
+                    }, 1500);
+                  }
+                }
+              }
+            }
+          });
+        });
+        
+
+        // Undo/Redo functionality
+        const undoBtn = document.getElementById('undo-edit-btn');
+        const redoBtn = document.getElementById('redo-edit-btn');
+        const output = document.getElementById('output');
+        
+        if (undoBtn) {
+          undoBtn.addEventListener('click', function() {
+            if (editHistoryIndex > 0) {
+              editHistoryIndex--;
+              if (output) output.value = editHistory[editHistoryIndex];
+              undoBtn.disabled = editHistoryIndex <= 0;
+              if (redoBtn) redoBtn.disabled = false;
+            }
+          });
+        }
+        
+        if (redoBtn) {
+          redoBtn.addEventListener('click', function() {
+            if (editHistoryIndex < editHistory.length - 1) {
+              editHistoryIndex++;
+              if (output) output.value = editHistory[editHistoryIndex];
+              redoBtn.disabled = editHistoryIndex >= editHistory.length - 1;
+              if (undoBtn) undoBtn.disabled = false;
+            }
+          });
+        }
+        
+        // Track changes in output textarea
+        if (output) {
+          let changeTimeout;
+          output.addEventListener('input', function() {
+            clearTimeout(changeTimeout);
+            changeTimeout = setTimeout(function() {
+              saveEditState(output.value);
+            }, 1000); // Save after 1 second of no typing
+          });
+        }
+        
+        // Update sidebar history
+        function updateSidebarHistory() {
+          const sidebarPromptHistory = document.getElementById('sidebar-prompt-history');
+          const sidebarRestoreHistory = document.getElementById('sidebar-restore-history');
+          
+          if (sidebarPromptHistory) {
+            sidebarPromptHistory.innerHTML = promptHistory.length ? 
+              promptHistory.slice(0, 5).map((item, idx) => {
+                const div = document.createElement('div');
+                div.className = 'history-item';
+                div.innerHTML = `
+                  <div class="history-item-content">
+                    <div class="history-item-text">${item.text}</div>
+                    <div class="history-item-date">${item.date}</div>
+                  </div>
+                  <div class="history-item-menu">
+                    <button class="history-menu-btn" title="Options">⋯</button>
+                    <div class="history-menu-dropdown">
+                      <button class="history-menu-item rename-btn">
+                        ✏️ Rename
+                      </button>
+                      <button class="history-menu-item delete-btn delete">
+                        🗑️ Delete
+                      </button>
+                    </div>
+                  </div>
+                `;
+                return div.outerHTML;
+              }).join('') : '<div class="history-empty"><span data-i18n="noPrompts">📝 No prompts yet</span><br><small>Your protected texts will appear here</small></div>';
+          }
+          
+          if (sidebarRestoreHistory) {
+            sidebarRestoreHistory.innerHTML = restoreHistory.length ?
+              restoreHistory.slice(0, 5).map((item, idx) => {
+                const div = document.createElement('div');
+                div.className = 'history-item';
+                div.innerHTML = `
+                  <div class="history-item-content">
+                    <div class="history-item-text">${item.text}</div>
+                    <div class="history-item-date">${item.date}</div>
+                  </div>
+                  <div class="history-item-menu">
+                    <button class="history-menu-btn" title="Options">⋯</button>
+                    <div class="history-menu-dropdown">
+                      <button class="history-menu-item rename-btn">
+                        ✏️ Rename
+                      </button>
+                      <button class="history-menu-item delete-btn delete">
+                        🗑️ Delete
+                      </button>
+                    </div>
+                  </div>
+                `;
+                return div.outerHTML;
+              }).join('') : '<div class="history-empty"><span data-i18n="noRestores">🔄 No restores yet</span><br><small>Your restored texts will appear here</small></div>';
+          }
+          
+          // Re-attach click handlers after innerHTML update
+          setTimeout(() => {
+            document.querySelectorAll('#sidebar-prompt-history .history-item').forEach((el, idx) => {
+              if (promptHistory[idx]) {
+                const content = el.querySelector('.history-item-content');
+                const menuBtn = el.querySelector('.history-menu-btn');
+                const dropdown = el.querySelector('.history-menu-dropdown');
+                const renameBtn = el.querySelector('.rename-btn');
+                const deleteBtn = el.querySelector('.delete-btn');
+                
+                content.addEventListener('click', () => loadPrompt(promptHistory[idx].text, promptHistory[idx].customTerms || ''));
+                
+                menuBtn.addEventListener('click', (e) => {
+                  e.stopPropagation();
+                  // Close all other dropdowns
+                  document.querySelectorAll('.history-menu-dropdown').forEach(d => d.classList.remove('show'));
+                  dropdown.classList.toggle('show');
+                });
+                
+                renameBtn.addEventListener('click', (e) => {
+                  e.stopPropagation();
+                  dropdown.classList.remove('show');
+                  const newText = prompt('Rename:', promptHistory[idx].text.substring(0, 50));
+                  if (newText && newText.trim()) {
+                    promptHistory[idx].text = newText.trim();
+                    localStorage.setItem('promptHistory', JSON.stringify(promptHistory));
+                    updateSidebarHistory();
+                  }
+                });
+                
+                deleteBtn.addEventListener('click', (e) => {
+                  e.stopPropagation();
+                  dropdown.classList.remove('show');
+                  if (confirm('Delete this item?')) {
+                    promptHistory.splice(idx, 1);
+                    localStorage.setItem('promptHistory', JSON.stringify(promptHistory));
+                    updateSidebarHistory();
+                  }
+                });
+              }
+            });
+            
+            document.querySelectorAll('#sidebar-restore-history .history-item').forEach((el, idx) => {
+              if (restoreHistory[idx]) {
+                const content = el.querySelector('.history-item-content');
+                const menuBtn = el.querySelector('.history-menu-btn');
+                const dropdown = el.querySelector('.history-menu-dropdown');
+                const renameBtn = el.querySelector('.rename-btn');
+                const deleteBtn = el.querySelector('.delete-btn');
+                
+                content.addEventListener('click', () => loadRestore(restoreHistory[idx].text));
+                
+                menuBtn.addEventListener('click', (e) => {
+                  e.stopPropagation();
+                  // Close all other dropdowns
+                  document.querySelectorAll('.history-menu-dropdown').forEach(d => d.classList.remove('show'));
+                  dropdown.classList.toggle('show');
+                });
+                
+                renameBtn.addEventListener('click', (e) => {
+                  e.stopPropagation();
+                  dropdown.classList.remove('show');
+                  const newText = prompt('Rename:', restoreHistory[idx].text.substring(0, 50));
+                  if (newText && newText.trim()) {
+                    restoreHistory[idx].text = newText.trim();
+                    localStorage.setItem('restoreHistory', JSON.stringify(restoreHistory));
+                    updateSidebarHistory();
+                  }
+                });
+                
+                deleteBtn.addEventListener('click', (e) => {
+                  e.stopPropagation();
+                  dropdown.classList.remove('show');
+                  if (confirm('Delete this item?')) {
+                    restoreHistory.splice(idx, 1);
+                    localStorage.setItem('restoreHistory', JSON.stringify(restoreHistory));
+                    updateSidebarHistory();
+                  }
+                });
+              }
+            });
+            
+            // Close dropdowns when clicking outside
+            document.addEventListener('click', () => {
+              document.querySelectorAll('.history-menu-dropdown').forEach(d => d.classList.remove('show'));
+            });
+          }, 10);
+        }
+        
+        // Make functions global so they can be called from onclick handlers
+        window.loadPrompt = function(text, customTerms = '') {
+          const input = document.getElementById('input');
+          const customTermsInput = document.getElementById('customTerms');
+          if (input) {
+            input.value = text;
+            if (customTermsInput && customTerms) {
+              customTermsInput.value = customTerms;
+            }
+            input.dispatchEvent(new Event('input'));
+            showStep(1);
+          }
+        };
+        
+        window.loadRestore = function(text) {
+          const output = document.getElementById('output');
+          const restoredResult = document.getElementById('restored-result');
+          if (output) {
+            output.value = text;
+            if (restoredResult) restoredResult.style.display = 'block';
+            showStep(3);
+          }
+        };
+        
+        // Close history modal
+        const closeHistory = document.getElementById('close-history');
+        if (closeHistory) {
+          closeHistory.addEventListener('click', function() {
+            document.getElementById('history-modal').style.display = 'none';
+          });
+        }
+        
+        // Initialize sidebar history on load
+        updateSidebarHistory();
+        
+        // View analytics button
+        const viewAnalyticsBtn = document.getElementById('view-analytics');
+        if (viewAnalyticsBtn) {
+          viewAnalyticsBtn.addEventListener('click', function() {
+            const storageData = getStorageAnalytics();
+            const analyticsHtml = `
+              <div style="background: var(--white); padding: 2rem; border-radius: 8px; max-width: 500px; margin: 2rem auto; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                <h3 style="margin: 0 0 1.5rem 0; color: var(--text-dark); text-align: center;">📊 Storage Analytics</h3>
+                <div style="margin-bottom: 1.5rem;">
+                  <h4 style="margin: 0 0 0.75rem 0; color: var(--text-dark);">Local Storage Usage</h4>
+                  ${storageData.map(item => `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid var(--border);">
+                      <span style="color: var(--text-dark);">${item.name}</span>
+                      <div style="text-align: right;">
+                        <div style="font-weight: 600; color: var(--text-dark);">${item.size}</div>
+                        <div style="font-size: 0.8rem; color: var(--text-gray);">${item.count} items</div>
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+                <div style="text-align: center; padding-top: 1rem; border-top: 1px solid var(--border);">
+                  <button onclick="this.parentElement.parentElement.parentElement.remove()" style="background: var(--accent-green); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer;">Close</button>
+                </div>
+              </div>
+            `;
+            
+            const overlay = document.createElement('div');
+            overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; display: flex; align-items: center; justify-content: center;';
+            overlay.innerHTML = analyticsHtml;
+            document.body.appendChild(overlay);
+            
+            overlay.addEventListener('click', function(e) {
+              if (e.target === overlay) overlay.remove();
+            });
+          });
+        }
+        
+        function getStorageAnalytics() {
+          const data = [];
+          
+          // Prompt History
+          const promptHistory = JSON.parse(localStorage.getItem('promptHistory') || '[]');
+          const promptSize = new Blob([JSON.stringify(promptHistory)]).size;
+          data.push({
+            name: '📝 Prompt History',
+            size: formatBytes(promptSize),
+            count: promptHistory.length
+          });
+          
+          // Restore History
+          const restoreHistory = JSON.parse(localStorage.getItem('restoreHistory') || '[]');
+          const restoreSize = new Blob([JSON.stringify(restoreHistory)]).size;
+          data.push({
+            name: '🔄 Restore History',
+            size: formatBytes(restoreSize),
+            count: restoreHistory.length
+          });
+          
+          // Settings
+          const settings = localStorage.getItem('defaultCustomTerms') || '';
+          const settingsSize = new Blob([settings]).size;
+          data.push({
+            name: '⚙️ Settings & Terms',
+            size: formatBytes(settingsSize),
+            count: settings.split('\n').filter(Boolean).length
+          });
+          
+          // Other localStorage items
+          let otherSize = 0;
+          let otherCount = 0;
+          for (let key in localStorage) {
+            if (!['promptHistory', 'restoreHistory', 'defaultCustomTerms'].includes(key)) {
+              otherSize += new Blob([localStorage[key]]).size;
+              otherCount++;
+            }
+          }
+          
+          if (otherSize > 0) {
+            data.push({
+              name: '📁 Other Data',
+              size: formatBytes(otherSize),
+              count: otherCount
+            });
+          }
+          
+          return data;
+        }
+        
+        function formatBytes(bytes) {
+          if (bytes === 0) return '0 B';
+          const k = 1024;
+          const sizes = ['B', 'KB', 'MB', 'GB'];
+          const i = Math.floor(Math.log(bytes) / Math.log(k));
+          return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+        
+
+        
+
+        // Save to defaults functionality
+        const saveToDefaultsBtn = document.getElementById('save-to-defaults-btn');
+        if (saveToDefaultsBtn) {
+          saveToDefaultsBtn.addEventListener('click', function() {
+            const customTerms = document.getElementById('customTerms');
+            const settingsCustomTerms = document.getElementById('settings-custom-terms');
+            
+            if (customTerms && settingsCustomTerms && customTerms.value.trim()) {
+              const currentTerms = customTerms.value.split('\n').map(s => s.trim()).filter(Boolean);
+              const existingDefaults = settingsCustomTerms.value.split('\n').map(s => s.trim()).filter(Boolean);
+              
+              // Merge terms, avoiding duplicates, up to 50 limit
+              const allTerms = [...new Set([...existingDefaults, ...currentTerms])].slice(0, 50);
+              
+              settingsCustomTerms.value = allTerms.join('\n');
+              localStorage.setItem('defaultCustomTerms', allTerms.join('\n'));
+              
+              saveToDefaultsBtn.textContent = '✓ Saved!';
+              setTimeout(() => {
+                saveToDefaultsBtn.textContent = '❤️ Save to Defaults';
+              }, 2000);
+            }
+          });
+        }
+        
+        // Settings button functionality
+        const settingsBtn = document.getElementById('settings-btn');
+        const settingsModal = document.getElementById('settings-modal');
+        const closeSettings = document.getElementById('close-settings');
+        const cancelSettings = document.getElementById('cancel-settings');
+        
+        if (settingsBtn && settingsModal) {
+          settingsBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Settings button clicked');
+            settingsModal.style.display = 'block';
+          });
+        }
+        
+        if (closeSettings && settingsModal) {
+          closeSettings.addEventListener('click', function() {
+            settingsModal.style.display = 'none';
+          });
+        }
+        
+        if (cancelSettings && settingsModal) {
+          cancelSettings.addEventListener('click', function() {
+            settingsModal.style.display = 'none';
+          });
+        }
+        
+        // Save settings button functionality
+        const saveSettings = document.getElementById('save-settings');
+        if (saveSettings && settingsModal) {
+          saveSettings.addEventListener('click', function() {
+            // Save settings logic would go here
+            // For now, just close the modal
+            settingsModal.style.display = 'none';
+          });
+        }
+        
+        // Font selection
+        const fontSelect = document.getElementById('font-select');
+        if (fontSelect) {
+          fontSelect.addEventListener('change', function() {
+            const fontMap = {
+              'system': '-apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", "Roboto", sans-serif',
+              'arial': 'Arial, sans-serif',
+              'calibri': 'Calibri, sans-serif',
+              'times': '"Times New Roman", serif',
+              'georgia': 'Georgia, serif',
+              'palatino': '"Palatino Linotype", Palatino, serif',
+              'verdana': 'Verdana, sans-serif'
+            };
+            const selectedFont = fontMap[fontSelect.value] || fontMap.system;
+            document.querySelectorAll('textarea').forEach(textarea => {
+              textarea.style.fontFamily = selectedFont;
+            });
+            localStorage.setItem('selectedFont', fontSelect.value);
+          });
+          
+          // Load saved font
+          const savedFont = localStorage.getItem('selectedFont') || 'system';
+          fontSelect.value = savedFont;
+          fontSelect.dispatchEvent(new Event('change'));
+        }
+        
+        // Help button
+        const helpBtn = document.getElementById('help-btn');
+        if (helpBtn) {
+          helpBtn.addEventListener('click', function() {
+            alert('Ledebe Protector helps protect your personal information when using AI tools.\n\n1. Enter your text\n2. Add custom terms (optional)\n3. Click "Protect My Info"\n4. Use the protected text safely');
+          });
+        }
+        
+        // Guided Tour
+        const tourSteps = [
+          {
+            target: '#input',
+            title: 'Step 1: Enter Your Text',
+            description: 'Type or paste any text that contains personal information like names, emails, or phone numbers.',
+            position: 'bottom'
+          },
+          {
+            target: '#add-custom-terms',
+            title: 'Step 2: Add Custom Terms (Optional)',
+            description: 'Click here to add company names, project codes, or other sensitive terms you want to protect.',
+            position: 'left'
+          },
+          {
+            target: '#protect-my-info-btn',
+            title: 'Step 3: Protect Your Info',
+            description: 'Click this button to automatically hide your personal information with safe placeholders.',
+            position: 'left'
+          },
+          {
+            target: '#protected-prompt',
+            title: 'Step 4: Use Protected Text',
+            description: 'Your text is now safe to use with AI tools. Copy it and use it anywhere!',
+            position: 'top'
+          },
+          {
+            target: '#share-external-btn',
+            title: 'Step 5: Chat Outside App',
+            description: 'Click here to easily share your protected text with external AI services.',
+            position: 'bottom'
+          }
+        ];
+        
+        let currentTourStep = 0;
+        
+        function startTour() {
+          currentTourStep = 0;
+          showTourStep();
+          document.getElementById('tour-overlay').style.display = 'block';
+        }
+        
+        function showTourStep() {
+          const step = tourSteps[currentTourStep];
+          const target = document.querySelector(step.target);
+          const spotlight = document.getElementById('tour-spotlight');
+          const hand = document.getElementById('tour-hand');
+          const tooltip = document.getElementById('tour-tooltip');
+          
+          if (!target) return;
+          
+          const rect = target.getBoundingClientRect();
+          
+          // Position spotlight
+          spotlight.style.left = (rect.left - 10) + 'px';
+          spotlight.style.top = (rect.top - 10) + 'px';
+          spotlight.style.width = (rect.width + 20) + 'px';
+          spotlight.style.height = (rect.height + 20) + 'px';
+          
+          // Position hand
+          hand.style.left = (rect.left + rect.width / 2 - 15) + 'px';
+          hand.style.top = (rect.top - 40) + 'px';
+          
+          // Position tooltip
+          let tooltipLeft = rect.left;
+          let tooltipTop = rect.bottom + 20;
+          
+          if (step.position === 'top') {
+            tooltipTop = rect.top - 120;
+          } else if (step.position === 'left') {
+            tooltipLeft = rect.left - 320;
+            tooltipTop = rect.top;
+          }
+          
+          tooltip.style.left = Math.max(20, tooltipLeft) + 'px';
+          tooltip.style.top = Math.max(20, tooltipTop) + 'px';
+          
+          // Update content
+          document.getElementById('tour-title').textContent = step.title;
+          document.getElementById('tour-description').textContent = step.description;
+          
+          // Update button
+          const nextBtn = document.getElementById('tour-next');
+          nextBtn.textContent = currentTourStep === tourSteps.length - 1 ? 'Finish' : 'Next';
+        }
+        
+        function nextTourStep() {
+          currentTourStep++;
+          if (currentTourStep >= tourSteps.length) {
+            endTour();
+          } else {
+            showTourStep();
+          }
+        }
+        
+        function endTour() {
+          document.getElementById('tour-overlay').style.display = 'none';
+          localStorage.setItem('hasSeenTour', 'true');
+        }
+        
+        // Tour event listeners
+        document.getElementById('tour-next').addEventListener('click', nextTourStep);
+        document.getElementById('tour-skip').addEventListener('click', endTour);
+        
+        // Start tour for new users
+        if (!localStorage.getItem('hasSeenTour') && hasSeenGuide) {
+          setTimeout(startTour, 1000);
+        }
+        
+        // Add tour button to help
+        if (helpBtn) {
+          helpBtn.addEventListener('click', function() {
+            startTour();
+          });
+        }
+      });
+    </script>
+    
+    <script>
+        // External AI Share functionality
+        const aiServiceUrls = {
+            chatgpt: 'https://chat.openai.com/',
+            gemini: 'https://gemini.google.com/',
+            claude: 'https://claude.ai/',
+            copilot: 'https://copilot.microsoft.com/',
+            perplexity: 'https://www.perplexity.ai/',
+            custom: null
+        };
+        
+        function initializeExternalAIShare() {
+            const shareBtn = document.getElementById('share-external-btn');
+            const shareModal = document.getElementById('share-modal');
+            const closeShare = document.getElementById('close-share');
+            const copyUniversalBtn = document.getElementById('copy-universal-format');
+            const universalCopyText = document.getElementById('universal-copy-text');
+            
+            if (!shareBtn) return;
+            
+            shareBtn.addEventListener('click', () => {
+                const protectedText = document.getElementById('protected-prompt')?.value;
+                if (!protectedText) {
+                    alert('No protected text available to share');
+                    return;
+                }
+                
+                // Update universal copy text
+                const formattedText = `Here's my text with personal information safely protected:\n\n${protectedText}\n\nPlease help me with this text. When you respond, I'll restore my personal information back into your response.`;
+                universalCopyText.textContent = formattedText;
+                
+                shareModal.style.display = 'flex';
+            });
+            
+            closeShare?.addEventListener('click', () => {
+                shareModal.style.display = 'none';
+            });
+            
+            // Close modal when clicking outside
+            shareModal?.addEventListener('click', (e) => {
+                if (e.target === shareModal) {
+                    shareModal.style.display = 'none';
+                }
+            });
+            
+            // Copy universal format
+            copyUniversalBtn?.addEventListener('click', async () => {
+                const text = universalCopyText.textContent;
+                try {
+                    await navigator.clipboard.writeText(text);
+                    copyUniversalBtn.textContent = '✓ Copied!';
+                    setTimeout(() => {
+                        copyUniversalBtn.textContent = '📋 Copy';
+                    }, 2000);
+                } catch (err) {
+                    console.error('Failed to copy:', err);
+                    // Fallback for older browsers
+                    const textArea = document.createElement('textarea');
+                    textArea.value = text;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    copyUniversalBtn.textContent = '✓ Copied!';
+                    setTimeout(() => {
+                        copyUniversalBtn.textContent = '📋 Copy';
+                    }, 2000);
+                }
+            });
+            
+            // Handle AI service clicks
+            document.querySelectorAll('.ai-service-card').forEach(card => {
+                card.addEventListener('click', async () => {
+                    const service = card.dataset.service;
+                    const protectedText = document.getElementById('protected-prompt')?.value;
+                    
+                    if (!protectedText) {
+                        alert('No protected text available');
+                        return;
+                    }
+                    
+                    // Copy to clipboard first
+                    const formattedText = `Here's my text with personal information safely protected:\n\n${protectedText}\n\nPlease help me with this text. When you respond, I'll restore my personal information back into your response.`;
+                    
+                    try {
+                        await navigator.clipboard.writeText(formattedText);
+                        
+                        // Show success feedback
+                        const originalContent = card.innerHTML;
+                        card.innerHTML = `
+                            <div class="service-icon">✓</div>
+                            <div class="service-name">Copied!</div>
+                            <div class="service-desc">Opening ${card.querySelector('.service-name').textContent}...</div>
+                        `;
+                        
+                        setTimeout(() => {
+                            card.innerHTML = originalContent;
+                        }, 2000);
+                        
+                        // Open AI service if URL exists
+                        if (service !== 'custom' && aiServiceUrls[service]) {
+                            // Use electron API if available, otherwise fallback to window.open
+                            if (window.electronAPI?.openExternal) {
+                                window.electronAPI.openExternal(aiServiceUrls[service]);
+                            } else {
+                                window.open(aiServiceUrls[service], '_blank');
+                            }
+                        } else if (service === 'custom') {
+                            // For custom/other AI, just show a message
+                            alert('📋 Text copied to clipboard!\n\nNow open your preferred AI service and paste the text.');
+                        }
+                        
+                    } catch (err) {
+                        console.error('Failed to copy:', err);
+                        alert('Failed to copy text to clipboard. Please try the universal copy button below.');
+                    }
+                });
+            });
+        }
+        
+        // Initialize when DOM is loaded
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeExternalAIShare);
+        } else {
+            initializeExternalAIShare();
+        }
+        
+        // Auto-resize textarea functionality (ChatGPT-style)
+        function autoResizeTextarea(textarea) {
+            if (!textarea) return;
+            textarea.style.height = 'auto';
+            textarea.style.height = Math.max(textarea.scrollHeight, 60) + 'px';
+        }
+        
+        // Initialize auto-resize for all textareas
+        function initializeAutoResize() {
+            document.querySelectorAll('textarea').forEach(textarea => {
+                // Set initial height
+                autoResizeTextarea(textarea);
+                
+                // Add input event listener
+                textarea.addEventListener('input', () => {
+                    autoResizeTextarea(textarea);
+                });
+                
+                // Handle paste events
+                textarea.addEventListener('paste', () => {
+                    setTimeout(() => {
+                        autoResizeTextarea(textarea);
+                    }, 10);
+                });
+                
+                // Handle focus events
+                textarea.addEventListener('focus', () => {
+                    autoResizeTextarea(textarea);
+                });
+                
+                // Poll for changes (for programmatic updates)
+                let lastValue = textarea.value;
+                setInterval(() => {
+                    if (textarea.value !== lastValue) {
+                        lastValue = textarea.value;
+                        autoResizeTextarea(textarea);
+                    }
+                }, 200);
+            });
+        }
+        
+        // Initialize auto-resize when DOM is loaded
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeAutoResize);
+        } else {
+            initializeAutoResize();
+        }
+        
+        // Markdown toggle functionality
+        window.toggleMarkdown = function(textareaId, showPreview) {
+          const textarea = document.getElementById(textareaId);
+          const preview = document.getElementById(textareaId + '-preview');
+          const toggleBtns = document.querySelectorAll(`[onclick*="${textareaId}"]`);
+          
+          if (!textarea || !preview) return;
+          
+          if (showPreview) {
+            // Show preview
+            textarea.style.display = 'none';
+            preview.style.display = 'block';
+            
+            // Convert markdown to HTML
+            if (typeof marked !== 'undefined') {
+              preview.innerHTML = marked.parse(textarea.value || 'Nothing to preview...');
+            } else {
+              // Fallback simple markdown
+              let html = textarea.value || 'Nothing to preview...';
+              html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+              html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+              html = html.replace(/`(.*?)`/g, '<code>$1</code>');
+              html = html.replace(/\n/g, '<br>');
+              preview.innerHTML = html;
+            }
+            
+            // Update button states
+            toggleBtns.forEach(btn => {
+              if (btn.textContent.includes('📄') || btn.textContent.includes('Preview')) {
+                btn.classList.add('active');
+              } else {
+                btn.classList.remove('active');
+              }
+            });
+          } else {
+            // Show textarea
+            textarea.style.display = 'block';
+            preview.style.display = 'none';
+            
+            // Update button states
+            toggleBtns.forEach(btn => {
+              if (btn.textContent.includes('✏️') || btn.textContent.includes('Edit')) {
+                btn.classList.add('active');
+              } else {
+                btn.classList.remove('active');
+              }
+            });
+          }
+        };
+    </script>
+</body>
+</html>

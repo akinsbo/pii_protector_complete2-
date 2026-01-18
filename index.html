@@ -638,6 +638,105 @@
         input:checked + .slider:before {
             transform: translateX(22px);
         }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .chat-area {
+                width: 80%;
+                padding-right: 2rem;
+            }
+            
+            .chat-message {
+                max-width: 80%;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .app-header {
+                padding: 0.5rem 1rem;
+            }
+
+            .app-header h2 {
+                font-size: 1rem;
+            }
+
+            .app-subtitle {
+                display: none;
+            }
+
+            .header-btn {
+                padding: 0.4rem 0.6rem;
+                font-size: 0.8rem;
+            }
+
+            .history-sidebar {
+                position: fixed;
+                left: -280px;
+                top: 0;
+                height: 100vh;
+                z-index: 1000;
+                transition: left 0.3s ease;
+            }
+
+            .history-sidebar.mobile-open {
+                left: 0;
+            }
+
+            .sidebar-toggle {
+                position: fixed;
+                left: 10px;
+                top: 60px;
+                z-index: 1001;
+                background: var(--primary-blue);
+                color: white;
+            }
+
+            .chat-area {
+                width: 100%;
+                padding: 1rem;
+                padding-right: 1rem;
+            }
+
+            .chat-area.has-messages {
+                align-items: flex-end;
+                margin: 0;
+            }
+
+            .chat-message {
+                max-width: 90%;
+            }
+
+            .message-tabs {
+                flex-direction: column;
+            }
+
+            .message-tab {
+                width: 100%;
+            }
+
+            .input-wrapper {
+                flex-direction: column;
+            }
+
+            .action-btn {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .chat-message {
+                max-width: 95%;
+            }
+
+            .message-actions {
+                flex-wrap: wrap;
+            }
+
+            .message-action-btn {
+                flex: 1;
+                min-width: 40px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1155,7 +1254,13 @@
         function toggleSidebar() {
             const sidebar = document.getElementById('history-sidebar');
             const toggleBtn = document.getElementById('sidebar-toggle-btn');
-            sidebar.classList.toggle('collapsed');
+            
+            // Check if mobile
+            if (window.innerWidth <= 768) {
+                sidebar.classList.toggle('mobile-open');
+            } else {
+                sidebar.classList.toggle('collapsed');
+            }
             
             localStorage.setItem('sidebarOpen', !sidebar.classList.contains('collapsed'));
         }

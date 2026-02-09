@@ -72,6 +72,7 @@ export class PluginSystem {
         padding: 15px;
         border-bottom: 1px solid #34495e;
         display: flex;
+        flex-direction: column;
         gap: 10px;
       }
       
@@ -415,3 +416,5 @@ export { PluginManager } from './PluginManager';
 export { ChatManager } from './ChatManager';
 export { ChatInterface } from './ChatInterface';
 export { ChatGPTPlugin } from './ChatGPTPlugin';
+export { ClaudePlugin } from './ClaudePlugin';
+export { GeminiPlugin } from './GeminiPlugin';

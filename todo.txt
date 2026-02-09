@@ -1,0 +1,190 @@
+# LEDEBE PROTECTOR - TODO LIST
+
+## ✅ COMPLETED
+- Update the textarea to use markdown
+- Too many buttons, use icons instead - redo design
+- History noisy, repeated twice
+- When user selects a section, it should highlight
+- History chat being stored and can be fetched
+- Can go back to edit messages
+- Can delete messages
+- Icons tooltips (edit, copy, delete)
+- Text should be white in dark mode
+- Prompt created twice issue
+- "Enter your text" should be expandable
+- Call and response like ChatGPT layout
+- Image upload with OCR and redaction
+- Plain/Protected image tabs with download
+- Quick Actions / Shortcuts:
+  - Quick Copy Protected button
+  - Keyboard shortcuts (Ctrl+Enter, Ctrl+K, Ctrl+Shift+C, Ctrl+/)
+  - Toast notifications
+  - Help button shows shortcuts modal
+- Multi-AI Support:
+  - Support for ChatGPT, Claude, and Gemini
+  - Multiple API keys (one per AI provider)
+  - Checkbox interface to select which AIs to use
+  - Simultaneous responses from multiple AIs
+  - Individual error handling per AI
+- Document Preview Modal:
+  - Preview protected document before download
+  - Scroll through entire document
+  - Toggle between original and protected versions
+  - Highlighted protected items in yellow
+  - Stats display (pages, words, protected items)
+  - Download from preview
+  - PDFs rendered as images to preserve exact formatting (tables, columns, layout)
+  - Text files use monospace font for alignment preservation
+- Document formatting preservation:
+  - Tabular content stays tabular with exact spacing
+  - Bullet points preserved as-is
+  - Original document structure maintained exactly
+  - Monospace font for proper alignment
+
+## 🐛 QUICK FIXES NEEDED
+- Dark mode text visibility - adjust contrast for better readability
+- "New chat" button placement - ensure it's at top of sidebar
+- Expandable "protect your text" area
+- History edit creates new item instead of updating existing
+
+## 🚀 HIGH PRIORITY FEATURES
+
+### 1. ✅ Quick Actions / Shortcuts (COMPLETED)
+- ✅ Add "Quick Copy Protected" button after sending message
+- ✅ Keyboard shortcuts:
+  - ✅ Ctrl/Cmd + Enter → Send message
+  - ✅ Ctrl/Cmd + K → New chat
+  - ✅ Ctrl/Cmd + Shift + C → Copy protected text
+  - ✅ Ctrl/Cmd + / → Show shortcuts help
+- ✅ Toast notifications: "✅ Protected text copied!"
+- ✅ Reduce clicks in main workflow
+
+### 2. Better Onboarding (2 hours)
+- Interactive tutorial on first visit
+- Sample data with fake PII to try
+- Tooltips on key features
+- Video walkthrough link
+- Help modal with common use cases
+
+### 3. Browser Extension (High Impact)
+- Right-click → "Protect with Ledebe"
+- Works in Gmail, Slack, ChatGPT, etc.
+- Inline protection without leaving page
+- Context menu integration
+- Reduces context switching
+
+## 📦 MEDIUM PRIORITY FEATURES
+
+### 4. Batch Processing
+- Allow multiple file uploads at once
+- Process all files together
+- Show results in one message
+- Bulk download as ZIP
+- Progress indicator for batch operations
+
+### 5. Export/Import History
+- Export button: Download all chats as JSON
+- Import button: Restore from backup
+- Sync across devices (optional cloud feature)
+- Data portability and backup
+- Multi-device usage support
+
+### 6. Custom PII Patterns
+- Add regex pattern support
+- Pre-built patterns:
+  - SSN: \d{3}-\d{2}-\d{4}
+  - Credit Card: \d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}
+  - IP addresses
+  - URLs
+  - Passport numbers
+- Pattern library users can enable/disable
+- Save custom regex patterns
+
+### 7. Analytics Dashboard (Optional)
+- Show stats: "Protected 47 emails this month"
+- Most common PII types detected
+- Usage trends and patterns
+- Export analytics report
+
+## 🔮 FUTURE / ADVANCED FEATURES
+
+### 8. AI Integration
+- Auto-detect names, companies, locations using NLP
+- Suggest custom terms based on context
+- Smart redaction (understands context, not just patterns)
+- Example: Detects "John Smith from Acme Corp" automatically
+- Machine learning for pattern recognition
+
+### 9. Collaboration Features
+- Share protected message via encrypted link
+- Team custom terms library
+- Audit log (who protected what, when)
+- Team workspace
+- Role-based access control
+
+### 10. Mobile App
+- Native iOS/Android app
+- Camera → OCR → Protect → Share workflow
+- Quick Share extension
+- Offline mode
+- Push notifications
+
+### 11. Compliance Features (Enterprise)
+- GDPR/HIPAA compliance mode
+- Detailed audit logs
+- Admin dashboard for team management
+- SSO integration (Google, Microsoft, Okta)
+- Data retention policies
+- Compliance reports
+
+## 💰 MONETIZATION STRATEGY
+
+### Free Tier
+- 50 protections/month
+- Text + basic image OCR
+- Local storage only
+- Community support
+
+### Pro Tier ($9/month)
+- Unlimited protections
+- Batch processing
+- Cloud sync
+- Export/import
+- Priority support
+- Custom regex patterns
+
+### Team Tier ($29/month)
+- Everything in Pro
+- Shared custom terms
+- Team analytics
+- Admin controls
+- API access
+- SSO integration
+- Compliance features
+
+## 🎯 NEXT SPRINT PRIORITIES
+1. ✅ Quick Copy Button (30 mins) - COMPLETED
+2. Keyboard Shortcuts (1 hour) - IN PROGRESS
+3. Better Onboarding (2 hours)
+4. Dark mode contrast fixes (30 mins)
+5. Export/Import History (3 hours)
+
+## 📝 NOTES & QUESTIONS
+- Get domain name.com
+- Target audience: Individuals or teams? Casual or professionals?
+- Primary use case: ChatGPT protection? General data sharing? Compliance?
+- Platform priority: Web app only? Browser extension? Mobile?
+- Monetization approach: Free tool? Freemium? Enterprise focus?
+
+## ✅ RECENT FIXES
+- PDF formatting preservation: PDFs now display as rendered page images, preserving all visual structure including tables, columns, headings, and layout
+- Text file formatting: Uses monospace font with exact spacing preservation for tabular data
+- Custom terms for company onboarding: Companies can add employee names and terms to protect
+
+## 🔗 RESOURCES NEEDED
+- Marketing website/landing page
+- Documentation site
+- Tutorial videos
+- API documentation (for future)
+- Privacy policy & Terms of Service
+- Support email/ticketing system

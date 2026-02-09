@@ -53,7 +53,7 @@ function addPluginMenu(): void {
   // Listen for events from main app buttons
   document.addEventListener('open-ai-chat', () => {
     console.log('open-ai-chat event received');
-    pluginSystem.toggleChatInterface();
+    pluginSystem.showChatInterface();
   });
 
   document.addEventListener('open-plugin-store', () => {

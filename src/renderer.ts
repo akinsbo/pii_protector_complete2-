@@ -106,19 +106,8 @@ function init() {
   // AI Chat button handler
   aiChatBtn?.addEventListener('click', () => {
     analytics.trackFeature('ai_chat_button_clicked');
-    const chatInterface = document.getElementById('chat-interface');
-    if (chatInterface) {
-      chatInterface.style.display = 'flex';
-    } else {
-      // If no chat interface, show a message or redirect to step 3
-      const protectedPromptEl = document.getElementById('protected-prompt') as HTMLTextAreaElement;
-      const protectedText = protectedPromptEl?.value;
-      if (protectedText) {
-        showStep(4);
-      } else {
-        notifications.info('Please protect your text first, then use AI chat.');
-      }
-    }
+    // Trigger plugin system to show chat interface
+    document.dispatchEvent(new CustomEvent('open-ai-chat'));
   });
 
   // Input change handler
@@ -153,10 +142,7 @@ function init() {
   useWithAiBtn?.addEventListener('click', () => {
     // Show step 4 and open AI chat
     showStep(4);
-    const chatInterface = document.getElementById('chat-interface');
-    if (chatInterface) {
-      chatInterface.style.display = 'flex';
-    }
+    document.dispatchEvent(new CustomEvent('open-ai-chat'));
     analytics.trackFeature('use_with_ai_clicked');
   });
 

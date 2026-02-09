@@ -4,6 +4,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ledebe Protector</title>
+    <script src='https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js'></script>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js'></script>
+    <script src='ai-chat.js'></script>
+    <script src='multi-ai-chat.js'></script>
     <style>
         :root {
             --primary-blue: #1e3a8a;
@@ -550,11 +554,594 @@
             display: flex;
             gap: 0.5rem;
             align-items: flex-end;
+            position: relative;
+        }
+
+        .upload-btn {
+            position: absolute;
+            left: 0.75rem;
+            bottom: 0.75rem;
+            background: var(--bg-light);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.2rem;
+            color: var(--text-dark);
+            transition: all 0.2s;
+            z-index: 10;
+        }
+
+        .upload-btn:hover {
+            background: var(--border);
+        }
+
+        .upload-menu {
+            position: absolute;
+            bottom: 50px;
+            left: 0.75rem;
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            min-width: 200px;
+            display: none;
+            z-index: 100;
+        }
+
+        .upload-menu.show {
+            display: block;
+        }
+
+        .upload-menu-item {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--text-dark);
+        }
+
+        .upload-menu-item:first-child {
+            border-radius: 8px 8px 0 0;
+        }
+
+        .upload-menu-item:last-child {
+            border-radius: 0 0 8px 8px;
+        }
+
+        .upload-menu-item:hover {
+            background: var(--bg-light);
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .uploaded-file {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--bg-light);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0.5rem 0.75rem;
+            margin: 0.5rem 0;
+            font-size: 0.85rem;
+        }
+
+        .uploaded-file img {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+
+        .uploaded-file-info {
+            flex: 1;
+        }
+
+        .uploaded-file button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-gray);
+            font-size: 1.2rem;
+            padding: 0.25rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .uploaded-file button:hover {
+            color: #ef4444;
+        }
+
+        .processing-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+
+        .processing-overlay.show {
+            display: flex;
+        }
+
+        .processing-content {
+            background: var(--white);
+            padding: 2rem;
+            border-radius: 12px;
+            text-align: center;
+            max-width: 400px;
+        }
+
+        .processing-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--border);
+            border-top-color: var(--primary-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .image-preview {
+            max-width: 100%;
+            border-radius: 8px;
+            margin: 1rem 0;
+            border: 2px solid var(--border);
+        }
+
+        .download-btn {
+            background: var(--accent-green);
+            color: #065f46;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .download-btn:hover {
+            background: #22c55e;
+        }
+
+        /* Document Card (Claude-style) */
+        .document-card {
+            background: var(--bg-light);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem;
+            margin: 1rem 0;
+            cursor: pointer;
+            transition: all 0.2s;
+            max-width: 400px;
+        }
+
+        .document-card:hover {
+            border-color: var(--primary-blue);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .document-card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .document-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--primary-blue);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .document-info {
+            flex: 1;
+        }
+
+        .document-name {
+            font-weight: 600;
+            color: var(--text-dark);
+            font-size: 0.9rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .document-meta {
+            font-size: 0.75rem;
+            color: var(--text-gray);
+        }
+
+        .document-stats {
+            display: flex;
+            gap: 1rem;
+            padding: 0.75rem;
+            background: var(--white);
+            border-radius: 8px;
+            font-size: 0.8rem;
+            color: var(--text-gray);
+        }
+
+        .document-stat {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .document-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+        }
+
+        .doc-action-btn {
+            flex: 1;
+            padding: 0.5rem;
+            border: 1px solid var(--border);
+            background: var(--white);
+            border-radius: 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-dark);
+            font-weight: 500;
+        }
+
+        .doc-action-btn:hover {
+            border-color: var(--primary-blue);
+            background: var(--bg-light);
+        }
+
+        .doc-action-btn.primary {
+            background: var(--accent-green);
+            color: #065f46;
+            border-color: var(--accent-green);
+        }
+
+        .doc-action-btn.primary:hover {
+            background: #22c55e;
+        }
+
+        /* Toast Notifications */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--primary-blue);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.9rem;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+            z-index: 10001;
+            pointer-events: none;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .toast.success {
+            background: var(--accent-green);
+            color: #065f46;
+        }
+
+        .toast.error {
+            background: #ef4444;
+            color: white;
+        }
+
+        /* Quick Copy Button */
+        .quick-copy-btn {
+            background: var(--primary-blue);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .quick-copy-btn:hover {
+            background: #1e40af;
+            transform: translateY(-1px);
+        }
+
+        /* Keyboard Shortcuts Help */
+        .shortcuts-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+
+        .shortcuts-modal.show {
+            display: flex;
+        }
+
+        .shortcuts-content {
+            background: var(--white);
+            padding: 2rem;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        /* Document Preview Modal */
+        .preview-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+
+        .preview-modal.show {
+            display: flex;
+        }
+
+        .preview-content {
+            background: var(--white);
+            border-radius: 12px;
+            max-width: 90vw;
+            width: 1200px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .preview-header {
+            padding: 1.5rem;
+            border-bottom: 2px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-light);
+        }
+
+        .preview-header h3 {
+            color: var(--text-dark);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .preview-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-gray);
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .preview-close:hover {
+            background: var(--border);
+            color: var(--text-dark);
+        }
+
+        .preview-tabs {
+            display: flex;
+            gap: 0.5rem;
+            padding: 1rem 1.5rem;
+            background: var(--bg-light);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .preview-tab {
+            padding: 0.6rem 1.2rem;
+            background: var(--white);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-dark);
+            font-weight: 500;
+        }
+
+        .preview-tab.active {
+            background: var(--primary-blue);
+            color: white;
+            border-color: var(--primary-blue);
+        }
+
+        .preview-tab:hover:not(.active) {
+            border-color: var(--primary-blue);
+        }
+
+        .preview-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem;
+            background: var(--white);
+        }
+
+        .preview-document {
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.95rem;
+            line-height: 1.8;
+            color: var(--text-dark);
+            max-width: 100%;
+        }
+        
+        .preview-document table {
+            font-family: inherit;
+        }
+        
+        .preview-document h1,
+        .preview-document h2,
+        .preview-document h3 {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .preview-stats {
+            padding: 1rem 1.5rem;
+            background: var(--bg-light);
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .preview-stats-info {
+            display: flex;
+            gap: 1.5rem;
+            font-size: 0.85rem;
+            color: var(--text-gray);
+        }
+
+        .preview-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .preview-btn {
+            padding: 0.6rem 1.2rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .preview-btn.primary {
+            background: var(--accent-green);
+            color: #065f46;
+        }
+
+        .preview-btn.primary:hover {
+            background: #22c55e;
+            transform: translateY(-1px);
+        }
+
+        .preview-btn.secondary {
+            background: var(--white);
+            color: var(--text-dark);
+            border: 2px solid var(--border);
+        }
+
+        .preview-btn.secondary:hover {
+            border-color: var(--primary-blue);
+        }
+
+        .highlight-protected {
+            background: #fef3c7;
+            padding: 0.1rem 0.3rem;
+            border-radius: 3px;
+            color: #92400e;
+            font-weight: 600;
+        }
+
+        [data-theme="dark"] .highlight-protected {
+            background: #78350f;
+            color: #fef3c7;
+        }
+
+        .shortcuts-content h3 {
+            color: var(--text-dark);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .shortcut-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .shortcut-item:last-child {
+            border-bottom: none;
+        }
+
+        .shortcut-desc {
+            color: var(--text-dark);
+            font-size: 0.9rem;
+        }
+
+        .shortcut-keys {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .key {
+            background: var(--bg-light);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.8rem;
+            font-family: monospace;
+            color: var(--text-dark);
         }
 
         .input-wrapper textarea {
             flex: 1;
-            padding: 0.75rem 1rem;
+            padding: 0.75rem 1rem 0.75rem 3rem;
             border: 3px solid var(--primary-blue);
             border-radius: 12px;
             font-family: inherit;
@@ -807,6 +1394,32 @@
                 </button>
             </div>
             
+            <!-- Multi-AI Selection -->
+            <div style="padding: 15px; border-bottom: 1px solid var(--border); background: #f8f9fa;">
+                <button id="ai-models-toggle" onclick="toggleAIModels()" style="width: 100%; padding: 10px; background: white; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-size: 14px; font-weight: 500;">
+                    <span>🤖 Select AI Models</span>
+                    <span id="ai-toggle-icon">▼</span>
+                </button>
+                <div id="ai-models-list" style="display: none; margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
+                    <label style="display: flex; align-items: center; gap: 8px; padding: 8px; background: white; border-radius: 6px; cursor: pointer;">
+                        <input type="checkbox" id="enable-chatgpt" style="width: 18px; height: 18px;">
+                        <span style="flex: 1; font-size: 14px;">ChatGPT</span>
+                        <span id="chatgpt-status">⚠️</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px; padding: 8px; background: white; border-radius: 6px; cursor: pointer;">
+                        <input type="checkbox" id="enable-claude" style="width: 18px; height: 18px;">
+                        <span style="flex: 1; font-size: 14px;">Claude</span>
+                        <span id="claude-status">⚠️</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px; padding: 8px; background: white; border-radius: 6px; cursor: pointer;">
+                        <input type="checkbox" id="enable-gemini" style="width: 18px; height: 18px;">
+                        <span style="flex: 1; font-size: 14px;">Gemini</span>
+                        <span id="gemini-status">⚠️</span>
+                    </label>
+                    <button onclick="alert('Configure API keys feature coming soon!')" style="width: 100%; margin-top: 5px; padding: 8px; background: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;">⚙️ Configure API Keys</button>
+                </div>
+            </div>
+            
             <div class="history-header">
                 <h3>📚 History</h3>
             </div>
@@ -838,13 +1451,189 @@
 
             <!-- Bottom Input -->
             <div class="input-container">
+                <div id="uploaded-files-container"></div>
                 <div class="input-wrapper">
+                    <button class="upload-btn" onclick="toggleUploadMenu()" title="Attach file">+</button>
+                    <div class="upload-menu" id="upload-menu">
+                        <div class="upload-menu-item" onclick="triggerFileUpload()">
+                            📄 Upload file
+                        </div>
+                    </div>
+                    <input type="file" id="file-input" class="file-input" accept=".txt,.md,.csv,.pdf,image/*" onchange="handleFileUpload(event)">
                     <textarea id="text-input" placeholder="Type your message here..." rows="1"></textarea>
                     <button class="action-btn" onclick="sendMessage()" id="send-btn">Send</button>
                 </div>
             </div>
         </div>
         <!-- End App Body -->
+    </div>
+
+    <!-- Processing Overlay -->
+    <div class="processing-overlay" id="processing-overlay">
+        <div class="processing-content">
+            <div class="processing-spinner"></div>
+            <h3 style="color: var(--text-dark); margin-bottom: 0.5rem;">Processing Image...</h3>
+            <p style="color: var(--text-gray); font-size: 0.9rem;" id="processing-status">Extracting text from image</p>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <span id="toast-message"></span>
+    </div>
+
+    <!-- Document Preview Modal -->
+    <div class="preview-modal" id="preview-modal">
+        <div class="preview-content">
+            <div class="preview-header">
+                <h3>
+                    <span>📄</span>
+                    <span id="preview-filename">Document Preview</span>
+                </h3>
+                <button class="preview-close" onclick="closePreviewModal()">×</button>
+            </div>
+            <div class="preview-tabs">
+                <button class="preview-tab active" onclick="switchPreviewTab('protected')">🛡️ Protected Version</button>
+                <button class="preview-tab" onclick="switchPreviewTab('original')">📝 Original Version</button>
+            </div>
+            <div style="padding: 0.75rem 1.5rem; background: var(--bg-light); border-bottom: 1px solid var(--border); font-size: 0.85rem; color: var(--text-gray);">
+                <span id="preview-note">💡 PDFs are displayed as images to preserve exact formatting (tables, columns, layout)</span>
+            </div>
+            <div class="preview-body">
+                <div class="preview-document" id="preview-document"></div>
+            </div>
+            <div class="preview-stats">
+                <div class="preview-stats-info">
+                    <span id="preview-pages">📄 0 pages</span>
+                    <span id="preview-words">📝 0 words</span>
+                    <span id="preview-protected">🛡️ 0 items protected</span>
+                </div>
+                <div class="preview-actions">
+                    <button class="preview-btn secondary" onclick="closePreviewModal()">Cancel</button>
+                    <button class="preview-btn primary" onclick="downloadFromPreview()">
+                        📥 Download Protected
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="shortcuts-modal" id="settings-modal">
+        <div class="shortcuts-content" style="max-width: 600px;">
+            <h3>⚙️ Settings</h3>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-dark);">🌍 Language</label>
+                <select id="settings-language" style="width: 100%; padding: 0.6rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; background: var(--white); color: var(--text-dark);">
+                    <option value="en">English</option>
+                    <option value="es">Español</option>
+                    <option value="fr">Français</option>
+                    <option value="de">Deutsch</option>
+                    <option value="pt">Português</option>
+                    <option value="zh">中文</option>
+                </select>
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-dark);">🎨 Theme</label>
+                <select id="settings-theme" style="width: 100%; padding: 0.6rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; background: var(--white); color: var(--text-dark);">
+                    <option value="light">Light</option>
+                    <option value="dark">Dark</option>
+                    <option value="auto">Auto (System)</option>
+                </select>
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                    <input type="checkbox" id="settings-notifications" style="width: 18px; height: 18px;">
+                    <span style="font-weight: 600; color: var(--text-dark);">🔔 Enable notifications</span>
+                </label>
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                    <input type="checkbox" id="settings-auto-save" style="width: 18px; height: 18px;">
+                    <span style="font-weight: 600; color: var(--text-dark);">💾 Auto-save history</span>
+                </label>
+            </div>
+            
+            <div style="margin-bottom: 1.5rem; padding: 1rem; background: var(--bg-light); border-radius: 8px; border: 2px solid var(--border);">
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; margin-bottom: 0.75rem;">
+                    <input type="checkbox" id="settings-ai-enabled" style="width: 18px; height: 18px;">
+                    <span style="font-weight: 600; color: var(--text-dark);">🤖 Enable AI Chat Integration</span>
+                </label>
+                <div id="ai-config" style="display: none; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border);">
+                    <label style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--text-gray);">AI Provider</label>
+                    <select id="settings-ai-provider" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; background: var(--white); color: var(--text-dark); margin-bottom: 0.75rem;">
+                        <option value="openai">OpenAI (ChatGPT)</option>
+                        <option value="anthropic">Anthropic (Claude)</option>
+                        <option value="google">Google (Gemini)</option>
+                    </select>
+                    <label style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--text-gray);">API Key</label>
+                    <input type="password" id="settings-ai-key" placeholder="Enter your API key" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; background: var(--white); color: var(--text-dark);">
+                    <small style="display: block; margin-top: 0.5rem; color: var(--text-gray); font-size: 0.75rem;">🔒 Your API key is stored locally and never sent to our servers</small>
+                    <button onclick="testAIConnection()" style="margin-top: 0.75rem; padding: 0.5rem 1rem; background: var(--primary-blue); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem; width: 100%;">
+                        📡 Test Connection
+                    </button>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 0.75rem; margin-top: 2rem;">
+                <button class="action-btn" onclick="saveSettings()" style="flex: 1;">💾 Save Settings</button>
+                <button class="action-btn" onclick="closeSettingsModal()" style="flex: 1; background: var(--border); color: var(--text-dark);">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Keyboard Shortcuts Modal -->
+    <div class="shortcuts-modal" id="shortcuts-modal">
+        <div class="shortcuts-content">
+            <h3>⌨️ Keyboard Shortcuts</h3>
+            <div class="shortcut-item">
+                <span class="shortcut-desc">Send message</span>
+                <div class="shortcut-keys">
+                    <span class="key">Ctrl</span>
+                    <span>+</span>
+                    <span class="key">Enter</span>
+                </div>
+            </div>
+            <div class="shortcut-item">
+                <span class="shortcut-desc">New chat</span>
+                <div class="shortcut-keys">
+                    <span class="key">Ctrl</span>
+                    <span>+</span>
+                    <span class="key">K</span>
+                </div>
+            </div>
+            <div class="shortcut-item">
+                <span class="shortcut-desc">Copy protected text</span>
+                <div class="shortcut-keys">
+                    <span class="key">Ctrl</span>
+                    <span>+</span>
+                    <span class="key">Shift</span>
+                    <span>+</span>
+                    <span class="key">C</span>
+                </div>
+            </div>
+            <div class="shortcut-item">
+                <span class="shortcut-desc">Show shortcuts</span>
+                <div class="shortcut-keys">
+                    <span class="key">Ctrl</span>
+                    <span>+</span>
+                    <span class="key">/</span>
+                </div>
+            </div>
+            <div class="shortcut-item">
+                <span class="shortcut-desc">Close modal</span>
+                <div class="shortcut-keys">
+                    <span class="key">Esc</span>
+                </div>
+            </div>
+            <div style="margin-top: 1.5rem; text-align: center;">
+                <button class="action-btn" onclick="closeShortcutsModal()" style="width: auto;">Got it!</button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -854,6 +1643,9 @@
         let currentHistoryId = null;
         let messageCounter = 0;
         let currentChatMessages = []; // Store all messages in current chat
+        let uploadedFile = null; // Store uploaded file
+        let processedImageData = null; // Store processed image data (original + protected)
+        let previewData = null; // Store document preview data
 
         // Dark mode toggle
         const darkMode = document.getElementById('darkMode');
@@ -862,10 +1654,20 @@
             localStorage.setItem('darkMode', darkMode.checked);
         });
 
-        // Load saved dark mode
-        const savedDarkMode = localStorage.getItem('darkMode') === 'true';
-        darkMode.checked = savedDarkMode;
-        document.documentElement.setAttribute('data-theme', savedDarkMode ? 'dark' : 'light');
+        // Load saved dark mode preference and apply theme on startup
+        const savedTheme = localStorage.getItem('theme') || 'auto';
+        if (savedTheme === 'dark') {
+            darkMode.checked = true;
+            document.documentElement.setAttribute('data-theme', 'dark');
+        } else if (savedTheme === 'light') {
+            darkMode.checked = false;
+            document.documentElement.setAttribute('data-theme', 'light');
+        } else {
+            // Auto - use system preference
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            darkMode.checked = prefersDark;
+            document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+        }
 
         // Auto-resize textarea
         const textInput = document.getElementById('text-input');
@@ -882,11 +1684,1065 @@
             }
         });
 
+        // Global keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+            const ctrlKey = isMac ? e.metaKey : e.ctrlKey;
+
+            // Ctrl/Cmd + Enter: Send message
+            if (ctrlKey && e.key === 'Enter') {
+                e.preventDefault();
+                sendMessage();
+            }
+
+            // Ctrl/Cmd + K: New chat
+            if (ctrlKey && e.key === 'k') {
+                e.preventDefault();
+                createNewChat();
+                showToast('✨ New chat started', 'success');
+            }
+
+            // Ctrl/Cmd + Shift + C: Copy protected text from last message
+            if (ctrlKey && e.shiftKey && e.key === 'C') {
+                e.preventDefault();
+                const lastMessage = document.querySelector('.chat-message:last-child');
+                if (lastMessage) {
+                    quickCopyProtected(lastMessage.id);
+                }
+            }
+
+            // Ctrl/Cmd + /: Show shortcuts
+            if (ctrlKey && e.key === '/') {
+                e.preventDefault();
+                showShortcutsModal();
+            }
+
+            // Esc: Close modals
+            if (e.key === 'Escape') {
+                closeShortcutsModal();
+                closeSettingsModal();
+            }
+        });
+
+        // Toast notification function
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+            
+            toastMessage.textContent = message;
+            toast.className = 'toast show ' + type;
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Quick copy protected text
+        function quickCopyProtected(messageId) {
+            const messageDiv = document.getElementById(messageId);
+            if (!messageDiv) return;
+            
+            const protectedText = messageDiv.dataset.protectedText;
+            if (!protectedText) return;
+            
+            navigator.clipboard.writeText(protectedText).then(() => {
+                showToast('✅ Protected text copied to clipboard!', 'success');
+            }).catch(() => {
+                showToast('❌ Failed to copy text', 'error');
+            });
+        }
+
+        // Show shortcuts modal
+        function showShortcutsModal() {
+            document.getElementById('shortcuts-modal').classList.add('show');
+        }
+
+        // Close shortcuts modal
+        function closeShortcutsModal() {
+            document.getElementById('shortcuts-modal').classList.remove('show');
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('shortcuts-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeShortcutsModal();
+            }
+        });
+        
+        document.getElementById('settings-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeSettingsModal();
+            }
+        });
+
+        // Document Card Functions (Claude-style)
+        function showDocumentCard(originalText, fileName, words, pages) {
+            // Check if previewData already exists (e.g., from PDF processing)
+            if (previewData && previewData.isPDF) {
+                // PDF already processed, just show the card
+                const count = previewData.protectedCount;
+                
+                const chatArea = document.getElementById('chat-area');
+                const welcomePrompt = document.querySelector('.welcome-prompt');
+                if (welcomePrompt) welcomePrompt.remove();
+
+                const cardId = 'doc-card-' + Date.now();
+                const cardDiv = document.createElement('div');
+                cardDiv.className = 'chat-message';
+                cardDiv.innerHTML = `
+                    <div class="chat-message-inner">
+                        <div class="message-label">
+                            <span>📄 Document Uploaded</span>
+                        </div>
+                        <div class="document-card" id="${cardId}" onclick="openDocumentPreview('${cardId}')">
+                            <div class="document-card-header">
+                                <div class="document-icon">📄</div>
+                                <div class="document-info">
+                                    <div class="document-name">${fileName}</div>
+                                    <div class="document-meta">${(uploadedFile.size / 1024).toFixed(1)} KB</div>
+                                </div>
+                            </div>
+                            <div class="document-stats">
+                                <div class="document-stat">
+                                    <span>📄</span>
+                                    <span>${pages} page${pages > 1 ? 's' : ''}</span>
+                                </div>
+                                <div class="document-stat">
+                                    <span>📝</span>
+                                    <span>${words.toLocaleString()} words</span>
+                                </div>
+                                <div class="document-stat">
+                                    <span>🛡️</span>
+                                    <span>${count} protected</span>
+                                </div>
+                            </div>
+                            <div class="document-actions" onclick="event.stopPropagation()">
+                                <button class="doc-action-btn" onclick="openDocumentPreview('${cardId}')">
+                                    👁️ Preview
+                                </button>
+                                <button class="doc-action-btn primary" onclick="downloadProtectedFromCard()">
+                                    📥 Download
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                chatArea.appendChild(cardDiv);
+                chatArea.scrollTop = chatArea.scrollHeight;
+                document.getElementById('uploaded-files-container').innerHTML = '';
+                return;
+            }
+            
+            // Regular text file processing
+            const customTermsInput = document.getElementById('custom-terms');
+            
+            // Protect the text
+            placeholderMap = {};
+            let protectedText = originalText;
+            let count = 0;
+
+            // Get custom terms
+            const customTerms = customTermsInput.value
+                .split('\n')
+                .map(t => t.trim())
+                .filter(Boolean);
+
+            // Mask emails
+            protectedText = protectedText.replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, function(match) {
+                count++;
+                const placeholder = '[LDB_EMAIL' + count + ']';
+                placeholderMap[placeholder] = match;
+                return placeholder;
+            });
+
+            // Mask phones
+            protectedText = protectedText.replace(/\+?[1-9]\d{1,14}|\(?\d{3}\)?[-\s]?\d{3}[-\s]?\d{4}/g, function(match) {
+                count++;
+                const placeholder = '[LDB_PHONE' + count + ']';
+                placeholderMap[placeholder] = match;
+                return placeholder;
+            });
+
+            // Mask custom terms
+            customTerms.forEach(term => {
+                const regex = new RegExp('\\b' + term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'gi');
+                protectedText = protectedText.replace(regex, function(match) {
+                    count++;
+                    const placeholder = '[LDB_CUSTOM' + count + ']';
+                    placeholderMap[placeholder] = match;
+                    return placeholder;
+                });
+            });
+
+            // Store preview data
+            previewData = {
+                originalText: originalText,
+                protectedText: protectedText,
+                fileName: fileName,
+                protectedCount: count,
+                placeholderMap: {...placeholderMap},
+                words: words,
+                pages: pages
+            };
+
+            // Add document card to chat
+            const chatArea = document.getElementById('chat-area');
+            const welcomePrompt = document.querySelector('.welcome-prompt');
+            if (welcomePrompt) welcomePrompt.remove();
+
+            const cardId = 'doc-card-' + Date.now();
+            const cardDiv = document.createElement('div');
+            cardDiv.className = 'chat-message';
+            cardDiv.innerHTML = `
+                <div class="chat-message-inner">
+                    <div class="message-label">
+                        <span>📄 Document Uploaded</span>
+                    </div>
+                    <div class="document-card" id="${cardId}" onclick="openDocumentPreview('${cardId}')">
+                        <div class="document-card-header">
+                            <div class="document-icon">📄</div>
+                            <div class="document-info">
+                                <div class="document-name">${fileName}</div>
+                                <div class="document-meta">${(uploadedFile.size / 1024).toFixed(1)} KB</div>
+                            </div>
+                        </div>
+                        <div class="document-stats">
+                            <div class="document-stat">
+                                <span>📄</span>
+                                <span>${pages} page${pages > 1 ? 's' : ''}</span>
+                            </div>
+                            <div class="document-stat">
+                                <span>📝</span>
+                                <span>${words.toLocaleString()} words</span>
+                            </div>
+                            <div class="document-stat">
+                                <span>🛡️</span>
+                                <span>${count} protected</span>
+                            </div>
+                        </div>
+                        <div class="document-actions" onclick="event.stopPropagation()">
+                            <button class="doc-action-btn" onclick="openDocumentPreview('${cardId}')">
+                                👁️ Preview
+                            </button>
+                            <button class="doc-action-btn primary" onclick="downloadProtectedFromCard()">
+                                📥 Download
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            chatArea.appendChild(cardDiv);
+            chatArea.scrollTop = chatArea.scrollHeight;
+            
+            // Clear uploaded file indicator
+            document.getElementById('uploaded-files-container').innerHTML = '';
+        }
+
+        function openDocumentPreview(cardId) {
+            if (!previewData) return;
+            
+            // Update modal
+            document.getElementById('preview-filename').textContent = previewData.fileName;
+            document.getElementById('preview-pages').textContent = `📄 ${previewData.pages} page${previewData.pages > 1 ? 's' : ''}`;
+            document.getElementById('preview-words').textContent = `📝 ${previewData.words.toLocaleString()} words`;
+            document.getElementById('preview-protected').textContent = `🛡️ ${previewData.protectedCount} item${previewData.protectedCount > 1 ? 's' : ''} protected`;
+            
+            // Show protected version
+            switchPreviewTab('protected');
+            
+            // Show modal
+            document.getElementById('preview-modal').classList.add('show');
+        }
+
+        function downloadProtectedFromCard() {
+            if (!previewData) return;
+            
+            if (previewData.isPDF && previewData.pdfPages) {
+                // Download PDF as HTML with images
+                downloadFromPreview();
+            } else {
+                // Regular text download
+                const blob = new Blob([previewData.protectedText], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                const baseName = previewData.fileName.replace(/\.[^/.]+$/, '');
+                link.download = `${baseName}_protected.txt`;
+                link.click();
+                URL.revokeObjectURL(url);
+                
+                showToast('✅ Protected document downloaded!', 'success');
+            }
+        }
+
+        // Document Preview Functions
+        function showDocumentPreview(originalText, fileName) {
+            const customTermsInput = document.getElementById('custom-terms');
+            
+            // Protect the text
+            placeholderMap = {};
+            let protectedText = originalText;
+            let count = 0;
+
+            // Get custom terms
+            const customTerms = customTermsInput.value
+                .split('\n')
+                .map(t => t.trim())
+                .filter(Boolean);
+
+            // Mask emails
+            protectedText = protectedText.replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, function(match) {
+                count++;
+                const placeholder = '[LDB_EMAIL' + count + ']';
+                placeholderMap[placeholder] = match;
+                return placeholder;
+            });
+
+            // Mask phones
+            protectedText = protectedText.replace(/\+?[1-9]\d{1,14}|\(?\d{3}\)?[-\s]?\d{3}[-\s]?\d{4}/g, function(match) {
+                count++;
+                const placeholder = '[LDB_PHONE' + count + ']';
+                placeholderMap[placeholder] = match;
+                return placeholder;
+            });
+
+            // Mask custom terms
+            customTerms.forEach(term => {
+                const regex = new RegExp('\\b' + term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'gi');
+                protectedText = protectedText.replace(regex, function(match) {
+                    count++;
+                    const placeholder = '[LDB_CUSTOM' + count + ']';
+                    placeholderMap[placeholder] = match;
+                    return placeholder;
+                });
+            });
+
+            // Store preview data
+            previewData = {
+                originalText: originalText,
+                protectedText: protectedText,
+                fileName: fileName,
+                protectedCount: count,
+                placeholderMap: {...placeholderMap}
+            };
+
+            // Calculate stats
+            const words = originalText.split(/\s+/).filter(w => w.length > 0).length;
+            const pages = Math.ceil(words / 250);
+
+            // Update modal
+            document.getElementById('preview-filename').textContent = fileName;
+            document.getElementById('preview-pages').textContent = `📄 ${pages} page${pages > 1 ? 's' : ''}`;
+            document.getElementById('preview-words').textContent = `📝 ${words.toLocaleString()} words`;
+            document.getElementById('preview-protected').textContent = `🛡️ ${count} item${count > 1 ? 's' : ''} protected`;
+            
+            // Show protected version with highlights
+            switchPreviewTab('protected');
+            
+            // Show modal
+            document.getElementById('preview-modal').classList.add('show');
+        }
+
+        // Enhanced format detection and preservation
+        function detectAndPreserveFormat(content, fileName) {
+            // ALWAYS preserve exact formatting by default
+            // This ensures tabular data, spacing, and alignment are maintained exactly as in the original
+            return formatAsPreservedText(content);
+        }
+        
+        function formatAsTable(content, delimiter) {
+            const lines = content.trim().split('\n').filter(line => line.trim());
+            if (lines.length < 2) return formatAsPreservedText(content);
+            
+            let html = '<table style="border-collapse: collapse; width: 100%; margin: 1rem 0; font-family: inherit;">';
+            
+            lines.forEach((line, index) => {
+                const cells = line.split(delimiter).map(cell => cell.trim());
+                if (cells.length < 2) return; // Skip lines that don't have multiple columns
+                
+                const tag = index === 0 ? 'th' : 'td';
+                const style = index === 0 ? 
+                    'style="border: 1px solid var(--border); padding: 0.75rem; background: var(--bg-light); font-weight: 600; text-align: left;"' :
+                    'style="border: 1px solid var(--border); padding: 0.75rem; vertical-align: top;"';
+                
+                html += '<tr>';
+                cells.forEach(cell => {
+                    html += `<${tag} ${style}>${escapeHtml(cell)}</${tag}>`;
+                });
+                html += '</tr>';
+            });
+            
+            html += '</table>';
+            return html;
+        }
+        
+        function formatAsMarkdown(content) {
+            let html = content
+                // Headers
+                .replace(/^### (.*$)/gm, '<h3 style="margin: 1rem 0 0.5rem 0; color: var(--text-dark);">$1</h3>')
+                .replace(/^## (.*$)/gm, '<h2 style="margin: 1.5rem 0 0.5rem 0; color: var(--text-dark);">$1</h2>')
+                .replace(/^# (.*$)/gm, '<h1 style="margin: 2rem 0 0.5rem 0; color: var(--text-dark);">$1</h1>')
+                // Bold and italic
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                // Lists
+                .replace(/^- (.*$)/gm, '<li style="margin: 0.25rem 0;">$1</li>')
+                .replace(/^\* (.*$)/gm, '<li style="margin: 0.25rem 0;">$1</li>')
+                // Code blocks
+                .replace(/`([^`]+)`/g, '<code style="background: var(--bg-light); padding: 0.2rem 0.4rem; border-radius: 3px; font-family: monospace;">$1</code>');
+            
+            // Wrap consecutive list items in ul tags
+            html = html.replace(/((<li[^>]*>.*?<\/li>\s*)+)/g, '<ul style="margin: 0.5rem 0; padding-left: 1.5rem;">$1</ul>');
+            
+            // Convert line breaks to paragraphs
+            html = html.split('\n\n').map(paragraph => {
+                if (paragraph.trim() && !paragraph.includes('<h') && !paragraph.includes('<ul') && !paragraph.includes('<table')) {
+                    return `<p style="margin: 0.5rem 0; line-height: 1.6;">${paragraph.trim()}</p>`;
+                }
+                return paragraph;
+            }).join('\n');
+            
+            return html;
+        }
+        
+        function formatAsList(content) {
+            const lines = content.split('\n');
+            let html = '';
+            let inList = false;
+            
+            lines.forEach(line => {
+                const trimmed = line.trim();
+                if (trimmed.startsWith('- ') || trimmed.startsWith('* ') || trimmed.startsWith('• ')) {
+                    if (!inList) {
+                        html += '<ul style="margin: 0.5rem 0; padding-left: 1.5rem;">';
+                        inList = true;
+                    }
+                    const text = trimmed.substring(2).trim();
+                    html += `<li style="margin: 0.25rem 0;">${escapeHtml(text)}</li>`;
+                } else {
+                    if (inList) {
+                        html += '</ul>';
+                        inList = false;
+                    }
+                    if (trimmed) {
+                        html += `<p style="margin: 0.5rem 0; line-height: 1.6;">${escapeHtml(trimmed)}</p>`;
+                    } else {
+                        html += '<br>';
+                    }
+                }
+            });
+            
+            if (inList) {
+                html += '</ul>';
+            }
+            
+            return html;
+        }
+        
+        function formatAsPreservedText(content) {
+            // Use monospace font to preserve exact spacing and alignment for tabular data
+            return `<pre style="white-space: pre; overflow-x: auto; font-family: 'Monaco', 'Menlo', 'Courier New', monospace; margin: 0; line-height: 1.6; font-size: 0.9rem;">${escapeHtml(content)}</pre>`;
+        }
+
+        function switchPreviewTab(view) {
+            if (!previewData) return;
+            
+            const tabs = document.querySelectorAll('.preview-tab');
+            const previewDoc = document.getElementById('preview-document');
+            
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            if (view === 'protected') {
+                tabs[0].classList.add('active');
+                
+                if (previewData.isPDF && previewData.pdfPages) {
+                    // Show PDF pages as images with PII redacted visually
+                    let pdfHtml = '';
+                    previewData.pdfPages.forEach((page, index) => {
+                        // Create canvas to draw redactions on the page image
+                        const canvas = document.createElement('canvas');
+                        const img = new Image();
+                        img.src = page.image;
+                        
+                        pdfHtml += `
+                            <div style="margin-bottom: 2rem; border: 1px solid var(--border); border-radius: 8px; overflow: hidden;">
+                                <div style="background: var(--bg-light); padding: 0.5rem 1rem; font-size: 0.85rem; color: var(--text-gray);">Page ${page.pageNumber} - Protected</div>
+                                <div style="position: relative; background: white;">
+                                    <img src="${page.image}" style="width: 100%; height: auto; display: block; filter: blur(0px);" alt="Page ${page.pageNumber}">
+                                    <div style="position: absolute; top: 10%; left: 10%; right: 10%; bottom: 10%; background: rgba(0,0,0,0.05); border: 2px dashed #fbbf24; border-radius: 8px; display: flex; align-items: center; justify-content: center; pointer-events: none;">
+                                        <div style="background: #fef3c7; color: #92400e; padding: 1rem 2rem; border-radius: 8px; font-weight: 600; font-size: 0.9rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                            🛡️ ${previewData.protectedCount} items protected in document
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    previewDoc.innerHTML = pdfHtml;
+                } else {
+                    // Regular text formatting
+                    const formattedContent = detectAndPreserveFormat(previewData.protectedText, previewData.fileName);
+                    let highlighted = formattedContent;
+                    Object.keys(previewData.placeholderMap).forEach(placeholder => {
+                        const escapedPlaceholder = escapeHtml(placeholder);
+                        const regex = new RegExp(escapedPlaceholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+                        highlighted = highlighted.replace(
+                            regex,
+                            `<span class="highlight-protected">${escapedPlaceholder}</span>`
+                        );
+                    });
+                    previewDoc.innerHTML = highlighted;
+                }
+            } else {
+                tabs[1].classList.add('active');
+                
+                if (previewData.isPDF && previewData.pdfPages) {
+                    // Show original PDF pages
+                    let pdfHtml = '';
+                    previewData.pdfPages.forEach((page, index) => {
+                        pdfHtml += `
+                            <div style="margin-bottom: 2rem; border: 1px solid var(--border); border-radius: 8px; overflow: hidden;">
+                                <div style="background: var(--bg-light); padding: 0.5rem 1rem; font-size: 0.85rem; color: var(--text-gray);">Page ${page.pageNumber}</div>
+                                <img src="${page.image}" style="width: 100%; height: auto; display: block; background: white;" alt="Page ${page.pageNumber}">
+                            </div>
+                        `;
+                    });
+                    previewDoc.innerHTML = pdfHtml;
+                } else {
+                    // Regular text formatting
+                    const formattedOriginal = detectAndPreserveFormat(previewData.originalText, previewData.fileName);
+                    previewDoc.innerHTML = formattedOriginal;
+                }
+            }
+        }
+
+        function downloadFromPreview() {
+            if (!previewData) return;
+            
+            if (previewData.isPDF && previewData.pdfPages) {
+                // For PDFs, create a multi-page document with images and protected text
+                let htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>${previewData.fileName} - Protected</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .page { background: white; margin: 20px auto; padding: 20px; max-width: 800px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); page-break-after: always; }
+        .page-header { background: #1e3a8a; color: white; padding: 10px; margin: -20px -20px 20px -20px; font-size: 14px; }
+        .page-image { width: 100%; border: 1px solid #ddd; margin: 10px 0; }
+        .protected-badge { background: #4ade80; color: #065f46; padding: 8px 16px; border-radius: 6px; display: inline-block; margin: 10px 0; font-weight: 600; }
+        .text-content { background: #f8f9fa; padding: 15px; border-radius: 6px; margin: 10px 0; font-family: monospace; white-space: pre-wrap; font-size: 12px; }
+        @media print { .page { box-shadow: none; margin: 0; page-break-after: always; } }
+    </style>
+</head>
+<body>
+    <div style="text-align: center; padding: 20px; background: white; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <h1 style="color: #1e3a8a; margin: 0 0 10px 0;">🛡️ Protected Document</h1>
+        <p style="color: #6b7280; margin: 0;">${previewData.fileName}</p>
+        <div class="protected-badge">🛡️ ${previewData.protectedCount} sensitive items protected</div>
+    </div>
+`;
+                
+                previewData.pdfPages.forEach((page, index) => {
+                    htmlContent += `
+    <div class="page">
+        <div class="page-header">Page ${page.pageNumber} of ${previewData.pages}</div>
+        <img src="${page.image}" class="page-image" alt="Page ${page.pageNumber}">
+        <div style="margin-top: 15px; padding: 10px; background: #fef3c7; border-left: 4px solid #f59e0b; color: #92400e; font-size: 13px;">
+            <strong>⚠️ Note:</strong> This page contains protected information. Sensitive data has been detected and masked in the text version below.
+        </div>
+    </div>
+`;
+                });
+                
+                htmlContent += `
+    <div class="page">
+        <div class="page-header">Protected Text Content</div>
+        <div class="text-content">${escapeHtml(previewData.protectedText)}</div>
+    </div>
+</body>
+</html>`;
+                
+                const blob = new Blob([htmlContent], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                const baseName = previewData.fileName.replace(/\.[^/.]+$/, '');
+                link.download = `${baseName}_protected.html`;
+                link.click();
+                URL.revokeObjectURL(url);
+                
+                showToast('✅ Protected PDF downloaded as HTML with images!', 'success');
+            } else {
+                // Regular text file
+                const blob = new Blob([previewData.protectedText], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                const baseName = previewData.fileName.replace(/\.[^/.]+$/, '');
+                link.download = `${baseName}_protected.txt`;
+                link.click();
+                URL.revokeObjectURL(url);
+                
+                showToast('✅ Protected document downloaded!', 'success');
+            }
+            
+            closePreviewModal();
+        }
+
+        function closePreviewModal() {
+            document.getElementById('preview-modal').classList.remove('show');
+        }
+
+        // Close preview modal when clicking outside
+        document.getElementById('preview-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closePreviewModal();
+            }
+        });
+
+        // File upload functions
+        function toggleUploadMenu() {
+            const menu = document.getElementById('upload-menu');
+            menu.classList.toggle('show');
+        }
+
+        function triggerFileUpload() {
+            document.getElementById('file-input').click();
+            toggleUploadMenu();
+        }
+
+        async function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            uploadedFile = file;
+
+            // Check if it's an image
+            if (file.type.startsWith('image/')) {
+                processImageWithOCR(file);
+            } else if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
+                // Process PDF and auto-protect
+                displayUploadedFile(file, null);
+                await processPDF(file);
+                // Auto-send after loading
+                setTimeout(() => sendMessage(), 500);
+            } else {
+                // Read text file content and auto-protect
+                displayUploadedFile(file, null);
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const content = e.target.result;
+                    const preview = content.length > 500 ? content.substring(0, 500) + '...' : content;
+                    document.getElementById('text-input').value = preview;
+                    document.getElementById('text-input').dataset.fullContent = content;
+                    
+                    // Show file stats
+                    const words = content.split(/\s+/).length;
+                    const pages = Math.ceil(words / 250); // ~250 words per page
+                    showToast(`📄 Loaded ${pages} page${pages > 1 ? 's' : ''} (${words.toLocaleString()} words)`, 'success');
+                    
+                    // Show document card instead of auto-sending
+                    setTimeout(() => showDocumentCard(content, file.name, words, pages), 500);
+                };
+                reader.readAsText(file);
+            }
+        }
+
+        async function processPDF(file) {
+            const overlay = document.getElementById('processing-overlay');
+            const statusText = document.getElementById('processing-status');
+            
+            overlay.classList.add('show');
+            statusText.textContent = 'Loading PDF...';
+
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                
+                const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+                const numPages = pdf.numPages;
+                let fullText = '';
+                let pdfPages = [];
+                
+                for (let i = 1; i <= numPages; i++) {
+                    statusText.textContent = `Processing page ${i} of ${numPages}...`;
+                    const page = await pdf.getPage(i);
+                    
+                    // Render page as image to preserve visual formatting
+                    const viewport = page.getViewport({ scale: 1.5 });
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+                    
+                    await page.render({ canvasContext: context, viewport: viewport }).promise;
+                    const pageImage = canvas.toDataURL('image/png');
+                    
+                    // Also extract text for PII detection
+                    const textContent = await page.getTextContent();
+                    const pageText = textContent.items.map(item => item.str).join(' ');
+                    fullText += pageText + '\n\n';
+                    
+                    pdfPages.push({
+                        pageNumber: i,
+                        image: pageImage,
+                        text: pageText
+                    });
+                }
+                
+                overlay.classList.remove('show');
+                
+                // Protect the extracted text for PII detection
+                const customTermsInput = document.getElementById('custom-terms');
+                const customTerms = customTermsInput.value.split('\n').map(t => t.trim()).filter(Boolean);
+                
+                let protectedText = fullText;
+                let count = 0;
+                const pdfPlaceholderMap = {};
+                
+                // Mask emails
+                protectedText = protectedText.replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, function(match) {
+                    count++;
+                    const placeholder = '[LDB_EMAIL' + count + ']';
+                    pdfPlaceholderMap[placeholder] = match;
+                    return placeholder;
+                });
+                
+                // Mask phones
+                protectedText = protectedText.replace(/\+?[1-9]\d{1,14}|\(?\d{3}\)?[-\s]?\d{3}[-\s]?\d{4}/g, function(match) {
+                    count++;
+                    const placeholder = '[LDB_PHONE' + count + ']';
+                    pdfPlaceholderMap[placeholder] = match;
+                    return placeholder;
+                });
+                
+                // Mask custom terms
+                customTerms.forEach(term => {
+                    const regex = new RegExp('\\b' + term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'gi');
+                    protectedText = protectedText.replace(regex, function(match) {
+                        count++;
+                        const placeholder = '[LDB_CUSTOM' + count + ']';
+                        pdfPlaceholderMap[placeholder] = match;
+                        return placeholder;
+                    });
+                });
+                
+                // Store PDF pages for preview
+                previewData = {
+                    originalText: fullText,
+                    protectedText: protectedText,
+                    fileName: file.name,
+                    protectedCount: count,
+                    placeholderMap: pdfPlaceholderMap,
+                    words: fullText.split(/\s+/).filter(w => w.length > 0).length,
+                    pages: numPages,
+                    pdfPages: pdfPages,
+                    isPDF: true
+                };
+                
+                const words = fullText.split(/\s+/).filter(w => w.length > 0).length;
+                showToast(`📄 Loaded ${numPages} page${numPages > 1 ? 's' : ''} (${words.toLocaleString()} words)`, 'success');
+                
+                // Show document card
+                showDocumentCard(fullText, file.name, words, numPages);
+                
+            } catch (error) {
+                overlay.classList.remove('show');
+                console.error('PDF Error:', error);
+                showToast('❌ Failed to process PDF', 'error');
+                removeUploadedFile();
+            }
+        }
+
+        async function processImageWithOCR(imageFile) {
+            const overlay = document.getElementById('processing-overlay');
+            const statusText = document.getElementById('processing-status');
+            
+            overlay.classList.add('show');
+            statusText.textContent = 'Extracting text from image...';
+
+            try {
+                // Load image
+                const img = await loadImageFile(imageFile);
+                const originalImageUrl = await getImageDataUrl(imageFile);
+                
+                // Perform OCR
+                statusText.textContent = 'Analyzing text and detecting PII...';
+                const result = await Tesseract.recognize(imageFile, 'eng', {
+                    logger: m => {
+                        if (m.status === 'recognizing text') {
+                            statusText.textContent = `Processing: ${Math.round(m.progress * 100)}%`;
+                        }
+                    }
+                });
+
+                // Find PII locations
+                statusText.textContent = 'Preparing protected version...';
+                const piiLocations = findPIIInOCRResult(result.data);
+
+                // Create redacted image
+                const protectedImageUrl = await createRedactedImage(img, piiLocations);
+                
+                overlay.classList.remove('show');
+                
+                // Store processed data
+                processedImageData = {
+                    fileName: imageFile.name,
+                    originalUrl: originalImageUrl,
+                    protectedUrl: protectedImageUrl,
+                    piiCount: piiLocations.length
+                };
+
+                // Display in input area
+                displayUploadedFile(imageFile, originalImageUrl);
+                
+            } catch (error) {
+                overlay.classList.remove('show');
+                console.error('OCR Error:', error);
+                alert('Failed to process image. Please try again or use a text file.');
+                removeUploadedFile();
+            }
+        }
+
+        function getImageDataUrl(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = e => resolve(e.target.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function sendImageMessage() {
+            if (!processedImageData) return;
+
+            const chatArea = document.getElementById('chat-area');
+            const messageId = 'msg-' + (++messageCounter);
+            
+            // Clear welcome message
+            const welcomePrompt = document.querySelector('.welcome-prompt');
+            if (welcomePrompt) welcomePrompt.remove();
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'chat-message';
+            messageDiv.id = messageId;
+            
+            messageDiv.innerHTML = `
+                <div class="chat-message-inner">
+                    <div class="message-label">
+                        <span>🖼️ ${processedImageData.fileName}</span>
+                    </div>
+                    <div class="message-content user">
+                        <div style="margin-bottom: 0.5rem; color: var(--accent-green); font-size: 0.85rem;">
+                            ✅ ${processedImageData.piiCount} sensitive item${processedImageData.piiCount !== 1 ? 's' : ''} detected
+                        </div>
+                        <img src="${processedImageData.protectedUrl}" class="image-preview" data-view="protected" alt="Protected image">
+                        <div class="message-tabs">
+                            <button class="message-tab" onclick="switchImageView('${messageId}', 'plain')">Plain Image</button>
+                            <button class="message-tab active" onclick="switchImageView('${messageId}', 'protected')">Protected Image</button>
+                        </div>
+                        <div class="message-actions">
+                            <button class="download-btn" onclick="downloadCurrentImage('${messageId}')">
+                                📥 Download
+                            </button>
+                            <button class="message-action-btn" data-label="Delete" onclick="deleteMessage('${messageId}')">🗑️</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Store data
+            messageDiv.dataset.originalUrl = processedImageData.originalUrl;
+            messageDiv.dataset.protectedUrl = processedImageData.protectedUrl;
+            messageDiv.dataset.fileName = processedImageData.fileName;
+            
+            chatArea.appendChild(messageDiv);
+            chatArea.scrollTop = chatArea.scrollHeight;
+            
+            // Clear uploaded file and processed data
+            processedImageData = null;
+            removeUploadedFile();
+        }
+
+        function switchImageView(messageId, view) {
+            const messageDiv = document.getElementById(messageId);
+            if (!messageDiv) return;
+            
+            const img = messageDiv.querySelector('.image-preview');
+            const tabs = messageDiv.querySelectorAll('.message-tab');
+            
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            if (view === 'plain') {
+                img.src = messageDiv.dataset.originalUrl;
+                img.dataset.view = 'plain';
+                tabs[0].classList.add('active');
+            } else {
+                img.src = messageDiv.dataset.protectedUrl;
+                img.dataset.view = 'protected';
+                tabs[1].classList.add('active');
+            }
+        }
+
+        function downloadCurrentImage(messageId) {
+            const messageDiv = document.getElementById(messageId);
+            if (!messageDiv) return;
+            
+            const img = messageDiv.querySelector('.image-preview');
+            const view = img.dataset.view;
+            const fileName = messageDiv.dataset.fileName;
+            const dataUrl = view === 'plain' ? messageDiv.dataset.originalUrl : messageDiv.dataset.protectedUrl;
+            
+            const link = document.createElement('a');
+            link.href = dataUrl;
+            const prefix = view === 'plain' ? 'original_' : 'protected_';
+            link.download = prefix + fileName.replace(/\.[^/.]+$/, '') + '.png';
+            link.click();
+        }
+
+        function loadImageFile(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = () => resolve(img);
+                    img.onerror = reject;
+                    img.src = e.target.result;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function findPIIInOCRResult(ocrData) {
+            const piiLocations = [];
+            const customTerms = document.getElementById('custom-terms').value
+                .split('\n')
+                .map(t => t.trim())
+                .filter(Boolean);
+
+            ocrData.words.forEach(word => {
+                const text = word.text;
+                
+                // Check for email
+                if (/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/.test(text)) {
+                    piiLocations.push({ bbox: word.bbox, type: 'email', text: text });
+                }
+                
+                // Check for phone
+                if (/\+?[1-9]\d{1,14}|\(?\d{3}\)?[-\s]?\d{3}[-\s]?\d{4}/.test(text)) {
+                    piiLocations.push({ bbox: word.bbox, type: 'phone', text: text });
+                }
+                
+                // Check custom terms
+                customTerms.forEach(term => {
+                    if (text.toLowerCase().includes(term.toLowerCase())) {
+                        piiLocations.push({ bbox: word.bbox, type: 'custom', text: text });
+                    }
+                });
+            });
+
+            return piiLocations;
+        }
+
+        async function createRedactedImage(img, piiLocations) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = img.width;
+            canvas.height = img.height;
+            
+            // Draw original image
+            ctx.drawImage(img, 0, 0);
+            
+            // Redact PII areas with black boxes
+            ctx.fillStyle = 'black';
+            piiLocations.forEach(location => {
+                const bbox = location.bbox;
+                const padding = 2; // Add small padding
+                ctx.fillRect(
+                    bbox.x0 - padding,
+                    bbox.y0 - padding,
+                    (bbox.x1 - bbox.x0) + (padding * 2),
+                    (bbox.y1 - bbox.y0) + (padding * 2)
+                );
+            });
+            
+            return canvas.toDataURL('image/png');
+        }
+
+        function displayUploadedFile(file, imageUrl) {
+            const container = document.getElementById('uploaded-files-container');
+            
+            if (imageUrl) {
+                container.innerHTML = `
+                    <div class="uploaded-file">
+                        <img src="${imageUrl}" alt="Preview">
+                        <div class="uploaded-file-info">
+                            <div>📄 ${file.name}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-gray); margin-top: 0.25rem;">Ready to send</div>
+                        </div>
+                        <button onclick="removeUploadedFile()" title="Remove">×</button>
+                    </div>
+                `;
+            } else {
+                const sizeKB = (file.size / 1024).toFixed(1);
+                container.innerHTML = `
+                    <div class="uploaded-file">
+                        <div class="uploaded-file-info">
+                            <div>📄 ${file.name}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-gray); margin-top: 0.25rem;">${sizeKB} KB • Loading...</div>
+                        </div>
+                        <button onclick="removeUploadedFile()" title="Remove">×</button>
+                    </div>
+                `;
+            }
+        }
+
+        function removeUploadedFile() {
+            uploadedFile = null;
+            processedImageData = null;
+            document.getElementById('uploaded-files-container').innerHTML = '';
+            document.getElementById('file-input').value = '';
+            document.getElementById('text-input').value = '';
+        }
+
+        // Close upload menu when clicking outside
+        document.addEventListener('click', function(e) {
+            const uploadBtn = e.target.closest('.upload-btn');
+            const uploadMenu = document.getElementById('upload-menu');
+            
+            if (!uploadBtn && !e.target.closest('.upload-menu')) {
+                uploadMenu.classList.remove('show');
+            }
+            
+            if (!e.target.closest('.history-actions')) {
+                document.querySelectorAll('.history-menu').forEach(m => m.classList.remove('show'));
+            }
+        });
+
         // Send message function
         function sendMessage() {
             const input = document.getElementById('text-input');
             const customTermsInput = document.getElementById('custom-terms');
-            const text = input.value.trim();
+            let text = input.value.trim();
+            
+            // Check if there's an uploaded image ready to process
+            if (processedImageData) {
+                sendImageMessage();
+                return;
+            }
+            
+            // Use full content if available (from file upload)
+            if (input.dataset.fullContent) {
+                text = input.dataset.fullContent;
+                delete input.dataset.fullContent;
+            }
             
             if (!text) return;
 
@@ -899,7 +2755,6 @@
             
             // Add has-messages class to chat area
             const chatArea = document.getElementById('chat-area');
-            chatArea.classList.add('has-messages');
 
             if (isRestore) {
                 // Restore operation: replace placeholders with original values
@@ -970,18 +2825,40 @@
             messageDiv.className = 'chat-message';
             messageDiv.id = messageId;
             
+            // Calculate document stats
+            const words = originalText.split(/\s+/).length;
+            const pages = Math.ceil(words / 250);
+            const isLargeDoc = words > 500;
+            
+            const docStats = isLargeDoc ? `
+                <div style="margin-bottom: 0.5rem; color: var(--text-gray); font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <span>📄 ${pages} page${pages > 1 ? 's' : ''} • ${words.toLocaleString()} words</span>
+                    <span style="color: var(--text-gray); font-size: 0.75rem;">•</span>
+                    <span style="background: var(--bg-light); padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.75rem; color: var(--text-gray); border: 1px solid var(--border);">👁️ Click tabs to view</span>
+                </div>
+            ` : '';
+            
+            const downloadBtn = isLargeDoc ? `
+                <button class="download-btn" onclick="downloadProtectedDocument('${messageId}')">
+                    📥 Download Protected Document
+                </button>
+            ` : '';
+            
             messageDiv.innerHTML = `
                 <div class="chat-message-inner">
                     <div class="message-label">
                         <span>👤 You</span>
                     </div>
                     <div class="message-content user">
-                        <div class="message-text" data-view="protected">${escapeHtml(protectedText)}</div>
+                        ${docStats}
+                        <div class="message-text" data-view="protected" style="${isLargeDoc ? 'max-height: 400px; overflow-y: auto; padding: 1rem; background: var(--bg-light); border-radius: 8px;' : ''}">${escapeHtml(protectedText)}</div>
                         <div class="message-tabs">
                             <button class="message-tab" onclick="switchMessageView('${messageId}', 'plain')">Plain Text</button>
                             <button class="message-tab active" onclick="switchMessageView('${messageId}', 'protected')">Protected Text</button>
                         </div>
                         <div class="message-actions">
+                            ${downloadBtn}
+                            <button class="message-action-btn" data-label="Ask AI" onclick="askAI('${messageId}')">🤖</button>
                             <button class="message-action-btn" data-label="Copy" onclick="copyMessage('${messageId}')">📋</button>
                             <button class="message-action-btn" data-label="Edit" onclick="editMessage('${messageId}')">✏️</button>
                             <button class="message-action-btn" data-label="Delete" onclick="deleteMessage('${messageId}')">🗑️</button>
@@ -1085,12 +2962,9 @@
             const text = view === 'plain' ? messageDiv.dataset.originalText : messageDiv.dataset.protectedText;
             
             navigator.clipboard.writeText(text).then(() => {
-                const btn = event.target;
-                const originalText = btn.textContent;
-                btn.textContent = '✅ Copied!';
-                setTimeout(() => {
-                    btn.textContent = originalText;
-                }, 2000);
+                showToast('✅ Text copied!', 'success');
+            }).catch(() => {
+                showToast('❌ Failed to copy', 'error');
             });
         }
 
@@ -1111,6 +2985,26 @@
             if (!confirm('Delete this message?')) return;
             const messageDiv = document.getElementById(messageId);
             if (messageDiv) messageDiv.remove();
+        }
+
+        function downloadProtectedDocument(messageId) {
+            const messageDiv = document.getElementById(messageId);
+            if (!messageDiv) return;
+            
+            const textDiv = messageDiv.querySelector('.message-text');
+            const view = textDiv.dataset.view;
+            const text = view === 'plain' ? messageDiv.dataset.originalText : messageDiv.dataset.protectedText;
+            const fileName = uploadedFile ? uploadedFile.name.replace(/\.[^/.]+$/, '') : 'document';
+            
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${fileName}_protected.txt`;
+            link.click();
+            URL.revokeObjectURL(url);
+            
+            showToast('✅ Protected document downloaded!', 'success');
         }
 
         function escapeHtml(text) {
@@ -1238,11 +3132,7 @@
         }
 
         // Close menus when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.history-actions')) {
-                document.querySelectorAll('.history-menu').forEach(m => m.classList.remove('show'));
-            }
-        });
+        // (Moved to file upload section above)
 
         // Load history on page load
         loadHistory();
@@ -1267,7 +3157,7 @@
 
         // Header button functions
         function showHelp() {
-            alert('Ledebe Protector helps protect your personal information when using AI tools.\n\n1. Type your message in the bottom input\n2. Add custom terms in the sidebar (optional)\n3. Your message appears with tabs to switch between Plain Text and Protected Text\n4. Copy the protected text to use safely with AI\n5. History saves all your conversations');
+            showShortcutsModal();
         }
 
         function showTutorial() {
@@ -1275,7 +3165,136 @@
         }
 
         function showSettings() {
-            alert('Settings coming soon!\n\nFor now, you can:\n- Toggle dark mode (top right)\n- Add custom terms (left sidebar)\n- Manage history (rename/delete items)');
+            const modal = document.getElementById('settings-modal');
+            
+            // Load current settings
+            const savedLanguage = localStorage.getItem('language') || 'en';
+            const savedTheme = localStorage.getItem('theme') || 'auto';
+            const savedNotifications = localStorage.getItem('notifications') !== 'false';
+            const savedAutoSave = localStorage.getItem('autoSave') !== 'false';
+            const savedAiEnabled = localStorage.getItem('aiEnabled') === 'true';
+            const savedAiProvider = localStorage.getItem('aiProvider') || 'openai';
+            const savedAiKey = localStorage.getItem('aiKey') || '';
+            
+            document.getElementById('settings-language').value = savedLanguage;
+            document.getElementById('settings-theme').value = savedTheme;
+            document.getElementById('settings-notifications').checked = savedNotifications;
+            document.getElementById('settings-auto-save').checked = savedAutoSave;
+            document.getElementById('settings-ai-enabled').checked = savedAiEnabled;
+            document.getElementById('settings-ai-provider').value = savedAiProvider;
+            document.getElementById('settings-ai-key').value = savedAiKey;
+            
+            // Show/hide AI config
+            document.getElementById('ai-config').style.display = savedAiEnabled ? 'block' : 'none';
+            
+            modal.classList.add('show');
+        }
+        
+        // Toggle AI config visibility - setup immediately
+        (function() {
+            const aiEnabledCheckbox = document.getElementById('settings-ai-enabled');
+            if (aiEnabledCheckbox) {
+                aiEnabledCheckbox.addEventListener('change', function() {
+                    const aiConfig = document.getElementById('ai-config');
+                    if (aiConfig) {
+                        aiConfig.style.display = this.checked ? 'block' : 'none';
+                    }
+                });
+            }
+        })();
+        
+        function closeSettingsModal() {
+            document.getElementById('settings-modal').classList.remove('show');
+        }
+        
+        function saveSettings() {
+            const language = document.getElementById('settings-language').value;
+            const theme = document.getElementById('settings-theme').value;
+            const notifications = document.getElementById('settings-notifications').checked;
+            const autoSave = document.getElementById('settings-auto-save').checked;
+            const aiEnabled = document.getElementById('settings-ai-enabled').checked;
+            const aiProvider = document.getElementById('settings-ai-provider').value;
+            const aiKey = document.getElementById('settings-ai-key').value;
+            
+            localStorage.setItem('language', language);
+            localStorage.setItem('theme', theme);
+            localStorage.setItem('notifications', notifications);
+            localStorage.setItem('autoSave', autoSave);
+            localStorage.setItem('aiEnabled', aiEnabled);
+            localStorage.setItem('aiProvider', aiProvider);
+            localStorage.setItem('aiKey', aiKey);
+            
+            // Reinitialize AI Chat with new settings
+            if (aiChat) {
+                aiChat.provider = aiProvider;
+                aiChat.apiKey = aiKey;
+                aiChat.enabled = aiEnabled;
+                console.log('✅ AI settings updated:', { provider: aiProvider, enabled: aiEnabled, hasKey: !!aiKey });
+            }
+            
+            // Apply theme
+            if (theme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                document.getElementById('darkMode').checked = true;
+            } else if (theme === 'light') {
+                document.documentElement.setAttribute('data-theme', 'light');
+                document.getElementById('darkMode').checked = false;
+            } else {
+                // Auto - use system preference
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+                document.getElementById('darkMode').checked = prefersDark;
+            }
+            
+            showToast('✅ Settings saved successfully!', 'success');
+            closeSettingsModal();
+        }
+        
+        // Test AI connection
+        async function testAIConnection() {
+            const aiEnabled = document.getElementById('settings-ai-enabled').checked;
+            const aiProvider = document.getElementById('settings-ai-provider').value;
+            const aiKey = document.getElementById('settings-ai-key').value;
+            
+            if (!aiEnabled) {
+                showToast('⚠️ Please enable AI integration first', 'error');
+                return;
+            }
+            
+            if (!aiKey || aiKey.trim().length === 0) {
+                showToast('⚠️ Please enter an API key', 'error');
+                return;
+            }
+            
+            showToast('📡 Testing connection to ' + aiProvider + '...', 'success');
+            
+            try {
+                // Create temporary AI instance with current settings
+                const testAI = new AIChat();
+                testAI.provider = aiProvider;
+                testAI.apiKey = aiKey;
+                testAI.enabled = true;
+                
+                // Send a simple test message
+                const testMessage = 'Hello, this is a test message. Please respond with "Test successful".';
+                const result = await testAI.sendMessage(testMessage, {}, false);
+                
+                console.log('✅ Test successful:', result);
+                showToast('✅ Connection successful! AI is working.', 'success');
+            } catch (error) {
+                console.error('❌ Test failed:', error);
+                let errorMsg = error.message || 'Unknown error';
+                
+                if (errorMsg.includes('401') || errorMsg.includes('authentication') || errorMsg.includes('API key')) {
+                    errorMsg = 'Invalid API key. Please check your key.';
+                } else if (errorMsg.includes('429')) {
+                    errorMsg = 'Rate limit exceeded. Your key works but you\'ve hit the limit.';
+                } else if (errorMsg.includes('network') || errorMsg.includes('fetch') || errorMsg.includes('CORS')) {
+                    errorMsg = 'Network error. Check your internet connection or try a different provider.';
+                }
+                
+                showToast('❌ Test failed: ' + errorMsg, 'error');
+            }
         }
 
         // New chat function
@@ -1324,6 +3343,226 @@
         if (savedSidebarState === 'false') {
             document.getElementById('history-sidebar').classList.add('collapsed');
         }
+
+        // ============================================
+        // AI CHAT INTEGRATION
+        // ============================================
+        
+        // Initialize AI Chat with error handling
+        let aiChat;
+        try {
+            aiChat = new AIChat();
+            console.log('✅ AI Chat initialized successfully');
+        } catch (error) {
+            console.error('❌ Failed to initialize AI Chat:', error);
+            aiChat = null;
+        }
+
+        // Test AI configuration
+        function testAIConfig() {
+            if (!aiChat) {
+                showToast('❌ AI Chat not initialized', 'error');
+                return;
+            }
+            
+            const isConfigured = aiChat.isConfigured();
+            const provider = localStorage.getItem('aiProvider') || 'openai';
+            const hasKey = !!localStorage.getItem('aiKey');
+            const enabled = localStorage.getItem('aiEnabled') === 'true';
+            
+            console.log('AI Configuration Test:', {
+                isConfigured,
+                provider,
+                hasKey,
+                enabled
+            });
+            
+            if (isConfigured) {
+                showToast(`✅ AI configured: ${provider}`, 'success');
+            } else {
+                showToast(`⚠️ AI not configured. Enable: ${enabled}, Has Key: ${hasKey}`, 'error');
+            }
+        }
+
+        // Ask AI function
+        async function askAI(messageId) {
+            console.log('🤖 askAI called for message:', messageId);
+            
+            if (!aiChat) {
+                showToast('❌ AI Chat not initialized. Please refresh the page.', 'error');
+                return;
+            }
+            
+            const messageDiv = document.getElementById(messageId);
+            if (!messageDiv) {
+                console.error('Message not found:', messageId);
+                showToast('❌ Message not found', 'error');
+                return;
+            }
+            
+            // Check if AI is configured
+            if (!aiChat.isConfigured()) {
+                console.warn('AI not configured');
+                showToast('⚠️ Please configure AI in Settings first', 'error');
+                setTimeout(() => showSettings(), 500);
+                return;
+            }
+            
+            const protectedText = messageDiv.dataset.protectedText;
+            console.log('Protected text to send:', protectedText.substring(0, 100) + '...');
+            
+            const sendBtn = document.getElementById('send-btn');
+            
+            try {
+                // Show loading
+                sendBtn.disabled = true;
+                sendBtn.textContent = '🤖 Asking AI...';
+                showToast('🤖 Sending to AI...', 'success');
+                
+                // Send to AI
+                const result = await aiChat.sendMessage(protectedText, placeholderMap);
+                console.log('✅ AI response received');
+                
+                // Add AI response to chat
+                addAIResponse(result.restored, result.protected);
+                
+                showToast('✅ AI responded!', 'success');
+            } catch (error) {
+                console.error('❌ AI Error:', error);
+                let errorMsg = error.message || 'Unknown error';
+                
+                // Provide helpful error messages
+                if (errorMsg.includes('401') || errorMsg.includes('authentication')) {
+                    errorMsg = 'Invalid API key. Please check your settings.';
+                } else if (errorMsg.includes('429')) {
+                    errorMsg = 'Rate limit exceeded. Please try again later.';
+                } else if (errorMsg.includes('network') || errorMsg.includes('fetch')) {
+                    errorMsg = 'Network error. Please check your connection.';
+                }
+                
+                showToast('❌ ' + errorMsg, 'error');
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.textContent = 'Send';
+            }
+        }
+
+        // Add AI response to chat
+        function addAIResponse(restoredText, protectedText) {
+            const chatArea = document.getElementById('chat-area');
+            const messageId = 'ai-msg-' + (++messageCounter);
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'chat-message restore';
+            messageDiv.id = messageId;
+            
+            messageDiv.innerHTML = `
+                <div class="chat-message-inner">
+                    <div class="message-label">
+                        <span>🤖 AI Assistant</span>
+                    </div>
+                    <div class="message-content" style="border-color: var(--primary-blue);">
+                        <div class="message-text" data-view="restored">${escapeHtml(restoredText)}</div>
+                        <div class="message-tabs">
+                            <button class="message-tab active" onclick="switchAIView('${messageId}', 'restored')">With Your Info</button>
+                            <button class="message-tab" onclick="switchAIView('${messageId}', 'protected')">Protected Version</button>
+                        </div>
+                        <div class="message-actions">
+                            <button class="message-action-btn" data-label="Copy" onclick="copyMessage('${messageId}')">📋</button>
+                            <button class="message-action-btn" data-label="Ask Again" onclick="askAI('${messageId}')">🤖</button>
+                            <button class="message-action-btn" data-label="Delete" onclick="deleteMessage('${messageId}')">🗑️</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            messageDiv.dataset.originalText = restoredText;
+            messageDiv.dataset.protectedText = protectedText;
+            
+            chatArea.appendChild(messageDiv);
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        // Switch AI response view
+        function switchAIView(messageId, view) {
+            const messageDiv = document.getElementById(messageId);
+            if (!messageDiv) return;
+            
+            const textDiv = messageDiv.querySelector('.message-text');
+            const tabs = messageDiv.querySelectorAll('.message-tab');
+            
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            if (view === 'restored') {
+                textDiv.textContent = messageDiv.dataset.originalText;
+                textDiv.dataset.view = 'restored';
+                tabs[0].classList.add('active');
+            } else {
+                textDiv.textContent = messageDiv.dataset.protectedText;
+                textDiv.dataset.view = 'protected';
+                tabs[1].classList.add('active');
+            }
+        }
+    </script>
+    <script>
+        // Sync AI checkboxes with existing AI settings
+        function updateAICheckboxes() {
+            const aiEnabled = localStorage.getItem('aiEnabled') === 'true';
+            const aiProvider = localStorage.getItem('aiProvider') || 'openai';
+            const aiKey = localStorage.getItem('aiKey') || '';
+            
+            if (aiEnabled && aiKey) {
+                if (aiProvider === 'openai') {
+                    document.getElementById('enable-chatgpt').checked = true;
+                    document.getElementById('chatgpt-status').textContent = '✅';
+                } else if (aiProvider === 'anthropic') {
+                    document.getElementById('enable-claude').checked = true;
+                    document.getElementById('claude-status').textContent = '✅';
+                } else if (aiProvider === 'google') {
+                    document.getElementById('enable-gemini').checked = true;
+                    document.getElementById('gemini-status').textContent = '✅';
+                }
+            }
+        }
+        
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', updateAICheckboxes);
+        } else {
+            updateAICheckboxes();
+        }
+        
+        // Toggle AI models dropdown
+        function toggleAIModels() {
+            const list = document.getElementById('ai-models-list');
+            const icon = document.getElementById('ai-toggle-icon');
+            if (list.style.display === 'none' || !list.style.display) {
+                list.style.display = 'flex';
+                icon.textContent = '▲';
+            } else {
+                list.style.display = 'none';
+                icon.textContent = '▼';
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            ['chatgpt', 'claude', 'gemini'].forEach(function(provider) {
+                const checkbox = document.getElementById('enable-' + provider);
+                if (checkbox) {
+                    checkbox.addEventListener('change', function() {
+                        const providerMap = {'chatgpt': 'openai', 'claude': 'anthropic', 'gemini': 'google'};
+                        if (this.checked) {
+                            localStorage.setItem('aiProvider', providerMap[provider]);
+                            localStorage.setItem('aiEnabled', 'true');
+                            ['chatgpt', 'claude', 'gemini'].forEach(function(p) {
+                                if (p !== provider) document.getElementById('enable-' + p).checked = false;
+                            });
+                            alert('✅ ' + provider.charAt(0).toUpperCase() + provider.slice(1) + ' enabled!');
+                        }
+                        updateAICheckboxes();
+                    });
+                }
+            });
+        });
     </script>
 </body>
 </html>

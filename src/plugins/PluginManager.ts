@@ -4,6 +4,8 @@
 
 import { Plugin, LLMPlugin } from './types';
 import { ChatGPTPlugin } from './ChatGPTPlugin';
+import { ClaudePlugin } from './ClaudePlugin';
+import { GeminiPlugin } from './GeminiPlugin';
 
 export class PluginManager {
   private plugins = new Map<string, Plugin>();
@@ -15,7 +17,15 @@ export class PluginManager {
 
   loadBuiltinPlugins(): void {
     const chatgptPlugin = new ChatGPTPlugin();
+    const claudePlugin = new ClaudePlugin();
+    const geminiPlugin = new GeminiPlugin();
+    
     this.plugins.set(chatgptPlugin.id, chatgptPlugin);
+    this.plugins.set(claudePlugin.id, claudePlugin);
+    this.plugins.set(geminiPlugin.id, geminiPlugin);
+    
+    // Load saved settings
+    this.loadSettings();
   }
 
   getPlugin(id: string): Plugin | undefined {
@@ -54,6 +64,20 @@ export class PluginManager {
   setPluginSettings(pluginId: string, settings: Record<string, any>): void {
     this.settings.set(pluginId, settings);
     this.saveSettings();
+  }
+
+  getEnabledPlugins(): string[] {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('ledebe-enabled-plugins');
+      return saved ? JSON.parse(saved) : [];
+    }
+    return [];
+  }
+
+  setEnabledPlugins(pluginIds: string[]): void {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('ledebe-enabled-plugins', JSON.stringify(pluginIds));
+    }
   }
 
   private saveSettings(): void {

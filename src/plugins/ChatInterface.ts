@@ -7,11 +7,11 @@ import { ChatManager } from './ChatManager';
 import { LLMPlugin, ChatConversation, ChatFolder } from './types';
 
 // API key URLs for different providers
-const API_KEY_URLS = {
+const API_KEY_URLS: Record<string, string> = {
   openai: 'https://platform.openai.com/api-keys',
   gemini: 'https://aistudio.google.com/app/apikey',
   claude: 'https://console.anthropic.com/account/keys'
-} as const;
+};
 
 // Default model configurations
 const DEFAULT_MODELS = {
@@ -54,16 +54,17 @@ export class ChatInterface {
     chatContainer.id = 'chat-interface';
     chatContainer.innerHTML = `
       <div class="chat-sidebar">
-        <div class="plugin-selector">
-          <select id="plugin-select">
-            <option value="">Select AI Plugin</option>
-          </select>
-          <button id="plugin-settings" title="Set up your API key here (Step 1)">⚙️</button>
-        </div>
-        
         <div class="conversation-controls">
           <button id="new-chat" title="Start a new conversation">+ New Chat</button>
           <button id="new-folder" title="Organize chats in folders">📁 New Folder</button>
+        </div>
+        
+        <div class="plugin-selector">
+          <h4 style="font-size: 0.9rem; margin-bottom: 0.75rem; color: white;">🤖 Select AI Models</h4>
+          <div id="plugin-checkboxes" style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.75rem;">
+            <!-- Plugin checkboxes will be loaded here -->
+          </div>
+          <button id="plugin-settings" title="Configure API keys for each AI" style="width: 100%; padding: 0.5rem; background: #34495e; border: 1px solid #34495e; border-radius: 6px; cursor: pointer; font-size: 0.85rem; color: white;">⚙️ Configure API Keys</button>
         </div>
         
         <div class="conversations-list" id="conversations-list">
@@ -99,9 +100,9 @@ export class ChatInterface {
             <h2 style="color: #2c3e50; margin-bottom: 20px;">🛡️ Welcome to Protected AI Chat!</h2>
             <div style="background: #e8f5e8; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: left;">
               <h3 style="color: #2c3e50; margin-top: 0;">🚀 Quick Setup (2 minutes):</h3>
-              <div style="margin: 10px 0; padding: 8px; background: white; border-radius: 4px; border-left: 4px solid #27ae60;"><strong>Step 1:</strong> Click the ⚙️ settings button on the left</div>
-              <div style="margin: 10px 0; padding: 8px; background: white; border-radius: 4px; border-left: 4px solid #3498db;"><strong>Step 2:</strong> Click "Get your API key" to get a free key from OpenAI</div>
-              <div style="margin: 10px 0; padding: 8px; background: white; border-radius: 4px; border-left: 4px solid #f39c12;"><strong>Step 3:</strong> Paste your API key and close settings</div>
+              <div style="margin: 10px 0; padding: 8px; background: white; border-radius: 4px; border-left: 4px solid #27ae60;"><strong>Step 1:</strong> Click "Configure API Keys" on the left</div>
+              <div style="margin: 10px 0; padding: 8px; background: white; border-radius: 4px; border-left: 4px solid #3498db;"><strong>Step 2:</strong> Get API keys from OpenAI, Claude, or Gemini</div>
+              <div style="margin: 10px 0; padding: 8px; background: white; border-radius: 4px; border-left: 4px solid #f39c12;"><strong>Step 3:</strong> Check the AI models you want to use</div>
               <div style="margin: 10px 0; padding: 8px; background: white; border-radius: 4px; border-left: 4px solid #9b59b6;"><strong>Step 4:</strong> Start chatting! Your personal info is automatically protected</div>
             </div>
             <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107;">
@@ -137,7 +138,6 @@ export class ChatInterface {
   }
 
   private attachEventListeners(): void {
-    const pluginSelect = document.getElementById('plugin-select') as HTMLSelectElement;
     const pluginSettings = document.getElementById('plugin-settings') as HTMLButtonElement;
     const newChatBtn = document.getElementById('new-chat') as HTMLButtonElement;
     const newFolderBtn = document.getElementById('new-folder') as HTMLButtonElement;
@@ -146,11 +146,6 @@ export class ChatInterface {
     const modelSelect = document.getElementById('model-select') as HTMLSelectElement;
     const exportBtn = document.getElementById('export-chat') as HTMLButtonElement;
     const closeBtn = document.getElementById('close-chat') as HTMLButtonElement;
-
-    pluginSelect.addEventListener('change', (e) => {
-      const pluginId = (e.target as HTMLSelectElement).value;
-      this.selectPlugin(pluginId);
-    });
 
     pluginSettings.addEventListener('click', () => {
       this.showPluginSettings();
@@ -206,21 +201,83 @@ export class ChatInterface {
   }
 
   private loadPlugins(): void {
-    const pluginSelect = document.getElementById('plugin-select') as HTMLSelectElement;
-    const llmPlugins = this.pluginManager.getLLMPlugins();
+    const checkboxContainer = document.getElementById('plugin-checkboxes');
+    if (!checkboxContainer) return;
     
-    llmPlugins.forEach((plugin, index) => {
-      const option = document.createElement('option');
-      option.value = plugin.id;
-      option.textContent = plugin.name;
-      pluginSelect.appendChild(option);
+    const llmPlugins = this.pluginManager.getLLMPlugins();
+    const enabledPlugins = this.pluginManager.getEnabledPlugins();
+    
+    checkboxContainer.innerHTML = '';
+    
+    llmPlugins.forEach((plugin) => {
+      const isEnabled = enabledPlugins.includes(plugin.id);
+      const settings = this.pluginManager.getPluginSettings(plugin.id);
+      const hasApiKey = settings.apiKey && settings.apiKey.length > 0;
       
-      // Auto-select first plugin
-      if (index === 0) {
-        pluginSelect.value = plugin.id;
-        this.selectPlugin(plugin.id);
-      }
+      const checkboxDiv = document.createElement('div');
+      checkboxDiv.style.cssText = 'display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; background: #34495e; border-radius: 6px; border: 1px solid #34495e;';
+      
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.id = `plugin-${plugin.id}`;
+      checkbox.checked = isEnabled;
+      checkbox.disabled = !hasApiKey;
+      checkbox.style.cssText = 'width: 18px; height: 18px; cursor: pointer;';
+      
+      checkbox.addEventListener('change', () => {
+        this.togglePlugin(plugin.id, checkbox.checked);
+      });
+      
+      const label = document.createElement('label');
+      label.htmlFor = `plugin-${plugin.id}`;
+      label.style.cssText = 'flex: 1; cursor: pointer; font-size: 0.85rem; color: white;';
+      label.textContent = plugin.name;
+      
+      const statusIcon = document.createElement('span');
+      statusIcon.style.fontSize = '0.9rem';
+      statusIcon.title = hasApiKey ? 'API key configured' : 'API key required';
+      statusIcon.textContent = hasApiKey ? '✅' : '⚠️';
+      
+      checkboxDiv.appendChild(checkbox);
+      checkboxDiv.appendChild(label);
+      checkboxDiv.appendChild(statusIcon);
+      
+      checkboxContainer.appendChild(checkboxDiv);
     });
+    
+    // Auto-select first enabled plugin if none selected
+    if (enabledPlugins.length > 0 && !this.currentPlugin) {
+      this.selectPlugin(enabledPlugins[0]);
+    }
+  }
+  
+  private togglePlugin(pluginId: string, enabled: boolean): void {
+    const enabledPlugins = this.pluginManager.getEnabledPlugins();
+    
+    if (enabled) {
+      if (!enabledPlugins.includes(pluginId)) {
+        enabledPlugins.push(pluginId);
+      }
+      // Auto-select if no plugin is currently selected
+      if (!this.currentPlugin) {
+        this.selectPlugin(pluginId);
+      }
+    } else {
+      const index = enabledPlugins.indexOf(pluginId);
+      if (index > -1) {
+        enabledPlugins.splice(index, 1);
+      }
+      // If current plugin was disabled, select another
+      if (this.currentPlugin?.id === pluginId) {
+        this.currentPlugin = null;
+        if (enabledPlugins.length > 0) {
+          this.selectPlugin(enabledPlugins[0]);
+        }
+      }
+    }
+    
+    this.pluginManager.setEnabledPlugins(enabledPlugins);
+    this.updateUI();
   }
 
   private selectPlugin(pluginId: string): void {
@@ -301,7 +358,13 @@ export class ChatInterface {
     const chatInput = document.getElementById('chat-input') as HTMLTextAreaElement;
     const message = chatInput.value.trim();
     
-    if (!message || !this.currentPlugin) return;
+    if (!message) return;
+
+    const enabledPlugins = this.pluginManager.getEnabledPlugins();
+    if (enabledPlugins.length === 0) {
+      alert('Please enable at least one AI plugin and configure its API key');
+      return;
+    }
 
     // Auto-create conversation if none exists
     if (!this.currentConversation) {
@@ -328,71 +391,39 @@ export class ChatInterface {
     // Show typing indicator
     this.showTypingIndicator();
 
-    try {
-      // Get plugin settings
-      const settings = this.pluginManager.getPluginSettings(this.currentPlugin.id);
+    // Send to all enabled AIs
+    const responses: Array<{plugin: LLMPlugin, response: string, error?: string}> = [];
+    
+    for (const pluginId of enabledPlugins) {
+      const plugin = this.pluginManager.getLLMPlugin(pluginId);
+      if (!plugin) continue;
       
-      // Send to AI (with PII protection handled in plugin)
-      const response = await this.currentPlugin.chat(message, settings);
-      
-      // Add AI response
-      const aiMessage = this.chatManager.addMessage(this.currentConversation.id, response, 'assistant');
-      this.displayMessage(response, 'assistant', aiMessage.id);
-      this.loadConversations(); // Refresh sidebar
-    } catch (error) {
-      console.error('Chat error:', error);
-      const errorMsg = error instanceof Error ? error.message : String(error);
-      
-      if (errorMsg.includes('401') || errorMsg.includes('API key') || errorMsg.includes('Unauthorized')) {
-        const pluginName = this.currentPlugin?.name.toLowerCase() || '';
-        let apiKeyUrl: string = API_KEY_URLS.openai;
-        let buttonText = '🔑 Get OpenAI API Key';
+      try {
+        const settings = this.pluginManager.getPluginSettings(plugin.id);
+        if (!settings.apiKey) continue;
         
-        if (pluginName.includes('gemini') || pluginName.includes('google')) {
-          apiKeyUrl = API_KEY_URLS.gemini;
-          buttonText = '💎 Get Gemini API Key';
-        } else if (pluginName.includes('claude') || pluginName.includes('anthropic')) {
-          apiKeyUrl = API_KEY_URLS.claude;
-          buttonText = '🤖 Get Claude API Key';
-        }
-        
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'message error';
-        errorDiv.innerHTML = `
-          <div class="message-content">
-            ❌ API Key Required<br><br>
-            <button style="background: #3498db; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; margin: 5px;">
-              ${buttonText}
-            </button><br><br>
-            Then click the ⚙️ button to configure your API key.
-          </div>
-          <div class="message-time">${new Date().toLocaleTimeString()}</div>
-        `;
-        
-        const apiBtn = errorDiv.querySelector('button');
-        apiBtn?.addEventListener('click', () => {
-          // Ensure HTTPS for security
-          const secureUrl = apiKeyUrl.startsWith('http://') ? apiKeyUrl.replace('http://', 'https://') : apiKeyUrl;
-          // @ts-ignore
-          if (window.electronAPI?.openExternal) {
-            // @ts-ignore
-            window.electronAPI.openExternal(secureUrl);
-          } else {
-            window.open(secureUrl, '_blank');
-          }
-        });
-        
-        const messagesContainer = document.getElementById('chat-messages');
-        if (messagesContainer) {
-          messagesContainer.appendChild(errorDiv);
-          messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-      } else {
-        this.displayMessage(`Error: ${errorMsg}`, 'error');
+        const response = await plugin.chat(message, settings);
+        responses.push({ plugin, response });
+      } catch (error) {
+        console.error(`Error from ${plugin.name}:`, error);
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        responses.push({ plugin, response: '', error: errorMsg });
       }
-    } finally {
-      this.hideTypingIndicator();
     }
+
+    this.hideTypingIndicator();
+
+    // Display all responses
+    for (const { plugin, response, error } of responses) {
+      if (error) {
+        this.displayAIError(plugin.name, error);
+      } else {
+        const aiMessage = this.chatManager.addMessage(this.currentConversation.id, response, 'assistant');
+        this.displayAIMessage(plugin.name, response, aiMessage.id);
+      }
+    }
+    
+    this.loadConversations(); // Refresh sidebar
   }
 
   private displayMessage(content: string, role: 'user' | 'assistant' | 'error', messageId?: string): void {
@@ -424,6 +455,85 @@ export class ChatInterface {
       editBtn?.addEventListener('click', () => this.editMessage(messageId, content));
       deleteBtn?.addEventListener('click', () => this.deleteMessage(messageId));
     }
+    
+    messagesContainer.appendChild(messageDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  }
+
+  private displayAIMessage(aiName: string, content: string, messageId: string): void {
+    const messagesContainer = document.getElementById('chat-messages');
+    if (!messagesContainer) return;
+
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message assistant';
+    messageDiv.dataset.messageId = messageId;
+    
+    messageDiv.innerHTML = `
+      <div class="message-header" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--text-gray);">
+        <span style="background: var(--primary-blue); color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-weight: 600;">${aiName}</span>
+      </div>
+      <div class="message-content">${this.formatMessage(content)}</div>
+      <div class="message-time">${new Date().toLocaleTimeString()}</div>
+    `;
+    
+    messagesContainer.appendChild(messageDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  }
+
+  private displayAIError(aiName: string, error: string): void {
+    const messagesContainer = document.getElementById('chat-messages');
+    if (!messagesContainer) return;
+
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message error';
+    
+    let errorMessage = error;
+    let actionButton = '';
+    
+    if (error.includes('401') || error.includes('API key') || error.includes('Unauthorized')) {
+      let apiKeyUrl = API_KEY_URLS.openai;
+      let buttonText = '🔑 Get API Key';
+      
+      if (aiName.toLowerCase().includes('gemini') || aiName.toLowerCase().includes('google')) {
+        apiKeyUrl = API_KEY_URLS.gemini;
+        buttonText = '💎 Get Gemini API Key';
+      } else if (aiName.toLowerCase().includes('claude') || aiName.toLowerCase().includes('anthropic')) {
+        apiKeyUrl = API_KEY_URLS.claude;
+        buttonText = '🤖 Get Claude API Key';
+      }
+      
+      actionButton = `
+        <button class="api-key-btn" style="background: #3498db; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; margin: 5px;">
+          ${buttonText}
+        </button>
+      `;
+      
+      setTimeout(() => {
+        const btn = messageDiv.querySelector('.api-key-btn');
+        btn?.addEventListener('click', () => {
+          const secureUrl = apiKeyUrl.startsWith('http://') ? apiKeyUrl.replace('http://', 'https://') : apiKeyUrl;
+          // @ts-ignore
+          if (window.electronAPI?.openExternal) {
+            // @ts-ignore
+            window.electronAPI.openExternal(secureUrl);
+          } else {
+            window.open(secureUrl, '_blank');
+          }
+        });
+      }, 0);
+    }
+    
+    messageDiv.innerHTML = `
+      <div class="message-header" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; font-size: 0.85rem;">
+        <span style="background: #ef4444; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-weight: 600;">${aiName}</span>
+      </div>
+      <div class="message-content">
+        ❌ ${errorMessage}<br>
+        ${actionButton}
+        ${actionButton ? '<br>Then click "Configure API Keys" to set up your key.' : ''}
+      </div>
+      <div class="message-time">${new Date().toLocaleTimeString()}</div>
+    `;
     
     messagesContainer.appendChild(messageDiv);
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
@@ -571,11 +681,6 @@ export class ChatInterface {
   }
 
   private showPluginSettings(): void {
-    if (!this.currentPlugin) {
-      alert('Please select a plugin first');
-      return;
-    }
-
     const modal = document.getElementById('plugin-settings-modal');
     const form = document.getElementById('plugin-settings-form');
     
@@ -587,141 +692,129 @@ export class ChatInterface {
       return;
     }
 
-    const currentSettings = this.pluginManager.getPluginSettings(this.currentPlugin.id);
-    
     form.innerHTML = '';
-    this.currentPlugin.manifest.settings.forEach(setting => {
-      const div = document.createElement('div');
-      div.className = 'setting-item';
+    
+    const llmPlugins = this.pluginManager.getLLMPlugins();
+    
+    llmPlugins.forEach((plugin, index) => {
+      const currentSettings = this.pluginManager.getPluginSettings(plugin.id);
       
-      const label = document.createElement('label');
-      label.textContent = setting.label;
+      // Plugin section header
+      const sectionHeader = document.createElement('div');
+      sectionHeader.style.cssText = 'margin-top: ' + (index > 0 ? '2rem' : '0') + '; padding-bottom: 0.75rem; border-bottom: 2px solid var(--border);';
+      sectionHeader.innerHTML = `<h3 style="color: var(--text-dark); margin: 0; font-size: 1.1rem;">${plugin.name}</h3>`;
+      form.appendChild(sectionHeader);
       
-      let input: HTMLInputElement | HTMLSelectElement;
-      
-      if (setting.type === 'select') {
-        input = document.createElement('select');
-        setting.options?.forEach(option => {
-          const optionEl = document.createElement('option');
-          optionEl.value = option;
-          optionEl.textContent = option;
-          input.appendChild(optionEl);
-        });
-      } else {
-        input = document.createElement('input');
-        input.type = setting.type === INPUT_TYPES.password ? INPUT_TYPES.password : INPUT_TYPES.text;
-      }
-      
-      input.id = `setting-${setting.key}`;
-      input.value = currentSettings[setting.key] || setting.default || '';
-      
-      // Auto-save when API key input changes
-      if (setting.key === 'apiKey') {
+      plugin.manifest.settings.forEach(setting => {
+        const div = document.createElement('div');
+        div.className = 'setting-item';
+        div.style.marginTop = '1rem';
+        
+        const label = document.createElement('label');
+        label.textContent = setting.label;
+        label.style.cssText = 'display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-dark);';
+        
+        let input: HTMLInputElement | HTMLSelectElement;
+        
+        if (setting.type === 'select') {
+          input = document.createElement('select');
+          input.style.cssText = 'width: 100%; padding: 0.6rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; background: var(--white); color: var(--text-dark);';
+          setting.options?.forEach(option => {
+            const optionEl = document.createElement('option');
+            optionEl.value = option;
+            optionEl.textContent = option;
+            input.appendChild(optionEl);
+          });
+        } else {
+          input = document.createElement('input');
+          input.type = setting.type === INPUT_TYPES.password ? INPUT_TYPES.password : INPUT_TYPES.text;
+          input.style.cssText = 'width: 100%; padding: 0.6rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; background: var(--white); color: var(--text-dark);';
+        }
+        
+        input.id = `setting-${plugin.id}-${setting.key}`;
+        input.value = currentSettings[setting.key] || setting.default || '';
+        
+        // Auto-save when input changes
         input.addEventListener('input', () => {
-          setTimeout(() => this.savePluginSettings(), 500);
+          setTimeout(() => this.saveAllPluginSettings(), 500);
         });
-      }
-      
-      // Auto-save when model changes and ensure gpt-3.5-turbo for compatibility
-      if (setting.key === 'model') {
+        
         input.addEventListener('change', () => {
-          const selectedModel = (input as HTMLSelectElement).value;
-          if (selectedModel === 'gpt-4') {
-            // Show warning about GPT-4 requirements
-            const warning = document.createElement('div');
-            warning.style.color = '#f59e0b';
-            warning.style.fontSize = '0.8rem';
-            warning.style.marginTop = '0.25rem';
-            warning.textContent = '⚠️ GPT-4 requires a paid OpenAI account. If you get access errors, switch to GPT-3.5-turbo.';
-            input.parentElement?.appendChild(warning);
-          }
-          this.savePluginSettings();
+          this.saveAllPluginSettings();
+          // Reload checkboxes to update status icons
+          this.loadPlugins();
         });
-      }
-      
-      div.appendChild(label);
-      div.appendChild(input);
-      
-      if (setting.key === 'apiKey') {
-        const info = document.createElement('div');
-        info.style.fontSize = '0.85rem';
-        info.style.color = '#6b7280';
-        info.style.marginTop = '0.5rem';
-        info.style.lineHeight = '1.4';
         
-        const link = document.createElement('button');
-        link.style.background = 'none';
-        link.style.border = 'none';
-        link.style.color = '#3498db';
-        link.style.textDecoration = 'underline';
-        link.style.cursor = 'pointer';
-        link.style.fontSize = '0.85rem';
-        link.style.fontWeight = '500';
-        link.textContent = '🔑 Get your API key from OpenAI →';
+        div.appendChild(label);
+        div.appendChild(input);
         
-        link.addEventListener('click', () => {
-          // Ensure HTTPS for security
-          const secureUrl = API_KEY_URLS.openai.startsWith('http://') ? API_KEY_URLS.openai.replace('http://', 'https://') : API_KEY_URLS.openai;
-          // @ts-ignore
-          if (window.electronAPI?.openExternal) {
+        // Add helpful info for API keys
+        if (setting.key === 'apiKey') {
+          const info = document.createElement('div');
+          info.style.fontSize = '0.85rem';
+          info.style.color = '#6b7280';
+          info.style.marginTop = '0.5rem';
+          info.style.lineHeight = '1.4';
+          
+          let apiKeyUrl = API_KEY_URLS.openai;
+          let linkText = '🔑 Get your API key from OpenAI →';
+          
+          if (plugin.id.includes('gemini')) {
+            apiKeyUrl = API_KEY_URLS.gemini;
+            linkText = '💎 Get your API key from Google AI →';
+          } else if (plugin.id.includes('claude')) {
+            apiKeyUrl = API_KEY_URLS.claude;
+            linkText = '🤖 Get your API key from Anthropic →';
+          }
+          
+          const link = document.createElement('button');
+          link.style.background = 'none';
+          link.style.border = 'none';
+          link.style.color = '#3498db';
+          link.style.textDecoration = 'underline';
+          link.style.cursor = 'pointer';
+          link.style.fontSize = '0.85rem';
+          link.style.fontWeight = '500';
+          link.style.padding = '0';
+          link.textContent = linkText;
+          
+          link.addEventListener('click', () => {
+            const secureUrl = apiKeyUrl.startsWith('http://') ? apiKeyUrl.replace('http://', 'https://') : apiKeyUrl;
             // @ts-ignore
-            window.electronAPI.openExternal(secureUrl);
-          } else {
-            window.open(secureUrl, '_blank');
-          }
-        });
+            if (window.electronAPI?.openExternal) {
+              // @ts-ignore
+              window.electronAPI.openExternal(secureUrl);
+            } else {
+              window.open(secureUrl, '_blank');
+            }
+          });
+          
+          info.appendChild(link);
+          div.appendChild(info);
+        }
         
-        info.appendChild(link);
-        const instructions = document.createElement('div');
-        instructions.style.marginTop = '0.25rem';
-        instructions.style.fontSize = '0.8rem';
-        instructions.textContent = 'Click to open OpenAI dashboard, create key, then paste it above';
-        info.appendChild(instructions);
-        
-        div.appendChild(info);
-      } else if (setting.key === 'model') {
-        const info = document.createElement('div');
-        info.style.fontSize = '0.8rem';
-        info.style.color = '#6b7280';
-        info.style.marginTop = '0.25rem';
-        info.textContent = 'GPT-4 is more capable but costs more. GPT-3.5 is faster and cheaper.';
-        div.appendChild(info);
-      } else if (setting.key === 'temperature') {
-        const info = document.createElement('div');
-        info.style.fontSize = '0.8rem';
-        info.style.color = '#6b7280';
-        info.style.marginTop = '0.25rem';
-        info.textContent = 'Lower values (0.1-0.3) for focused responses, higher (0.7-1.0) for creative ones';
-        div.appendChild(info);
-      } else if (setting.key === 'maxTokens') {
-        const info = document.createElement('div');
-        info.style.fontSize = '0.8rem';
-        info.style.color = '#6b7280';
-        info.style.marginTop = '0.25rem';
-        info.textContent = 'Maximum response length. Higher values allow longer responses but cost more.';
-        div.appendChild(info);
-      }
-      form.appendChild(div);
+        form.appendChild(div);
+      });
     });
 
     modal.style.display = 'block';
-
-
   }
 
-  private savePluginSettings(): void {
-    if (!this.currentPlugin) return;
-
-    const settings: Record<string, any> = {};
+  private saveAllPluginSettings(): void {
+    const llmPlugins = this.pluginManager.getLLMPlugins();
     
-    this.currentPlugin.manifest.settings.forEach(setting => {
-      const input = document.getElementById(`setting-${setting.key}`) as HTMLInputElement;
-      if (input) {
-        settings[setting.key] = input.value;
-      }
-    });
+    llmPlugins.forEach(plugin => {
+      const settings: Record<string, any> = {};
+      
+      plugin.manifest.settings.forEach(setting => {
+        const input = document.getElementById(`setting-${plugin.id}-${setting.key}`) as HTMLInputElement;
+        if (input) {
+          settings[setting.key] = input.value;
+        }
+      });
 
-    this.pluginManager.setPluginSettings(this.currentPlugin.id, settings);
+      this.pluginManager.setPluginSettings(plugin.id, settings);
+    });
   }
 
   private exportCurrentConversation(): void {

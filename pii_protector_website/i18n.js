@@ -46,12 +46,17 @@ const translations = {
     download: {
       title: "Download Ledebe",
       subtitle: "Choose your platform and start protecting your data today",
-      macOS: "macOS",
-      macCompat: "Compatible with macOS 10.15+",
-      windows: "Windows", 
+      macOSSilicon: "macOS (Apple Silicon)",
+      macSiliconCompat: "For M1, M2, M3 Macs (macOS 11+)",
+      macOSIntel: "macOS (Intel)",
+      macIntelCompat: "For Intel-based Macs (macOS 10.15+)",
+      windows: "Windows",
       winCompat: "Compatible with Windows 10+",
+      linux: "Linux",
+      linuxCompat: "Universal AppImage (Ubuntu 18.04+)",
       downloadDmg: "Download .dmg",
-      downloadExe: "Download .exe"
+      downloadExe: "Download .exe",
+      downloadAppImage: "Download .AppImage"
     },
     footer: {
       tagline: "Secure data protection for everyone",
@@ -109,12 +114,17 @@ const translations = {
     download: {
       title: "Descargar Ledebe",
       subtitle: "Elige tu plataforma y comienza a proteger tus datos hoy",
-      macOS: "macOS",
-      macCompat: "Compatible con macOS 10.15+",
+      macOSSilicon: "macOS (Apple Silicon)",
+      macSiliconCompat: "Para Macs M1, M2, M3 (macOS 11+)",
+      macOSIntel: "macOS (Intel)",
+      macIntelCompat: "Para Macs con Intel (macOS 10.15+)",
       windows: "Windows",
-      winCompat: "Compatible con Windows 10+", 
+      winCompat: "Compatible con Windows 10+",
+      linux: "Linux",
+      linuxCompat: "AppImage universal (Ubuntu 18.04+)",
       downloadDmg: "Descargar .dmg",
-      downloadExe: "Descargar .exe"
+      downloadExe: "Descargar .exe",
+      downloadAppImage: "Descargar .AppImage"
     },
     footer: {
       tagline: "Protección segura de datos para todos",
@@ -172,12 +182,17 @@ const translations = {
     download: {
       title: "Télécharger Ledebe",
       subtitle: "Choisissez votre plateforme et commencez à protéger vos données aujourd'hui",
-      macOS: "macOS",
-      macCompat: "Compatible avec macOS 10.15+",
+      macOSSilicon: "macOS (Apple Silicon)",
+      macSiliconCompat: "Pour Macs M1, M2, M3 (macOS 11+)",
+      macOSIntel: "macOS (Intel)",
+      macIntelCompat: "Pour Macs Intel (macOS 10.15+)",
       windows: "Windows",
       winCompat: "Compatible avec Windows 10+",
+      linux: "Linux",
+      linuxCompat: "AppImage universel (Ubuntu 18.04+)",
       downloadDmg: "Télécharger .dmg",
-      downloadExe: "Télécharger .exe"
+      downloadExe: "Télécharger .exe",
+      downloadAppImage: "Télécharger .AppImage"
     },
     footer: {
       tagline: "Protection sécurisée des données pour tous",
@@ -235,12 +250,17 @@ const translations = {
     download: {
       title: "تحميل Ledebe",
       subtitle: "اختر منصتك وابدأ في حماية بياناتك اليوم",
-      macOS: "macOS",
-      macCompat: "متوافق مع macOS 10.15+",
+      macOSSilicon: "macOS (Apple Silicon)",
+      macSiliconCompat: "لأجهزة Mac M1، M2، M3 (macOS 11+)",
+      macOSIntel: "macOS (Intel)",
+      macIntelCompat: "لأجهزة Mac ذات معالج Intel (macOS 10.15+)",
       windows: "Windows",
       winCompat: "متوافق مع Windows 10+",
+      linux: "Linux",
+      linuxCompat: "AppImage عالمي (Ubuntu 18.04+)",
       downloadDmg: "تحميل .dmg",
-      downloadExe: "تحميل .exe"
+      downloadExe: "تحميل .exe",
+      downloadAppImage: "تحميل .AppImage"
     },
     footer: {
       tagline: "حماية آمنة للبيانات للجميع",
@@ -298,12 +318,17 @@ const translations = {
     download: {
       title: "下载 Ledebe",
       subtitle: "选择您的平台，今天就开始保护您的数据",
-      macOS: "macOS",
-      macCompat: "兼容 macOS 10.15+",
+      macOSSilicon: "macOS（Apple Silicon）",
+      macSiliconCompat: "适用于 M1、M2、M3 Mac（macOS 11+）",
+      macOSIntel: "macOS（Intel）",
+      macIntelCompat: "适用于 Intel Mac（macOS 10.15+）",
       windows: "Windows",
       winCompat: "兼容 Windows 10+",
+      linux: "Linux",
+      linuxCompat: "通用 AppImage（Ubuntu 18.04+）",
       downloadDmg: "下载 .dmg",
-      downloadExe: "下载 .exe"
+      downloadExe: "下载 .exe",
+      downloadAppImage: "下载 .AppImage"
     },
     footer: {
       tagline: "为每个人提供安全的数据保护",
@@ -395,12 +420,18 @@ function updateContent() {
   document.querySelector('#download .section-title').textContent = t('download.title');
   document.querySelector('.download-subtitle').textContent = t('download.subtitle');
   const downloadCards = document.querySelectorAll('.download-card');
-  downloadCards[0].querySelector('h3').textContent = t('download.macOS');
-  downloadCards[0].querySelector('p').textContent = t('download.macCompat');
+  downloadCards[0].querySelector('h3').textContent = t('download.macOSSilicon');
+  downloadCards[0].querySelector('p').textContent = t('download.macSiliconCompat');
   downloadCards[0].querySelector('.download-btn').textContent = t('download.downloadDmg');
-  downloadCards[1].querySelector('h3').textContent = t('download.windows');
-  downloadCards[1].querySelector('p').textContent = t('download.winCompat');
-  downloadCards[1].querySelector('.download-btn').textContent = t('download.downloadExe');
+  downloadCards[1].querySelector('h3').textContent = t('download.macOSIntel');
+  downloadCards[1].querySelector('p').textContent = t('download.macIntelCompat');
+  downloadCards[1].querySelector('.download-btn').textContent = t('download.downloadDmg');
+  downloadCards[2].querySelector('h3').textContent = t('download.windows');
+  downloadCards[2].querySelector('p').textContent = t('download.winCompat');
+  downloadCards[2].querySelector('.download-btn').textContent = t('download.downloadExe');
+  downloadCards[3].querySelector('h3').textContent = t('download.linux');
+  downloadCards[3].querySelector('p').textContent = t('download.linuxCompat');
+  downloadCards[3].querySelector('.download-btn').textContent = t('download.downloadAppImage');
 
   // Footer
   document.querySelector('.footer-section p').textContent = t('footer.tagline');

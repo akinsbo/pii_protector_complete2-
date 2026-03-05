@@ -132,27 +132,28 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64", "ia32"]
-        },
-        {
-          "target": "portable",
           "arch": ["x64"]
         }
       ],
       "forceCodeSigning": false
     },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["x64"]
+        }
+      ],
+      "category": "Utility"
+    },
     "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": "always",
       "createStartMenuShortcut": true,
       "shortcutName": "Ledebe Protector",
       "deleteAppDataOnUninstall": false,
-      "runAfterFinish": true,
-      "menuCategory": "Ledebe",
-      "displayLanguageSelector": true,
-      "multiLanguageInstaller": true,
-      "license": "LICENSE.txt"
+      "runAfterFinish": true
     },
     "publish": {
       "provider": "generic",

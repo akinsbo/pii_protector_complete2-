@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join Your Company - Ledebe</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        
+        .card { 
+            background: white; 
+            border-radius: 16px; 
+            padding: 3rem; 
+            max-width: 500px; 
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 { color: #2c3e50; margin-bottom: 0.5rem; }
+        p { color: #7f8c8d; margin-bottom: 2rem; }
+        
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: #2c3e50; }
+        .form-group input { 
+            width: 100%; 
+            padding: 0.75rem; 
+            border: 2px solid #ecf0f1; 
+            border-radius: 8px; 
+            font-size: 1rem;
+            transition: border 0.3s;
+        }
+        .form-group input:focus { 
+            outline: none; 
+            border-color: #667eea; 
+        }
+        
+        .btn { 
+            width: 100%; 
+            padding: 1rem; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; 
+            border: none; 
+            border-radius: 8px; 
+            font-size: 1rem; 
+            font-weight: 600; 
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .btn:hover { transform: translateY(-2px); }
+        .btn:active { transform: translateY(0); }
+        
+        .success { 
+            background: #d4edda; 
+            color: #155724; 
+            padding: 1rem; 
+            border-radius: 8px; 
+            margin-top: 1rem;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🛡️ Join Your Company</h1>
+        <p>Link your Ledebe app to your company's protected terms</p>
+        
+        <div class="form-group">
+            <label>Company Code</label>
+            <input type="text" id="company-code" placeholder="e.g., acme" required>
+            <small style="color: #7f8c8d;">Ask your admin for your company code</small>
+        </div>
+        
+        <div class="form-group">
+            <label>Your Work Email</label>
+            <input type="email" id="employee-email" placeholder="you@company.com" required>
+        </div>
+        
+        <button class="btn" onclick="joinCompany()">Join Company</button>
+        
+        <div class="success" id="success-message">
+            ✅ Success! Your app is now linked to your company.<br>
+            Company terms will sync automatically every 5 minutes.
+        </div>
+    </div>
+
+    <script>
+        function joinCompany() {
+            const companyCode = document.getElementById('company-code').value.trim().toLowerCase();
+            const email = document.getElementById('employee-email').value.trim();
+            
+            if (!companyCode || !email) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            // Save to localStorage
+            localStorage.setItem('ledebe-company-id', companyCode);
+            localStorage.setItem('ledebe-employee-email', email);
+            
+            // Show success
+            document.getElementById('success-message').style.display = 'block';
+            
+            // Redirect to app after 2 seconds
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 2000);
+        }
+    </script>
+</body>
+</html>

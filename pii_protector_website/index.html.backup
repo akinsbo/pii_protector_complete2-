@@ -34,8 +34,8 @@
                     <h1>Secure Your Data with Advanced PII Protection</h1>
                     <p>Protect sensitive information in your documents and communications with our intelligent anonymization technology. Keep emails, phone numbers, and personal data safe.</p>
                     <div class="cta-buttons">
-                        <a href="http://ledebe.s3-website.us-east-2.amazonaws.com/downloads/Ledebe%20Protector-1.0.0-arm64.dmg" class="cta-primary">Download for Mac (Apple Silicon)</a>
-                        <a href="http://ledebe.s3-website.us-east-2.amazonaws.com/downloads/Ledebe%20Protector-1.0.0-x64.dmg" class="cta-secondary">Download for Mac (Intel)</a>
+                        <a href="http://ledebe.s3-website.us-east-2.amazonaws.com/downloads/Ledebe%20Protector-1.0.0-arm64.dmg" class="cta-primary" style="text-decoration: none; display: inline-block;">Download for Mac (Apple Silicon)</a>
+                        <a href="http://ledebe.s3-website.us-east-2.amazonaws.com/downloads/Ledebe%20Protector-1.0.0-x64.dmg" class="cta-secondary" style="text-decoration: none; display: inline-block;">Download for Mac (Intel)</a>
                     </div>
                 </div>
                 <div class="hero-image">

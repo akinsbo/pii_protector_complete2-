@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ACME - Ledebe Admin Portal</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7fa; }
+        
+        .header { background: #2c3e50; color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .header h1 { font-size: 1.5rem; }
+        .header .institution { background: #3498db; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; }
+        
+        .container { max-width: 1400px; margin: 2rem auto; padding: 0 2rem; }
+        
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+        .stat-card { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .stat-card h3 { color: #7f8c8d; font-size: 0.9rem; margin-bottom: 0.5rem; }
+        .stat-card .value { font-size: 2rem; font-weight: bold; color: #2c3e50; }
+        .stat-card .trend { color: #27ae60; font-size: 0.85rem; margin-top: 0.5rem; }
+        
+        .section { background: white; border-radius: 12px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .section h2 { margin-bottom: 1.5rem; color: #2c3e50; display: flex; align-items: center; gap: 0.5rem; }
+        
+        .tabs { display: flex; gap: 1rem; border-bottom: 2px solid #ecf0f1; margin-bottom: 1.5rem; }
+        .tab { padding: 0.75rem 1.5rem; cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.3s; font-weight: 500; }
+        .tab.active { border-bottom-color: #3498db; color: #3498db; }
+        .tab:hover { background: #f8f9fa; }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        .btn { padding: 0.75rem 1.5rem; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.3s; }
+        .btn-primary { background: #3498db; color: white; }
+        .btn-primary:hover { background: #2980b9; }
+        .btn-success { background: #27ae60; color: white; }
+        .btn-danger { background: #e74c3c; color: white; }
+        
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: #2c3e50; }
+        .form-group input, .form-group textarea { width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; }
+        .form-group textarea { min-height: 100px; resize: vertical; }
+        
+        .term-list { display: flex; flex-direction: column; gap: 0.75rem; }
+        .term-item { display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #3498db; }
+        .term-item .info { flex: 1; }
+        .term-item .category { background: #3498db; color: white; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.85rem; margin-left: 1rem; }
+        .term-item .actions { display: flex; gap: 0.5rem; }
+        
+        .employee-list { display: grid; gap: 1rem; }
+        .employee-item { display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #f8f9fa; border-radius: 8px; }
+        .employee-item .status { padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.85rem; font-weight: 600; }
+        .employee-item .status.active { background: #d4edda; color: #155724; }
+        .employee-item .status.pending { background: #fff3cd; color: #856404; }
+        
+        .empty-state { text-align: center; padding: 3rem; color: #7f8c8d; }
+        .empty-state svg { width: 100px; height: 100px; margin-bottom: 1rem; opacity: 0.3; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🛡️ Ledebe Admin Portal</h1>
+        <div class="institution">ACME Corporation</div>
+    </div>
+
+    <div class="container">
+        <!-- Stats Overview -->
+        <div class="stats">
+            <div class="stat-card">
+                <h3>Total Employees</h3>
+                <div class="value" id="total-employees">0</div>
+                <div class="trend">↑ 5 this month</div>
+            </div>
+            <div class="stat-card">
+                <h3>Protected Terms</h3>
+                <div class="value" id="total-terms">0</div>
+                <div class="trend">12 company-wide</div>
+            </div>
+            <div class="stat-card">
+                <h3>Protections This Month</h3>
+                <div class="value" id="total-protections">0</div>
+                <div class="trend">↑ 23% vs last month</div>
+            </div>
+            <div class="stat-card">
+                <h3>Active Devices</h3>
+                <div class="value" id="active-devices">0</div>
+                <div class="trend">Last sync: 2 min ago</div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="section">
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('protected-terms')">🔒 Protected Terms</div>
+                <div class="tab" onclick="switchTab('employees')">👥 Employees</div>
+                <div class="tab" onclick="switchTab('billing')">💳 Billing</div>
+                <div class="tab" onclick="switchTab('settings')">⚙️ Settings</div>
+            </div>
+
+            <!-- Protected Terms Tab -->
+            <div id="protected-terms" class="tab-content active">
+                <h2>🔒 Company-Wide Protected Terms</h2>
+                <p style="color: #7f8c8d; margin-bottom: 1.5rem;">These terms will be automatically protected for all employees when they use Ledebe.</p>
+                
+                <div class="form-group">
+                    <label>Add New Protected Term</label>
+                    <input type="text" id="new-term" placeholder="e.g., Project Phoenix, CEO Name, Q4 Revenue">
+                </div>
+                <div class="form-group">
+                    <label>Category</label>
+                    <select id="term-category" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px;">
+                        <option value="executive">Executive Names</option>
+                        <option value="project">Project Names</option>
+                        <option value="financial">Financial Data</option>
+                        <option value="client">Client Names</option>
+                        <option value="custom">Custom</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" onclick="addTerm()">+ Add Term</button>
+
+                <div style="margin-top: 2rem;">
+                    <h3 style="margin-bottom: 1rem;">Current Protected Terms</h3>
+                    <div class="term-list" id="term-list">
+                        <!-- Terms will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Employees Tab -->
+            <div id="employees" class="tab-content">
+                <h2>👥 Employee Management</h2>
+                <p style="color: #7f8c8d; margin-bottom: 1.5rem;">Manage employee access and monitor device installations.</p>
+                
+                <div class="form-group">
+                    <label>Invite Employee by Email</label>
+                    <input type="email" id="employee-email" placeholder="employee@acme.com">
+                </div>
+                <button class="btn btn-success" onclick="inviteEmployee()">📧 Send Invitation</button>
+
+                <div style="margin-top: 2rem;">
+                    <h3 style="margin-bottom: 1rem;">Employee List</h3>
+                    <div class="employee-list" id="employee-list">
+                        <!-- Employees will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Billing Tab -->
+            <div id="billing" class="tab-content">
+                <h2>💳 Billing & Subscription</h2>
+                <div style="background: #e8f5e9; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
+                    <h3 style="color: #27ae60;">Enterprise Plan - $99/month</h3>
+                    <p style="color: #2c3e50; margin-top: 0.5rem;">Unlimited employees • Company-wide terms • Priority support</p>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                    <div>
+                        <h3 style="margin-bottom: 1rem;">Usage This Month</h3>
+                        <p>Employees: <strong id="billing-employees">0</strong></p>
+                        <p>Protections: <strong id="billing-protections">0</strong></p>
+                        <p>Storage: <strong>2.3 GB / 10 GB</strong></p>
+                    </div>
+                    <div>
+                        <h3 style="margin-bottom: 1rem;">Next Billing Date</h3>
+                        <p><strong>March 15, 2024</strong></p>
+                        <p style="color: #7f8c8d; margin-top: 0.5rem;">Payment method: •••• 4242</p>
+                        <button class="btn btn-primary" style="margin-top: 1rem;">Update Payment Method</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div id="settings" class="tab-content">
+                <h2>⚙️ Institution Settings</h2>
+                
+                <div class="form-group">
+                    <label>Institution Name</label>
+                    <input type="text" id="institution-name" value="ACME Corporation">
+                </div>
+                
+                <div class="form-group">
+                    <label>Admin Email</label>
+                    <input type="email" id="admin-email" value="admin@acme.com">
+                </div>
+                
+                <div class="form-group">
+                    <label>Auto-sync Interval</label>
+                    <select style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px;">
+                        <option>Every 5 minutes</option>
+                        <option>Every 15 minutes</option>
+                        <option>Every hour</option>
+                    </select>
+                </div>
+                
+                <button class="btn btn-primary">💾 Save Settings</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Institution ID from URL path
+        const institutionId = 'acme';
+        const storageKey = `ledebe-admin-${institutionId}`;
+        const s3Bucket = 'ledebe';
+        const s3Region = 'us-east-2';
+        const s3Url = `https://${s3Bucket}.s3.${s3Region}.amazonaws.com/${institutionId}/data.json`;
+
+        // Load data from S3 or localStorage
+        async function loadData() {
+            try {
+                const response = await fetch(s3Url);
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('✅ Loaded from S3');
+                    return data;
+                }
+            } catch (error) {
+                console.log('📦 Loading from localStorage');
+            }
+            return JSON.parse(localStorage.getItem(storageKey) || '{"terms": [], "employees": []}');
+        }
+
+        async function saveData(data) {
+            // Save to localStorage first
+            localStorage.setItem(storageKey, JSON.stringify(data));
+            
+            // Try to save to S3
+            try {
+                const response = await fetch(s3Url, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (response.ok) {
+                    console.log('✅ Synced to S3');
+                    showNotification('✅ Changes saved and synced to cloud');
+                } else {
+                    console.warn('⚠️ S3 sync failed, saved locally');
+                    showNotification('⚠️ Saved locally (cloud sync failed)');
+                }
+            } catch (error) {
+                console.error('❌ S3 error:', error);
+                showNotification('⚠️ Saved locally only');
+            }
+        }
+        
+        function showNotification(message) {
+            const notif = document.createElement('div');
+            notif.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #27ae60; color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 10000;';
+            notif.textContent = message;
+            document.body.appendChild(notif);
+            setTimeout(() => notif.remove(), 3000);
+        }
+
+        // Tab switching
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        // Add protected term
+        async function addTerm() {
+            const termInput = document.getElementById('new-term');
+            const categorySelect = document.getElementById('term-category');
+            const term = termInput.value.trim();
+            
+            if (!term) {
+                alert('Please enter a term to protect');
+                return;
+            }
+
+            const data = await loadData();
+            data.terms = data.terms || [];
+            data.terms.push({
+                id: Date.now(),
+                text: term,
+                category: categorySelect.value,
+                createdAt: new Date().toISOString()
+            });
+            await saveData(data);
+            
+            termInput.value = '';
+            renderTerms();
+            updateStats();
+            alert('✅ Term added! It will sync to all employee devices within 5 minutes.');
+        }
+
+        // Remove term
+        function removeTerm(id) {
+            if (!confirm('Remove this protected term?')) return;
+            
+            const data = loadData();
+            data.terms = data.terms.filter(t => t.id !== id);
+            saveData(data);
+            renderTerms();
+            updateStats();
+        }
+
+        // Render terms
+        async function renderTerms() {
+            const data = await loadData();
+            const list = document.getElementById('term-list');
+            
+            if (!data.terms || data.terms.length === 0) {
+                list.innerHTML = '<div class="empty-state">No protected terms yet. Add your first term above!</div>';
+                return;
+            }
+
+            list.innerHTML = data.terms.map(term => `
+                <div class="term-item">
+                    <div class="info">
+                        <strong>${term.text}</strong>
+                        <div style="color: #7f8c8d; font-size: 0.85rem; margin-top: 0.25rem;">
+                            Added ${new Date(term.createdAt).toLocaleDateString()}
+                        </div>
+                    </div>
+                    <span class="category">${term.category}</span>
+                    <div class="actions">
+                        <button class="btn btn-danger" style="padding: 0.5rem 1rem;" onclick="removeTerm(${term.id})">Remove</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Invite employee
+        function inviteEmployee() {
+            const emailInput = document.getElementById('employee-email');
+            const email = emailInput.value.trim();
+            
+            if (!email || !email.includes('@')) {
+                alert('Please enter a valid email address');
+                return;
+            }
+
+            const data = loadData();
+            data.employees = data.employees || [];
+            data.employees.push({
+                id: Date.now(),
+                email: email,
+                status: 'pending',
+                invitedAt: new Date().toISOString()
+            });
+            saveData(data);
+            
+            emailInput.value = '';
+            renderEmployees();
+            updateStats();
+            alert(`✅ Invitation sent to ${email}!`);
+        }
+
+        // Render employees
+        function renderEmployees() {
+            const data = loadData();
+            const list = document.getElementById('employee-list');
+            
+            if (!data.employees || data.employees.length === 0) {
+                list.innerHTML = '<div class="empty-state">No employees yet. Invite your first employee above!</div>';
+                return;
+            }
+
+            list.innerHTML = data.employees.map(emp => `
+                <div class="employee-item">
+                    <div>
+                        <strong>${emp.email}</strong>
+                        <div style="color: #7f8c8d; font-size: 0.85rem; margin-top: 0.25rem;">
+                            Invited ${new Date(emp.invitedAt).toLocaleDateString()}
+                        </div>
+                    </div>
+                    <span class="status ${emp.status}">${emp.status}</span>
+                    <button class="btn btn-danger" style="padding: 0.5rem 1rem;" onclick="removeEmployee(${emp.id})">Remove</button>
+                </div>
+            `).join('');
+        }
+
+        // Remove employee
+        function removeEmployee(id) {
+            if (!confirm('Remove this employee?')) return;
+            
+            const data = loadData();
+            data.employees = data.employees.filter(e => e.id !== id);
+            saveData(data);
+            renderEmployees();
+            updateStats();
+        }
+
+        // Update stats
+        function updateStats() {
+            const data = loadData();
+            document.getElementById('total-employees').textContent = (data.employees || []).length;
+            document.getElementById('total-terms').textContent = (data.terms || []).length;
+            document.getElementById('total-protections').textContent = Math.floor(Math.random() * 500) + 100;
+            document.getElementById('active-devices').textContent = (data.employees || []).filter(e => e.status === 'active').length;
+            document.getElementById('billing-employees').textContent = (data.employees || []).length;
+            document.getElementById('billing-protections').textContent = Math.floor(Math.random() * 500) + 100;
+        }
+
+        // Initialize
+        (async () => {
+            await renderTerms();
+            await renderEmployees();
+            await updateStats();
+        })();
+    </script>
+</body>
+</html>

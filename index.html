@@ -8,6 +8,7 @@
     <script src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js'></script>
     <script src='ai-chat.js'></script>
     <script src='multi-ai-chat.js'></script>
+    <script src='company-sync.js'></script>
     <style>
         :root {
             --primary-blue: #1e3a8a;
@@ -27,6 +28,18 @@
             --bg-light: #1f2937;
             --white: #111827;
             --border: #374151;
+        }
+
+        [data-theme="dark"] input,
+        [data-theme="dark"] textarea,
+        [data-theme="dark"] select,
+        [data-theme="dark"] button {
+            color: #f9fafb;
+        }
+
+        [data-theme="dark"] input::placeholder,
+        [data-theme="dark"] textarea::placeholder {
+            color: #9ca3af;
         }
 
         * {
@@ -1155,6 +1168,8 @@
             box-shadow: 0 2px 8px rgba(30, 58, 138, 0.1);
             width: 100%;
             box-sizing: border-box;
+            background: var(--white);
+            color: var(--text-dark);
         }
 
         .input-wrapper textarea:focus {
@@ -1395,28 +1410,28 @@
             </div>
             
             <!-- Multi-AI Selection -->
-            <div style="padding: 15px; border-bottom: 1px solid var(--border); background: #f8f9fa;">
-                <button id="ai-models-toggle" onclick="toggleAIModels()" style="width: 100%; padding: 10px; background: white; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-size: 14px; font-weight: 500;">
+            <div style="padding: 15px; border-bottom: 1px solid var(--border); background: var(--bg-light);">
+                <button id="ai-models-toggle" onclick="toggleAIModels()" style="width: 100%; padding: 10px; background: var(--white); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-size: 14px; font-weight: 500; color: var(--text-dark);">
                     <span>🤖 Select AI Models</span>
                     <span id="ai-toggle-icon">▼</span>
                 </button>
                 <div id="ai-models-list" style="display: none; margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
-                    <label style="display: flex; align-items: center; gap: 8px; padding: 8px; background: white; border-radius: 6px; cursor: pointer;">
+                    <label style="display: flex; align-items: center; gap: 8px; padding: 8px; background: var(--white); border-radius: 6px; cursor: pointer;">
                         <input type="checkbox" id="enable-chatgpt" style="width: 18px; height: 18px;">
-                        <span style="flex: 1; font-size: 14px;">ChatGPT</span>
+                        <span style="flex: 1; font-size: 14px; color: var(--text-dark);">ChatGPT</span>
                         <span id="chatgpt-status">⚠️</span>
                     </label>
-                    <label style="display: flex; align-items: center; gap: 8px; padding: 8px; background: white; border-radius: 6px; cursor: pointer;">
+                    <label style="display: flex; align-items: center; gap: 8px; padding: 8px; background: var(--white); border-radius: 6px; cursor: pointer;">
                         <input type="checkbox" id="enable-claude" style="width: 18px; height: 18px;">
-                        <span style="flex: 1; font-size: 14px;">Claude</span>
+                        <span style="flex: 1; font-size: 14px; color: var(--text-dark);">Claude</span>
                         <span id="claude-status">⚠️</span>
                     </label>
-                    <label style="display: flex; align-items: center; gap: 8px; padding: 8px; background: white; border-radius: 6px; cursor: pointer;">
+                    <label style="display: flex; align-items: center; gap: 8px; padding: 8px; background: var(--white); border-radius: 6px; cursor: pointer;">
                         <input type="checkbox" id="enable-gemini" style="width: 18px; height: 18px;">
-                        <span style="flex: 1; font-size: 14px;">Gemini</span>
+                        <span style="flex: 1; font-size: 14px; color: var(--text-dark);">Gemini</span>
                         <span id="gemini-status">⚠️</span>
                     </label>
-                    <button onclick="alert('Configure API keys feature coming soon!')" style="width: 100%; margin-top: 5px; padding: 8px; background: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;">⚙️ Configure API Keys</button>
+                    <button onclick="alert('Configure API keys feature coming soon!')" style="width: 100%; margin-top: 5px; padding: 8px; background: var(--primary-blue); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;">⚙️ Configure API Keys</button>
                 </div>
             </div>
             

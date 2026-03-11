@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentation - Ledebe Protector</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .docs-layout {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            gap: 0;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+            align-items: start;
+        }
+
+        /* Sidebar */
+        .docs-sidebar {
+            position: sticky;
+            top: 80px;
+            background: var(--bg-light);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-right: 2rem;
+        }
+
+        .docs-sidebar h4 {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-gray);
+            margin-bottom: 0.75rem;
+            margin-top: 1.25rem;
+        }
+
+        .docs-sidebar h4:first-child {
+            margin-top: 0;
+        }
+
+        .docs-sidebar ul {
+            list-style: none;
+        }
+
+        .docs-sidebar ul li a {
+            display: block;
+            padding: 0.35rem 0.75rem;
+            border-radius: 6px;
+            color: var(--text-dark);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .docs-sidebar ul li a:hover {
+            background: var(--primary-blue);
+            color: white;
+        }
+
+        /* Main content */
+        .docs-content {
+            min-width: 0;
+        }
+
+        .docs-content h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .docs-content .lead {
+            font-size: 1.15rem;
+            color: var(--text-gray);
+            margin-bottom: 3rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .doc-section {
+            margin-bottom: 3.5rem;
+            padding-bottom: 3.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .doc-section:last-child {
+            border-bottom: none;
+        }
+
+        .doc-section h2 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .doc-section h3 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin: 1.75rem 0 0.75rem;
+        }
+
+        .doc-section p {
+            color: var(--text-gray);
+            margin-bottom: 1rem;
+            line-height: 1.75;
+        }
+
+        .doc-section ol, .doc-section ul {
+            color: var(--text-gray);
+            padding-left: 1.5rem;
+            margin-bottom: 1rem;
+            line-height: 2;
+        }
+
+        /* Warning / info / tip boxes */
+        .callout {
+            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            margin: 1.25rem 0;
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-start;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .callout-icon {
+            font-size: 1.1rem;
+            flex-shrink: 0;
+            margin-top: 0.05rem;
+        }
+
+        .callout-warning {
+            background: #fef9c3;
+            border-left: 4px solid #eab308;
+            color: #713f12;
+        }
+
+        .callout-info {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            color: #1e3a8a;
+        }
+
+        .callout-tip {
+            background: #f0fdf4;
+            border-left: 4px solid #4ade80;
+            color: #14532d;
+        }
+
+        /* Code blocks */
+        .code-block {
+            background: #1e293b;
+            color: #e2e8f0;
+            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            margin: 1rem 0;
+            font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+            line-height: 1.6;
+        }
+
+        /* Step list */
+        .steps {
+            counter-reset: step;
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .steps li {
+            counter-increment: step;
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+            color: var(--text-gray);
+            line-height: 1.6;
+        }
+
+        .steps li::before {
+            content: counter(step);
+            background: var(--primary-blue);
+            color: white;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 700;
+            flex-shrink: 0;
+            margin-top: 0.1rem;
+        }
+
+        /* FAQ accordion */
+        .faq-item {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+            overflow: hidden;
+        }
+
+        .faq-question {
+            width: 100%;
+            background: var(--bg-light);
+            border: none;
+            padding: 1rem 1.25rem;
+            text-align: left;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s;
+        }
+
+        .faq-question:hover {
+            background: #e2e8f0;
+        }
+
+        .faq-answer {
+            display: none;
+            padding: 1rem 1.25rem;
+            color: var(--text-gray);
+            line-height: 1.75;
+            border-top: 1px solid var(--border);
+        }
+
+        .faq-answer.open {
+            display: block;
+        }
+
+        .faq-chevron {
+            transition: transform 0.2s;
+            font-size: 0.8rem;
+        }
+
+        .faq-chevron.open {
+            transform: rotate(180deg);
+        }
+
+        /* Platform badge */
+        .platform-badge {
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            margin-left: 0.5rem;
+            vertical-align: middle;
+        }
+
+        .badge-mac { background: #e5e7eb; color: #374151; }
+        .badge-win { background: #dbeafe; color: #1e40af; }
+        .badge-linux { background: #fef3c7; color: #92400e; }
+
+        /* Docs hero banner */
+        .docs-hero {
+            background: linear-gradient(135deg, var(--primary-blue) 0%, #3b82f6 100%);
+            color: white;
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+
+        .docs-hero h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .docs-hero p {
+            font-size: 1.1rem;
+            opacity: 0.85;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .docs-layout {
+                grid-template-columns: 1fr;
+            }
+            .docs-sidebar {
+                position: static;
+                margin-right: 0;
+                margin-bottom: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <nav class="nav">
+            <div class="logo">
+                <a href="index.html" style="color: white; text-decoration: none;">
+                    <img src="logo.png" alt="Ledebe" style="height: 32px; vertical-align: middle; margin-right: 8px;"> Ledebe
+                </a>
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html#home">Home</a></li>
+                <li><a href="index.html#features">Features</a></li>
+                <li><a href="index.html#download">Download</a></li>
+                <li><a href="docs.html" style="color: #4ade80;">Docs</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <div class="docs-hero">
+        <h1>Documentation</h1>
+        <p>Everything you need to install and use Ledebe Protector</p>
+    </div>
+
+    <div class="docs-layout">
+
+        <!-- Sidebar -->
+        <aside class="docs-sidebar">
+            <h4>Getting Started</h4>
+            <ul>
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#requirements">System Requirements</a></li>
+            </ul>
+            <h4>Installation</h4>
+            <ul>
+                <li><a href="#mac-silicon">macOS (Apple Silicon)</a></li>
+                <li><a href="#mac-intel">macOS (Intel)</a></li>
+                <li><a href="#windows">Windows</a></li>
+                <li><a href="#linux">Linux</a></li>
+            </ul>
+            <h4>Using Ledebe</h4>
+            <ul>
+                <li><a href="#protect-text">Protecting Text</a></li>
+                <li><a href="#custom-terms">Custom Terms</a></li>
+                <li><a href="#ai-chat">AI Chat</a></li>
+                <li><a href="#history">History</a></li>
+            </ul>
+            <h4>Help</h4>
+            <ul>
+                <li><a href="#faq">FAQ</a></li>
+                <li><a href="#troubleshooting">Troubleshooting</a></li>
+            </ul>
+        </aside>
+
+        <!-- Content -->
+        <main class="docs-content">
+
+            <!-- Overview -->
+            <h1>Ledebe Protector Docs</h1>
+            <p class="lead">Ledebe Protector detects and masks personally identifiable information (PII) before you share text with AI tools, colleagues, or external services. Your original data never leaves your device.</p>
+
+            <div class="doc-section" id="overview">
+                <h2>🛡️ Overview</h2>
+                <p>Ledebe Protector works by replacing sensitive information in your text with safe placeholders, letting you share or process the text freely. You can then restore the original content at any time.</p>
+                <p>Supported PII types:</p>
+                <ul>
+                    <li><strong>Emails</strong> — e.g. john@example.com → [LDB_EMAIL#1]</li>
+                    <li><strong>Phone numbers</strong> — local and international formats</li>
+                    <li><strong>IP addresses</strong> — IPv4 and IPv6</li>
+                    <li><strong>Credit/debit card numbers</strong></li>
+                    <li><strong>IBAN / bank account numbers</strong></li>
+                    <li><strong>NIN / BVN</strong> — national identity numbers</li>
+                    <li><strong>Custom terms</strong> — any word or phrase you define</li>
+                </ul>
+            </div>
+
+            <!-- System Requirements -->
+            <div class="doc-section" id="requirements">
+                <h2>💻 System Requirements</h2>
+                <ul>
+                    <li><strong>macOS:</strong> macOS 11 (Big Sur) or later for Apple Silicon · macOS 10.15 (Catalina) or later for Intel</li>
+                    <li><strong>Windows:</strong> Windows 10 or later (64-bit)</li>
+                    <li><strong>Linux:</strong> Ubuntu 18.04+ or any distro that supports AppImage</li>
+                    <li><strong>RAM:</strong> 4 GB minimum, 8 GB recommended</li>
+                    <li><strong>Disk:</strong> ~300 MB free space</li>
+                    <li><strong>Internet:</strong> Only required for AI chat features (API calls)</li>
+                </ul>
+            </div>
+
+            <!-- macOS Apple Silicon -->
+            <div class="doc-section" id="mac-silicon">
+                <h2>🍎 macOS <span class="platform-badge badge-mac">Apple Silicon</span></h2>
+                <p>For M1, M2, and M3 Macs. Download the <strong>arm64.dmg</strong> file.</p>
+
+                <h3>Installation steps</h3>
+                <ol class="steps">
+                    <li>Download <strong>Ledebe Protector-1.0.0-arm64.dmg</strong> from the <a href="index.html#download">Downloads</a> page.</li>
+                    <li>Open the downloaded <code>.dmg</code> file from your Downloads folder.</li>
+                    <li>Drag the <strong>Ledebe Protector</strong> app into your <strong>Applications</strong> folder.</li>
+                    <li>Eject the disk image and open the app from Applications or Spotlight.</li>
+                </ol>
+
+                <div class="callout callout-warning">
+                    <span class="callout-icon">⚠️</span>
+                    <div><strong>Gatekeeper warning:</strong> On first launch, macOS may show "Ledebe Protector cannot be opened because it is from an unidentified developer." To bypass: right-click the app icon → click <strong>Open</strong> → click <strong>Open</strong> in the dialog. You only need to do this once.</div>
+                </div>
+
+                <div class="callout callout-tip">
+                    <span class="callout-icon">💡</span>
+                    <div>Alternatively, go to <strong>System Settings → Privacy &amp; Security</strong> and click <strong>Open Anyway</strong> next to the Ledebe Protector entry.</div>
+                </div>
+            </div>
+
+            <!-- macOS Intel -->
+            <div class="doc-section" id="mac-intel">
+                <h2>🍎 macOS <span class="platform-badge badge-mac">Intel</span></h2>
+                <p>For Intel-based Macs. Download the <strong>x64.dmg</strong> file.</p>
+
+                <h3>Installation steps</h3>
+                <ol class="steps">
+                    <li>Download <strong>Ledebe Protector-1.0.0-x64.dmg</strong> from the <a href="index.html#download">Downloads</a> page.</li>
+                    <li>Open the <code>.dmg</code> file and drag the app to <strong>Applications</strong>.</li>
+                    <li>Launch from Applications or Spotlight.</li>
+                </ol>
+
+                <div class="callout callout-warning">
+                    <span class="callout-icon">⚠️</span>
+                    <div>Same Gatekeeper behaviour as Apple Silicon — right-click → <strong>Open</strong> on first launch if macOS blocks it.</div>
+                </div>
+            </div>
+
+            <!-- Windows -->
+            <div class="doc-section" id="windows">
+                <h2>🪟 Windows <span class="platform-badge badge-win">10 / 11</span></h2>
+                <p>Download the <strong>Ledebe Protector Setup 1.0.0.exe</strong> NSIS installer. This creates Start Menu shortcuts, a desktop icon, and an uninstaller.</p>
+
+                <h3>Installation steps</h3>
+                <ol class="steps">
+                    <li>Download <strong>Ledebe Protector Setup 1.0.0.exe</strong> from the <a href="index.html#download">Downloads</a> page.</li>
+                    <li>Run the installer — you may see a <strong>Windows SmartScreen</strong> warning ("Windows protected your PC"). Click <strong>More info</strong> then <strong>Run anyway</strong>.</li>
+                    <li>Follow the setup wizard (Next → Install → Finish).</li>
+                    <li>Launch Ledebe Protector from the Start Menu or desktop shortcut.</li>
+                </ol>
+
+                <div class="callout callout-warning">
+                    <span class="callout-icon">⚠️</span>
+                    <div><strong>SmartScreen warning</strong> is normal for newly published apps without an EV code signing certificate. The app is safe — click <strong>More info → Run anyway</strong> to proceed.</div>
+                </div>
+
+                <div class="callout callout-info">
+                    <span class="callout-icon">ℹ️</span>
+                    <div>To uninstall: go to <strong>Settings → Apps</strong>, find Ledebe Protector, and click <strong>Uninstall</strong>.</div>
+                </div>
+            </div>
+
+            <!-- Linux -->
+            <div class="doc-section" id="linux">
+                <h2>🐧 Linux <span class="platform-badge badge-linux">AppImage</span></h2>
+                <p>Ledebe Protector ships as a universal <strong>AppImage</strong> — no installation required. It runs on Ubuntu, Debian, Fedora, Arch, and most other distros.</p>
+
+                <h3>Installation steps</h3>
+                <ol class="steps">
+                    <li>Download <strong>Ledebe Protector-1.0.0.AppImage</strong> from the <a href="index.html#download">Downloads</a> page.</li>
+                    <li>Open a terminal and navigate to your Downloads folder:
+                        <div class="code-block">cd ~/Downloads</div>
+                    </li>
+                    <li>Make the file executable:
+                        <div class="code-block">chmod +x "Ledebe Protector-1.0.0.AppImage"</div>
+                    </li>
+                    <li>Run the app:
+                        <div class="code-block">./"Ledebe Protector-1.0.0.AppImage"</div>
+                    </li>
+                </ol>
+
+                <div class="callout callout-tip">
+                    <span class="callout-icon">💡</span>
+                    <div>You can also right-click the AppImage in your file manager → <strong>Properties → Permissions</strong> → check <strong>"Allow executing file as program"</strong>, then double-click to run.</div>
+                </div>
+
+                <div class="callout callout-info">
+                    <span class="callout-icon">ℹ️</span>
+                    <div>Some distros require <code>libfuse2</code> for AppImages. If the app fails to launch, install it:<br>
+                    <strong>Ubuntu/Debian:</strong> <code>sudo apt install libfuse2</code><br>
+                    <strong>Fedora:</strong> <code>sudo dnf install fuse-libs</code></div>
+                </div>
+            </div>
+
+            <!-- Protecting Text -->
+            <div class="doc-section" id="protect-text">
+                <h2>🔒 Protecting Text</h2>
+                <ol class="steps">
+                    <li>Paste or type your text into the input area.</li>
+                    <li>Click <strong>Protect</strong>. Ledebe will scan and replace all detected PII with placeholders like <code>[LDB_EMAIL#1]</code>.</li>
+                    <li>Copy the protected text and use it freely — share it with AI tools, colleagues, or external services.</li>
+                    <li>To restore the original content, paste the protected text back and click <strong>Restore</strong>.</li>
+                </ol>
+
+                <div class="callout callout-tip">
+                    <span class="callout-icon">💡</span>
+                    <div>Placeholders are consistent within a session — the same email always gets the same placeholder number, so the structure of your text is preserved.</div>
+                </div>
+            </div>
+
+            <!-- Custom Terms -->
+            <div class="doc-section" id="custom-terms">
+                <h2>⚙️ Custom Terms</h2>
+                <p>You can add your own words or phrases to mask — useful for company names, project codes, or any sensitive terminology.</p>
+                <ol class="steps">
+                    <li>Open the <strong>Custom Terms</strong> panel in the sidebar.</li>
+                    <li>Type a term and press <strong>Enter</strong> or click <strong>Add</strong>.</li>
+                    <li>The term will now be masked as <code>[LDB_CUSTOM#1]</code> in any text you protect.</li>
+                    <li>Terms are saved locally and persist across sessions.</li>
+                </ol>
+            </div>
+
+            <!-- AI Chat -->
+            <div class="doc-section" id="ai-chat">
+                <h2>🤖 AI Chat</h2>
+                <p>The built-in AI chat automatically masks your PII before sending messages to AI providers, then restores placeholders in the response.</p>
+
+                <h3>Setup</h3>
+                <ol class="steps">
+                    <li>Click the <strong>AI Chat</strong> icon in the sidebar.</li>
+                    <li>Open <strong>Settings</strong> and enter your API keys for the providers you want to use:
+                        <ul>
+                            <li><strong>OpenAI</strong> — ChatGPT (GPT-4, GPT-3.5)</li>
+                            <li><strong>Anthropic</strong> — Claude</li>
+                            <li><strong>Google</strong> — Gemini</li>
+                        </ul>
+                    </li>
+                    <li>Select one or more providers using the checkboxes.</li>
+                    <li>Type your message — PII is automatically masked before it leaves your device.</li>
+                </ol>
+
+                <div class="callout callout-info">
+                    <span class="callout-icon">ℹ️</span>
+                    <div>API keys are stored locally only — they are never sent to Ledebe servers.</div>
+                </div>
+            </div>
+
+            <!-- History -->
+            <div class="doc-section" id="history">
+                <h2>📋 History</h2>
+                <p>Every protection/restore action is saved in your local session history.</p>
+                <ul>
+                    <li>Access history from the <strong>History</strong> tab in the sidebar.</li>
+                    <li>Use the search bar to find past entries.</li>
+                    <li>Click any entry to reload it into the editor.</li>
+                    <li>History is stored locally on your device and is never uploaded.</li>
+                </ul>
+            </div>
+
+            <!-- FAQ -->
+            <div class="doc-section" id="faq">
+                <h2>❓ FAQ</h2>
+
+                <div class="faq-item">
+                    <button class="faq-question" onclick="toggleFaq(this)">
+                        Does Ledebe send my data anywhere?
+                        <span class="faq-chevron">▼</span>
+                    </button>
+                    <div class="faq-answer">
+                        No. All PII detection and masking happens locally on your device. The only outbound traffic is when you use the AI chat feature — in that case, only the <em>masked</em> text (with placeholders, not your real data) is sent to the AI provider's API.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question" onclick="toggleFaq(this)">
+                        Can I restore the original text after sharing the protected version?
+                        <span class="faq-chevron">▼</span>
+                    </button>
+                    <div class="faq-answer">
+                        Yes — as long as you are in the same session or the placeholder map has been saved. Paste the protected text back into Ledebe and click <strong>Restore</strong>.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question" onclick="toggleFaq(this)">
+                        Where are my API keys stored?
+                        <span class="faq-chevron">▼</span>
+                    </button>
+                    <div class="faq-answer">
+                        API keys are stored in your device's local storage only. They are never uploaded to Ledebe servers or included in any crash reports.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question" onclick="toggleFaq(this)">
+                        The app says it's from an unidentified developer on Mac — is it safe?
+                        <span class="faq-chevron">▼</span>
+                    </button>
+                    <div class="faq-answer">
+                        Yes, it is safe. This warning appears because the app is not yet enrolled in Apple's notarisation program. Right-click the app → <strong>Open</strong> → <strong>Open</strong> to bypass it. You only need to do this once.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question" onclick="toggleFaq(this)">
+                        Windows SmartScreen blocked the installer — what do I do?
+                        <span class="faq-chevron">▼</span>
+                    </button>
+                    <div class="faq-answer">
+                        Click <strong>More info</strong> in the SmartScreen dialog, then click <strong>Run anyway</strong>. This warning appears for newly published apps. The installer is safe.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question" onclick="toggleFaq(this)">
+                        The Linux AppImage won't launch — what do I do?
+                        <span class="faq-chevron">▼</span>
+                    </button>
+                    <div class="faq-answer">
+                        Make sure the file has execute permission: <code>chmod +x "Ledebe Protector-1.0.0.AppImage"</code>. If it still fails, install <code>libfuse2</code>: on Ubuntu/Debian run <code>sudo apt install libfuse2</code>.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Troubleshooting -->
+            <div class="doc-section" id="troubleshooting">
+                <h2>🔧 Troubleshooting</h2>
+
+                <h3>App crashes on launch</h3>
+                <p>Crash reports are stored at <code>~/.ledebe-crashes/</code>. If you need support, include the latest crash log when contacting us.</p>
+
+                <h3>PII not being detected</h3>
+                <p>Ensure the text format matches a supported pattern. For unusual formats (e.g. non-standard phone formats), add the value as a <strong>Custom Term</strong>.</p>
+
+                <h3>AI chat not responding</h3>
+                <ul>
+                    <li>Check that your API key is correct in Settings.</li>
+                    <li>Verify you have an active internet connection.</li>
+                    <li>Check your API quota/limits with the provider.</li>
+                </ul>
+
+                <h3>Dark mode not saving</h3>
+                <p>Dark mode preference is stored in local storage. Clearing your browser cache (in Electron: <strong>Settings → Clear Data</strong>) will reset it.</p>
+
+                <div class="callout callout-info">
+                    <span class="callout-icon">ℹ️</span>
+                    <div>Need more help? Open an issue on our <a href="https://github.com/anthropics/claude-code/issues" style="color: var(--primary-blue);">GitHub page</a> or reach out via the contact form on the <a href="index.html#contact" style="color: var(--primary-blue);">main site</a>.</div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Ledebe</h4>
+                    <p>Secure data protection for everyone</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Product</h4>
+                    <ul>
+                        <li><a href="index.html#features">Features</a></li>
+                        <li><a href="index.html#security">Security</a></li>
+                        <li><a href="index.html#download">Download</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Support</h4>
+                    <ul>
+                        <li><a href="index.html#contact">Contact</a></li>
+                        <li><a href="docs.html">Documentation</a></li>
+                        <li><a href="#">Privacy Policy</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Ledebe. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        function toggleFaq(btn) {
+            const answer = btn.nextElementSibling;
+            const chevron = btn.querySelector('.faq-chevron');
+            answer.classList.toggle('open');
+            chevron.classList.toggle('open');
+        }
+    </script>
+
+</body>
+</html>

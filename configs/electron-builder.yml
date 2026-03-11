@@ -1,4 +1,4 @@
-appId: com.example.piiprotector
+appId: com.ledebe.protector
 productName: Ledebe Protector
 files:
   - dist/**
@@ -12,6 +12,7 @@ mac:
   target:
     - dmg
   category: public.app-category.productivity
+  icon: assets/icon.icns
   hardenedRuntime: true
   gatekeeperAssess: true
   entitlements: build/entitlements.mac.plist
@@ -19,8 +20,28 @@ mac:
 
 dmg:
   background: build/dmg_background.png
-  icon: build/icon.icns
+  icon: assets/icon.icns
   iconSize: 128
   window:
     width: 600
     height: 400
+
+win:
+  target:
+    - nsis
+  icon: assets/icon.ico
+
+nsis:
+  oneClick: false
+  allowElevation: true
+  allowToChangeInstallationDirectory: false
+  createDesktopShortcut: always
+  createStartMenuShortcut: true
+  shortcutName: "Ledebe Protector"
+  runAfterFinish: true
+  deleteAppDataOnUninstall: false
+
+linux:
+  target:
+    - AppImage
+  category: Utility

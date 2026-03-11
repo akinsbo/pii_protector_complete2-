@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Colour Palette Preview – Ledebe Protector</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f1f5f9; }
+
+        .page-title {
+            text-align: center;
+            padding: 3rem 2rem 1rem;
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1f2937;
+        }
+        .page-subtitle {
+            text-align: center;
+            color: #6b7280;
+            margin-bottom: 3rem;
+            font-size: 1.1rem;
+        }
+
+        .palette-label {
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin: 3rem 0 0.5rem;
+            padding: 0 2rem;
+        }
+        .palette-desc {
+            text-align: center;
+            color: #6b7280;
+            margin-bottom: 1.5rem;
+            font-size: 1rem;
+        }
+        .palette-swatches {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .swatch {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .swatch-box {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+        .swatch span {
+            font-size: 0.75rem;
+            color: #6b7280;
+        }
+
+        /* ── PREVIEW WRAPPER ── */
+        .preview {
+            max-width: 1100px;
+            margin: 0 auto 4rem;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            border: 1px solid #e2e8f0;
+        }
+
+        /* ── NAV ── */
+        .p-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            color: white;
+        }
+        .p-logo { font-size: 1.3rem; font-weight: 700; }
+        .p-links { display: flex; gap: 1.5rem; list-style: none; }
+        .p-links a { color: white; text-decoration: none; font-weight: 500; font-size: 0.95rem; }
+
+        /* ── HERO ── */
+        .p-hero {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            padding: 4rem 2rem;
+            align-items: center;
+        }
+        .p-hero h1 { font-size: 2.2rem; font-weight: 700; margin-bottom: 1rem; color: #1f2937; line-height: 1.2; }
+        .p-hero p { color: #6b7280; margin-bottom: 2rem; font-size: 1rem; }
+        .p-btns { display: flex; flex-direction: column; gap: 0.75rem; max-width: 260px; }
+        .p-btn-primary {
+            padding: 0.9rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            color: white;
+            text-align: center;
+        }
+        .p-btn-secondary {
+            padding: 0.9rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            background: transparent;
+            text-align: center;
+        }
+
+        /* ── APP WINDOW MOCKUP ── */
+        .p-window {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .p-window-bar {
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .p-dots { display: flex; gap: 5px; }
+        .p-dots span { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.4); }
+        .p-window-body { padding: 1.5rem; font-size: 0.9rem; color: #6b7280; }
+        .p-masked { background: #fee2e2; color: #991b1b; padding: 0.25rem 0.5rem; border-radius: 4px; font-family: monospace; font-size: 0.8rem; }
+
+        /* ── CARDS ROW ── */
+        .p-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            padding: 3rem 2rem;
+        }
+        .p-card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+        }
+        .p-card-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+        .p-card h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; color: #1f2937; }
+        .p-card p { font-size: 0.85rem; color: #6b7280; }
+
+        /* ── DOWNLOAD ROW ── */
+        .p-downloads {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            padding: 0 2rem 3rem;
+        }
+        .p-dl-card {
+            border-radius: 10px;
+            padding: 1.5rem 1rem;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+            background: white;
+        }
+        .p-dl-card .icon { font-size: 2rem; margin-bottom: 0.5rem; }
+        .p-dl-card h4 { font-size: 0.9rem; font-weight: 600; color: #1f2937; margin-bottom: 0.25rem; }
+        .p-dl-card p { font-size: 0.75rem; color: #6b7280; margin-bottom: 1rem; }
+        .p-dl-btn {
+            display: block;
+            width: 100%;
+            padding: 0.6rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+        }
+
+        /* ── FOOTER ── */
+        .p-footer {
+            background: #1f2937;
+            color: rgba(255,255,255,0.7);
+            padding: 1.5rem 2rem;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
+        /* ── CURRENT TAG ── */
+        .current-tag {
+            display: inline-block;
+            background: #fef3c7;
+            color: #92400e;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.2rem 0.6rem;
+            border-radius: 999px;
+            margin-left: 0.5rem;
+            vertical-align: middle;
+        }
+
+        hr.divider {
+            border: none;
+            border-top: 2px dashed #e2e8f0;
+            margin: 1rem 2rem;
+        }
+    </style>
+</head>
+<body>
+
+<h1 class="page-title">Colour Palette Preview</h1>
+<p class="page-subtitle">See how each palette looks applied to the real site layout. Pick your favourite.</p>
+
+<!-- ══════════════════════════════════════════════════
+     CURRENT (for reference)
+══════════════════════════════════════════════════ -->
+<p class="palette-label">Current <span class="current-tag">Live now</span></p>
+<p class="palette-desc">Navy Blue + Lime Green — the existing palette</p>
+<div class="palette-swatches">
+    <div class="swatch"><div class="swatch-box" style="background:#1e3a8a"></div><span>#1e3a8a Navy</span></div>
+    <div class="swatch"><div class="swatch-box" style="background:#4ade80"></div><span>#4ade80 Lime</span></div>
+    <div class="swatch"><div class="swatch-box" style="background:#f8fafc"></div><span>#f8fafc BG</span></div>
+    <div class="swatch"><div class="swatch-box" style="background:#1f2937"></div><span>#1f2937 Text</span></div>
+</div>
+<div class="preview">
+    <div style="background:#1e3a8a" class="p-nav">
+        <div class="p-logo">🔒 Ledebe</div>
+        <ul class="p-links"><li><a href="#">Home</a></li><li><a href="#">Features</a></li><li><a href="#">Download</a></li><li><a href="#">Docs</a></li></ul>
+    </div>
+    <div style="background:#f8fafc" class="p-hero">
+        <div>
+            <h1>Protect Your Sensitive Data Before Sharing</h1>
+            <p>Ledebe Protector masks PII in seconds — names, emails, phone numbers and more.</p>
+            <div class="p-btns">
+                <button class="p-btn-primary" style="background:#4ade80">Download for Mac</button>
+                <button class="p-btn-secondary" style="border:2px solid #1e3a8a; color:#1e3a8a">Download for Windows</button>
+            </div>
+        </div>
+        <div class="p-window">
+            <div class="p-window-bar" style="background:#1e3a8a"><div class="p-dots"><span></span><span></span><span></span></div>Ledebe Protector</div>
+            <div class="p-window-body">Enter text with PII → <span class="p-masked">[NAME_1]</span> <span class="p-masked">[EMAIL_1]</span></div>
+        </div>
+    </div>
+    <div style="background:#ffffff" class="p-cards">
+        <div class="p-card"><div class="p-card-icon">🔐</div><h3>Auto Detection</h3><p>Detects names, emails, phones automatically</p></div>
+        <div class="p-card"><div class="p-card-icon">⚡</div><h3>Instant Masking</h3><p>One click to protect sensitive data</p></div>
+        <div class="p-card"><div class="p-card-icon">🤖</div><h3>AI Chat</h3><p>Safe AI prompts with masked data</p></div>
+    </div>
+    <div class="p-downloads">
+        <div class="p-dl-card"><div class="icon">🍎</div><h4>macOS Silicon</h4><p>M1, M2, M3 Macs</p><button class="p-dl-btn" style="background:#4ade80">Download .dmg</button></div>
+        <div class="p-dl-card"><div class="icon">🍎</div><h4>macOS Intel</h4><p>Intel-based Macs</p><button class="p-dl-btn" style="background:#4ade80">Download .dmg</button></div>
+        <div class="p-dl-card"><div class="icon">🪟</div><h4>Windows</h4><p>Windows 10+</p><button class="p-dl-btn" style="background:#4ade80">Download .exe</button></div>
+        <div class="p-dl-card"><div class="icon">🐧</div><h4>Linux</h4><p>Ubuntu 18.04+</p><button class="p-dl-btn" style="background:#4ade80">Download .AppImage</button></div>
+    </div>
+    <div class="p-footer">© 2024 Ledebe. All rights reserved.</div>
+</div>
+
+<hr class="divider">
+
+<!-- ══════════════════════════════════════════════════
+     OPTION 1 — Navy + Gold
+══════════════════════════════════════════════════ -->
+<p class="palette-label">Option 1 — Navy + Gold</p>
+<p class="palette-desc">Professional, authoritative, trustworthy. Think security companies and financial tools.</p>
+<div class="palette-swatches">
+    <div class="swatch"><div class="swatch-box" style="background:#1e3a8a"></div><span>#1e3a8a Navy</span></div>
+    <div class="swatch"><div class="swatch-box" style="background:#f59e0b"></div><span>#f59e0b Gold</span></div>
+    <div class="swatch"><div class="swatch-box" style="background:#d97706"></div><span>#d97706 Dark Gold</span></div>
+    <div class="swatch"><div class="swatch-box" style="background:#fffbeb"></div><span>#fffbeb BG</span></div>
+</div>
+<div class="preview">
+    <div style="background:#1e3a8a" class="p-nav">
+        <div class="p-logo">🔒 Ledebe</div>
+        <ul class="p-links"><li><a href="#">Home</a></li><li><a href="#">Features</a></li><li><a href="#">Download</a></li><li><a href="#">Docs</a></li></ul>
+    </div>
+    <div style="background:#fffbeb" class="p-hero">
+        <div>
+            <h1>Protect Your Sensitive Data Before Sharing</h1>
+            <p>Ledebe Protector masks PII in seconds — names, emails, phone numbers and more.</p>
+            <div class="p-btns">
+                <button class="p-btn-primary" style="background:#f59e0b">Download for Mac</button>
+                <button class="p-btn-secondary" style="border:2px solid #1e3a8a; color:#1e3a8a">Download for Windows</button>
+            </div>
+        </div>
+        <div class="p-window">
+            <div class="p-window-bar" style="background:#1e3a8a"><div class="p-dots"><span></span><span></span><span></span></div>Ledebe Protector</div>
+            <div class="p-window-body">Enter text with PII → <span class="p-masked">[NAME_1]</span> <span class="p-masked">[EMAIL_1]</span></div>
+        </div>
+    </div>
+    <div style="background:#ffffff" class="p-cards">
+        <div class="p-card"><div class="p-card-icon">🔐</div><h3>Auto Detection</h3><p>Detects names, emails, phones automatically</p></div>
+        <div class="p-card"><div class="p-card-icon">⚡</div><h3>Instant Masking</h3><p>One click to protect sensitive data</p></div>
+        <div class="p-card"><div class="p-card-icon">🤖</div><h3>AI Chat</h3><p>Safe AI prompts with masked data</p></div>
+    </div>
+    <div class="p-downloads">
+        <div class="p-dl-card"><div class="icon">🍎</div><h4>macOS Silicon</h4><p>M1, M2, M3 Macs</p><button class="p-dl-btn" style="background:#f59e0b">Download .dmg</button></div>
+        <div class="p-dl-card"><div class="icon">🍎</div><h4>macOS Intel</h4><p>Intel-based Macs</p><button class="p-dl-btn" style="background:#f59e0b">Download .dmg</button></div>
+        <div class="p-dl-card"><div class="icon">🪟</div><h4>Windows</h4><p>Windows 10+</p><button class="p-dl-btn" style="background:#f59e0b">Download .exe</button></div>
+        <div class="p-dl-card"><div class="icon">🐧</div><h4>Linux</h4><p>Ubuntu 18.04+</p><button class="p-dl-btn" style="background:#f59e0b">Download .AppImage</button></div>
+    </div>
+    <div class="p-footer">© 2024 Ledebe. All rights reserved.</div>
+</div>
+
+<hr class="divider">
+
+<!-- ══════════════════════════════════════════════════
+     OPTION 2 — Royal Blue + Cyan
+══════════════════════════════════════════════════ -->
+<p class="palette-label">Option 2 — Royal Blue + Cyan</p>
+<p class="palette-desc">Modern, clean, tech-forward. Feels like Stripe, Linear or Notion. Lighter and more approachable.</p>
+<div class="palette-swatches">
+    <div class="swatch"><div class="swatch-box" style="background:#1d4ed8"></div><span>#1d4ed8 Royal Blue</span></div>
+    <div class="swatch"><div class="swatch-box" style="background:#06b6d4"></div><span>#06b6d4 Cyan</span></div>
+    <div class="swatch"><div class="swatch-box" style="background:#0891b2"></div><span>#0891b2 Dark Cyan</span></div>
+    <div class="swatch"><div class="swatch-box" style="background:#f0f9ff"></div><span>#f0f9ff BG</span></div>
+</div>
+<div class="preview">
+    <div style="background:#1d4ed8" class="p-nav">
+        <div class="p-logo">🔒 Ledebe</div>
+        <ul class="p-links"><li><a href="#">Home</a></li><li><a href="#">Features</a></li><li><a href="#">Download</a></li><li><a href="#">Docs</a></li></ul>
+    </div>
+    <div style="background:#f0f9ff" class="p-hero">
+        <div>
+            <h1>Protect Your Sensitive Data Before Sharing</h1>
+            <p>Ledebe Protector masks PII in seconds — names, emails, phone numbers and more.</p>
+            <div class="p-btns">
+                <button class="p-btn-primary" style="background:#06b6d4">Download for Mac</button>
+                <button class="p-btn-secondary" style="border:2px solid #1d4ed8; color:#1d4ed8">Download for Windows</button>
+            </div>
+        </div>
+        <div class="p-window">
+            <div class="p-window-bar" style="background:#1d4ed8"><div class="p-dots"><span></span><span></span><span></span></div>Ledebe Protector</div>
+            <div class="p-window-body">Enter text with PII → <span class="p-masked">[NAME_1]</span> <span class="p-masked">[EMAIL_1]</span></div>
+        </div>
+    </div>
+    <div style="background:#ffffff" class="p-cards">
+        <div class="p-card"><div class="p-card-icon">🔐</div><h3>Auto Detection</h3><p>Detects names, emails, phones automatically</p></div>
+        <div class="p-card"><div class="p-card-icon">⚡</div><h3>Instant Masking</h3><p>One click to protect sensitive data</p></div>
+        <div class="p-card"><div class="p-card-icon">🤖</div><h3>AI Chat</h3><p>Safe AI prompts with masked data</p></div>
+    </div>
+    <div class="p-downloads">
+        <div class="p-dl-card"><div class="icon">🍎</div><h4>macOS Silicon</h4><p>M1, M2, M3 Macs</p><button class="p-dl-btn" style="background:#06b6d4">Download .dmg</button></div>
+        <div class="p-dl-card"><div class="icon">🍎</div><h4>macOS Intel</h4><p>Intel-based Macs</p><button class="p-dl-btn" style="background:#06b6d4">Download .dmg</button></div>
+        <div class="p-dl-card"><div class="icon">🪟</div><h4>Windows</h4><p>Windows 10+</p><button class="p-dl-btn" style="background:#06b6d4">Download .exe</button></div>
+        <div class="p-dl-card"><div class="icon">🐧</div><h4>Linux</h4><p>Ubuntu 18.04+</p><button class="p-dl-btn" style="background:#06b6d4">Download .AppImage</button></div>
+    </div>
+    <div class="p-footer">© 2024 Ledebe. All rights reserved.</div>
+</div>
+
+<hr class="divider">
+
+<!-- ══════════════════════════════════════════════════
+     OPTION 3 — Deep Purple + Green
+══════════════════════════════════════════════════ -->
+<p class="palette-label">Option 3 — Deep Purple + Green</p>
+<p class="palette-desc">Distinctive, privacy-forward, premium. Purple signals trust and privacy, green signals safety.</p>
+<div class="palette-swatches">
+    <div class="swatch"><div class="swatch-box" style="background:#5b21b6"></div><span>#5b21b6 Purple</span></div>
+    <div class="swatch"><div class="swatch-box" style="background:#22c55e"></div><span>#22c55e Green</span></div>
+    <div class="swatch"><div class="swatch-box" style="background:#16a34a"></div><span>#16a34a Dark Green</span></div>
+    <div class="swatch"><div class="swatch-box" style="background:#faf5ff"></div><span>#faf5ff BG</span></div>
+</div>
+<div class="preview">
+    <div style="background:#5b21b6" class="p-nav">
+        <div class="p-logo">🔒 Ledebe</div>
+        <ul class="p-links"><li><a href="#">Home</a></li><li><a href="#">Features</a></li><li><a href="#">Download</a></li><li><a href="#">Docs</a></li></ul>
+    </div>
+    <div style="background:#faf5ff" class="p-hero">
+        <div>
+            <h1>Protect Your Sensitive Data Before Sharing</h1>
+            <p>Ledebe Protector masks PII in seconds — names, emails, phone numbers and more.</p>
+            <div class="p-btns">
+                <button class="p-btn-primary" style="background:#22c55e">Download for Mac</button>
+                <button class="p-btn-secondary" style="border:2px solid #5b21b6; color:#5b21b6">Download for Windows</button>
+            </div>
+        </div>
+        <div class="p-window">
+            <div class="p-window-bar" style="background:#5b21b6"><div class="p-dots"><span></span><span></span><span></span></div>Ledebe Protector</div>
+            <div class="p-window-body">Enter text with PII → <span class="p-masked">[NAME_1]</span> <span class="p-masked">[EMAIL_1]</span></div>
+        </div>
+    </div>
+    <div style="background:#ffffff" class="p-cards">
+        <div class="p-card"><div class="p-card-icon">🔐</div><h3>Auto Detection</h3><p>Detects names, emails, phones automatically</p></div>
+        <div class="p-card"><div class="p-card-icon">⚡</div><h3>Instant Masking</h3><p>One click to protect sensitive data</p></div>
+        <div class="p-card"><div class="p-card-icon">🤖</div><h3>AI Chat</h3><p>Safe AI prompts with masked data</p></div>
+    </div>
+    <div class="p-downloads">
+        <div class="p-dl-card"><div class="icon">🍎</div><h4>macOS Silicon</h4><p>M1, M2, M3 Macs</p><button class="p-dl-btn" style="background:#22c55e">Download .dmg</button></div>
+        <div class="p-dl-card"><div class="icon">🍎</div><h4>macOS Intel</h4><p>Intel-based Macs</p><button class="p-dl-btn" style="background:#22c55e">Download .dmg</button></div>
+        <div class="p-dl-card"><div class="icon">🪟</div><h4>Windows</h4><p>Windows 10+</p><button class="p-dl-btn" style="background:#22c55e">Download .exe</button></div>
+        <div class="p-dl-card"><div class="icon">🐧</div><h4>Linux</h4><p>Ubuntu 18.04+</p><button class="p-dl-btn" style="background:#22c55e">Download .AppImage</button></div>
+    </div>
+    <div class="p-footer">© 2024 Ledebe. All rights reserved.</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     APP UI PREVIEWS
+══════════════════════════════════════════════════ -->
+<div style="text-align:center; padding: 4rem 2rem 1rem;">
+    <h2 style="font-size:2rem; font-weight:700; color:#1f2937;">App UI Previews</h2>
+    <p style="color:#6b7280; margin-top:0.5rem; font-size:1.1rem;">How the desktop app itself would look with each palette</p>
+</div>
+
+<style>
+    /* ── APP MOCKUP SHELL ── */
+    .app-mock {
+        max-width: 1000px;
+        margin: 2rem auto 4rem;
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 24px 64px rgba(0,0,0,0.2);
+        border: 1px solid #d1d5db;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 13px;
+    }
+
+    /* title bar (macOS style) */
+    .am-titlebar {
+        display: flex;
+        align-items: center;
+        padding: 0.6rem 1rem;
+        gap: 0.6rem;
+    }
+    .am-titlebar .dots { display:flex; gap:5px; }
+    .am-titlebar .dots span { width:12px; height:12px; border-radius:50%; }
+    .am-titlebar .dot-r { background:#ff5f56; }
+    .am-titlebar .dot-y { background:#ffbd2e; }
+    .am-titlebar .dot-g { background:#27c93f; }
+    .am-titlebar-title { flex:1; text-align:center; font-weight:600; color:rgba(255,255,255,0.85); font-size:0.85rem; }
+    .am-titlebar-btns { display:flex; gap:0.5rem; }
+    .am-titlebar-btn {
+        padding: 0.3rem 0.75rem;
+        border-radius: 4px;
+        border: 1px solid rgba(255,255,255,0.25);
+        background: rgba(255,255,255,0.1);
+        color: white;
+        font-size: 0.75rem;
+        cursor: pointer;
+    }
+
+    /* body = sidebar + main */
+    .am-body { display:flex; height:500px; }
+
+    /* sidebar */
+    .am-sidebar { width:220px; display:flex; flex-direction:column; border-right:1px solid #e2e8f0; }
+    .am-sidebar-head { padding:0.75rem 1rem; color:white; font-weight:600; font-size:0.85rem; display:flex; justify-content:space-between; align-items:center; }
+    .am-sidebar-body { flex:1; padding:0.75rem; overflow:hidden; background:white; }
+    .am-new-btn { display:block; width:100%; padding:0.5rem; border:none; border-radius:6px; font-size:0.8rem; font-weight:600; cursor:pointer; margin-bottom:0.75rem; }
+    .am-session { padding:0.6rem; border-radius:6px; margin-bottom:0.4rem; font-size:0.8rem; border:2px solid transparent; }
+    .am-session.active-s { color:white; }
+    .am-session-date { font-size:0.7rem; opacity:0.65; margin-top:2px; }
+    .am-sidebar-foot { padding:0.75rem; border-top:1px solid #e2e8f0; background:#f8fafc; }
+    .am-sidebar-foot label { font-size:0.75rem; font-weight:600; color:#374151; display:block; margin-bottom:0.4rem; }
+    .am-sidebar-foot textarea { width:100%; height:55px; border:1px solid #e2e8f0; border-radius:5px; padding:0.4rem; font-size:0.75rem; resize:none; color:#374151; }
+
+    /* main area */
+    .am-main { flex:1; display:flex; flex-direction:column; background:#f8fafc; }
+    .am-tabs { display:flex; gap:0; border-bottom:1px solid #e2e8f0; background:white; }
+    .am-tab { padding:0.6rem 1.2rem; font-size:0.82rem; font-weight:500; cursor:pointer; border-bottom:2px solid transparent; color:#6b7280; }
+    .am-tab.active-t { color:#1f2937; font-weight:600; }
+    .am-content { flex:1; padding:1rem; display:flex; flex-direction:column; gap:0.75rem; }
+    .am-label { font-size:0.8rem; font-weight:600; color:#374151; margin-bottom:0.25rem; }
+    .am-textarea { width:100%; height:130px; border:1px solid #e2e8f0; border-radius:8px; padding:0.75rem; font-size:0.82rem; resize:none; background:white; color:#374151; font-family:inherit; }
+    .am-actions { display:flex; gap:0.5rem; }
+    .am-protect-btn { padding:0.6rem 1.2rem; border:none; border-radius:6px; font-size:0.82rem; font-weight:600; color:white; cursor:pointer; }
+    .am-clear-btn { padding:0.6rem 1.2rem; border:1px solid #e2e8f0; border-radius:6px; font-size:0.82rem; background:white; color:#6b7280; cursor:pointer; }
+    .am-output { background:white; border:1px solid #e2e8f0; border-radius:8px; padding:0.75rem; flex:1; font-size:0.82rem; color:#374151; line-height:1.6; }
+    .am-tag { display:inline-block; padding:0.1rem 0.4rem; border-radius:4px; font-family:monospace; font-size:0.78rem; margin:0 1px; }
+    .am-tag-name { background:#fde8e8; color:#9b1c1c; }
+    .am-tag-email { background:#e1effe; color:#1e429f; }
+    .am-tag-phone { background:#def7ec; color:#03543f; }
+    .am-copy-btn { margin-top:0.5rem; padding:0.4rem 0.8rem; border:1px solid #e2e8f0; border-radius:5px; font-size:0.75rem; background:white; color:#6b7280; cursor:pointer; }
+</style>
+
+<!-- APP: Current -->
+<p class="palette-label">App — Current <span class="current-tag">Live now</span></p>
+<p class="palette-desc">Navy + Lime Green inside the desktop app</p>
+<div class="app-mock">
+    <div class="am-titlebar" style="background:#1e3a8a">
+        <div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        <div class="am-titlebar-title">🔒 Ledebe Protector — PII Protection Tool</div>
+        <div class="am-titlebar-btns">
+            <div class="am-titlebar-btn">📋 History</div>
+            <div class="am-titlebar-btn">🌙</div>
+            <div class="am-titlebar-btn">⚙️</div>
+        </div>
+    </div>
+    <div class="am-body">
+        <div class="am-sidebar">
+            <div class="am-sidebar-head" style="background:#1e3a8a">History <span style="opacity:0.6; font-size:1rem; cursor:pointer">✕</span></div>
+            <div class="am-sidebar-body">
+                <button class="am-new-btn" style="background:#4ade80; color:#065f46">+ New Session</button>
+                <div class="am-session active-s" style="background:#4ade80; color:#065f46">
+                    <div>John Smith contract.pdf</div>
+                    <div class="am-session-date">Today, 2:14 PM</div>
+                </div>
+                <div class="am-session" style="background:#f8fafc; border-color:#e2e8f0">
+                    <div>HR report Q1 2026</div>
+                    <div class="am-session-date">Yesterday</div>
+                </div>
+                <div class="am-session" style="background:#f8fafc; border-color:#e2e8f0">
+                    <div>Medical records batch</div>
+                    <div class="am-session-date">Mar 3</div>
+                </div>
+            </div>
+            <div class="am-sidebar-foot">
+                <label>Custom Terms</label>
+                <textarea placeholder="ProjectAlpha, Acme Corp..."></textarea>
+            </div>
+        </div>
+        <div class="am-main">
+            <div class="am-tabs">
+                <div class="am-tab active-t" style="border-color:#1e3a8a; color:#1e3a8a">🛡️ Protect</div>
+                <div class="am-tab">🤖 AI Chat</div>
+                <div class="am-tab">📤 Export</div>
+            </div>
+            <div class="am-content">
+                <div>
+                    <div class="am-label">Input Text</div>
+                    <textarea class="am-textarea">Please review the contract for John Smith (john.smith@acme.com). His phone is 555-234-7890 and he works at Acme Corp, 123 Main St, New York.</textarea>
+                </div>
+                <div class="am-actions">
+                    <button class="am-protect-btn" style="background:#4ade80; color:#065f46">🛡️ Protect Text</button>
+                    <button class="am-clear-btn">Clear</button>
+                    <button class="am-clear-btn">↩ Unmask</button>
+                </div>
+                <div>
+                    <div class="am-label">Protected Output</div>
+                    <div class="am-output">
+                        Please review the contract for <span class="am-tag am-tag-name">[NAME_1]</span> (<span class="am-tag am-tag-email">[EMAIL_1]</span>). His phone is <span class="am-tag am-tag-phone">[PHONE_1]</span> and he works at <span class="am-tag am-tag-name">[ORG_1]</span>, <span class="am-tag am-tag-email">[ADDRESS_1]</span>.
+                        <br><button class="am-copy-btn">📋 Copy</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<hr class="divider">
+
+<!-- APP: Option 1 — Navy + Gold -->
+<p class="palette-label">App — Option 1: Navy + Gold</p>
+<p class="palette-desc">Same navy header, gold replaces the lime green on buttons and active states</p>
+<div class="app-mock">
+    <div class="am-titlebar" style="background:#1e3a8a">
+        <div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        <div class="am-titlebar-title">🔒 Ledebe Protector — PII Protection Tool</div>
+        <div class="am-titlebar-btns">
+            <div class="am-titlebar-btn">📋 History</div>
+            <div class="am-titlebar-btn">🌙</div>
+            <div class="am-titlebar-btn">⚙️</div>
+        </div>
+    </div>
+    <div class="am-body">
+        <div class="am-sidebar">
+            <div class="am-sidebar-head" style="background:#1e3a8a">History <span style="opacity:0.6; font-size:1rem; cursor:pointer">✕</span></div>
+            <div class="am-sidebar-body">
+                <button class="am-new-btn" style="background:#f59e0b; color:#78350f">+ New Session</button>
+                <div class="am-session active-s" style="background:#f59e0b; color:#78350f">
+                    <div>John Smith contract.pdf</div>
+                    <div class="am-session-date" style="color:#92400e">Today, 2:14 PM</div>
+                </div>
+                <div class="am-session" style="background:#f8fafc; border-color:#e2e8f0">
+                    <div>HR report Q1 2026</div>
+                    <div class="am-session-date">Yesterday</div>
+                </div>
+                <div class="am-session" style="background:#f8fafc; border-color:#e2e8f0">
+                    <div>Medical records batch</div>
+                    <div class="am-session-date">Mar 3</div>
+                </div>
+            </div>
+            <div class="am-sidebar-foot">
+                <label>Custom Terms</label>
+                <textarea placeholder="ProjectAlpha, Acme Corp..."></textarea>
+            </div>
+        </div>
+        <div class="am-main" style="background:#fffbeb">
+            <div class="am-tabs" style="background:white">
+                <div class="am-tab active-t" style="border-color:#f59e0b; color:#92400e">🛡️ Protect</div>
+                <div class="am-tab">🤖 AI Chat</div>
+                <div class="am-tab">📤 Export</div>
+            </div>
+            <div class="am-content">
+                <div>
+                    <div class="am-label">Input Text</div>
+                    <textarea class="am-textarea">Please review the contract for John Smith (john.smith@acme.com). His phone is 555-234-7890 and he works at Acme Corp, 123 Main St, New York.</textarea>
+                </div>
+                <div class="am-actions">
+                    <button class="am-protect-btn" style="background:#f59e0b; color:#78350f">🛡️ Protect Text</button>
+                    <button class="am-clear-btn">Clear</button>
+                    <button class="am-clear-btn">↩ Unmask</button>
+                </div>
+                <div>
+                    <div class="am-label">Protected Output</div>
+                    <div class="am-output">
+                        Please review the contract for <span class="am-tag am-tag-name">[NAME_1]</span> (<span class="am-tag am-tag-email">[EMAIL_1]</span>). His phone is <span class="am-tag am-tag-phone">[PHONE_1]</span> and he works at <span class="am-tag am-tag-name">[ORG_1]</span>, <span class="am-tag am-tag-email">[ADDRESS_1]</span>.
+                        <br><button class="am-copy-btn">📋 Copy</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<hr class="divider">
+
+<!-- APP: Option 2 — Royal Blue + Cyan -->
+<p class="palette-label">App — Option 2: Royal Blue + Cyan</p>
+<p class="palette-desc">Lighter blue header, cyan accent on buttons — clean and modern feel</p>
+<div class="app-mock">
+    <div class="am-titlebar" style="background:#1d4ed8">
+        <div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        <div class="am-titlebar-title">🔒 Ledebe Protector — PII Protection Tool</div>
+        <div class="am-titlebar-btns">
+            <div class="am-titlebar-btn">📋 History</div>
+            <div class="am-titlebar-btn">🌙</div>
+            <div class="am-titlebar-btn">⚙️</div>
+        </div>
+    </div>
+    <div class="am-body">
+        <div class="am-sidebar">
+            <div class="am-sidebar-head" style="background:#1d4ed8">History <span style="opacity:0.6; font-size:1rem; cursor:pointer">✕</span></div>
+            <div class="am-sidebar-body">
+                <button class="am-new-btn" style="background:#06b6d4; color:#164e63">+ New Session</button>
+                <div class="am-session active-s" style="background:#06b6d4; color:#164e63">
+                    <div>John Smith contract.pdf</div>
+                    <div class="am-session-date" style="color:#155e75">Today, 2:14 PM</div>
+                </div>
+                <div class="am-session" style="background:#f0f9ff; border-color:#e0f2fe">
+                    <div>HR report Q1 2026</div>
+                    <div class="am-session-date">Yesterday</div>
+                </div>
+                <div class="am-session" style="background:#f0f9ff; border-color:#e0f2fe">
+                    <div>Medical records batch</div>
+                    <div class="am-session-date">Mar 3</div>
+                </div>
+            </div>
+            <div class="am-sidebar-foot" style="background:#f0f9ff; border-color:#e0f2fe">
+                <label>Custom Terms</label>
+                <textarea placeholder="ProjectAlpha, Acme Corp..."></textarea>
+            </div>
+        </div>
+        <div class="am-main" style="background:#f0f9ff">
+            <div class="am-tabs" style="background:white">
+                <div class="am-tab active-t" style="border-color:#06b6d4; color:#0e7490">🛡️ Protect</div>
+                <div class="am-tab">🤖 AI Chat</div>
+                <div class="am-tab">📤 Export</div>
+            </div>
+            <div class="am-content">
+                <div>
+                    <div class="am-label">Input Text</div>
+                    <textarea class="am-textarea">Please review the contract for John Smith (john.smith@acme.com). His phone is 555-234-7890 and he works at Acme Corp, 123 Main St, New York.</textarea>
+                </div>
+                <div class="am-actions">
+                    <button class="am-protect-btn" style="background:#06b6d4; color:#164e63">🛡️ Protect Text</button>
+                    <button class="am-clear-btn">Clear</button>
+                    <button class="am-clear-btn">↩ Unmask</button>
+                </div>
+                <div>
+                    <div class="am-label">Protected Output</div>
+                    <div class="am-output">
+                        Please review the contract for <span class="am-tag am-tag-name">[NAME_1]</span> (<span class="am-tag am-tag-email">[EMAIL_1]</span>). His phone is <span class="am-tag am-tag-phone">[PHONE_1]</span> and he works at <span class="am-tag am-tag-name">[ORG_1]</span>, <span class="am-tag am-tag-email">[ADDRESS_1]</span>.
+                        <br><button class="am-copy-btn">📋 Copy</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<hr class="divider">
+
+<!-- APP: Option 3 — Purple + Green -->
+<p class="palette-label">App — Option 3: Deep Purple + Green</p>
+<p class="palette-desc">Purple header, clean green buttons — distinctive and privacy-forward</p>
+<div class="app-mock">
+    <div class="am-titlebar" style="background:#5b21b6">
+        <div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        <div class="am-titlebar-title">🔒 Ledebe Protector — PII Protection Tool</div>
+        <div class="am-titlebar-btns">
+            <div class="am-titlebar-btn">📋 History</div>
+            <div class="am-titlebar-btn">🌙</div>
+            <div class="am-titlebar-btn">⚙️</div>
+        </div>
+    </div>
+    <div class="am-body">
+        <div class="am-sidebar">
+            <div class="am-sidebar-head" style="background:#5b21b6">History <span style="opacity:0.6; font-size:1rem; cursor:pointer">✕</span></div>
+            <div class="am-sidebar-body">
+                <button class="am-new-btn" style="background:#22c55e; color:#14532d">+ New Session</button>
+                <div class="am-session active-s" style="background:#22c55e; color:#14532d">
+                    <div>John Smith contract.pdf</div>
+                    <div class="am-session-date" style="color:#166534">Today, 2:14 PM</div>
+                </div>
+                <div class="am-session" style="background:#faf5ff; border-color:#e9d5ff">
+                    <div>HR report Q1 2026</div>
+                    <div class="am-session-date">Yesterday</div>
+                </div>
+                <div class="am-session" style="background:#faf5ff; border-color:#e9d5ff">
+                    <div>Medical records batch</div>
+                    <div class="am-session-date">Mar 3</div>
+                </div>
+            </div>
+            <div class="am-sidebar-foot" style="background:#faf5ff; border-color:#e9d5ff">
+                <label>Custom Terms</label>
+                <textarea placeholder="ProjectAlpha, Acme Corp..."></textarea>
+            </div>
+        </div>
+        <div class="am-main" style="background:#faf5ff">
+            <div class="am-tabs" style="background:white">
+                <div class="am-tab active-t" style="border-color:#22c55e; color:#15803d">🛡️ Protect</div>
+                <div class="am-tab">🤖 AI Chat</div>
+                <div class="am-tab">📤 Export</div>
+            </div>
+            <div class="am-content">
+                <div>
+                    <div class="am-label">Input Text</div>
+                    <textarea class="am-textarea">Please review the contract for John Smith (john.smith@acme.com). His phone is 555-234-7890 and he works at Acme Corp, 123 Main St, New York.</textarea>
+                </div>
+                <div class="am-actions">
+                    <button class="am-protect-btn" style="background:#22c55e; color:#14532d">🛡️ Protect Text</button>
+                    <button class="am-clear-btn">Clear</button>
+                    <button class="am-clear-btn">↩ Unmask</button>
+                </div>
+                <div>
+                    <div class="am-label">Protected Output</div>
+                    <div class="am-output">
+                        Please review the contract for <span class="am-tag am-tag-name">[NAME_1]</span> (<span class="am-tag am-tag-email">[EMAIL_1]</span>). His phone is <span class="am-tag am-tag-phone">[PHONE_1]</span> and he works at <span class="am-tag am-tag-name">[ORG_1]</span>, <span class="am-tag am-tag-email">[ADDRESS_1]</span>.
+                        <br><button class="am-copy-btn">📋 Copy</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div style="text-align:center; padding: 2rem; color: #9ca3af; font-size: 0.9rem;">
+    This page is temporary — tell us which palette you prefer and we'll apply it to the live site and app.
+</div>
+
+</body>
+</html>

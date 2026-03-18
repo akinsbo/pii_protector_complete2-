@@ -41,12 +41,6 @@
   - Original document structure maintained exactly
   - Monospace font for proper alignment
 
-## 🐛 QUICK FIXES NEEDED
-- Dark mode text visibility - adjust contrast for better readability
-- "New chat" button placement - ensure it's at top of sidebar
-- Expandable "protect your text" area
-- History edit creates new item instead of updating existing
-
 ## 🚀 HIGH PRIORITY FEATURES
 
 ### 1. ✅ Quick Actions / Shortcuts (COMPLETED)
@@ -66,7 +60,7 @@
 - Video walkthrough link
 - Help modal with common use cases
 
-### 3. Browser Extension (High Impact)
+### 3. Browser Extension (High Impact) (VERSION 2.0)
 - Right-click → "Protect with Ledebe"
 - Works in Gmail, Slack, ChatGPT, etc.
 - Inline protection without leaving page
@@ -137,30 +131,6 @@
 - Data retention policies
 - Compliance reports
 
-## 💰 MONETIZATION STRATEGY
-
-### Free Tier
-- 50 protections/month
-- Text + basic image OCR
-- Local storage only
-- Community support
-
-### Pro Tier ($9/month)
-- Unlimited protections
-- Batch processing
-- Cloud sync
-- Export/import
-- Priority support
-- Custom regex patterns
-
-### Team Tier ($29/month)
-- Everything in Pro
-- Shared custom terms
-- Team analytics
-- Admin controls
-- API access
-- SSO integration
-- Compliance features
 
 ## 🎯 NEXT SPRINT PRIORITIES
 1. ✅ Quick Copy Button (30 mins) - COMPLETED
@@ -188,3 +158,53 @@
 - API documentation (for future)
 - Privacy policy & Terms of Service
 - Support email/ticketing system
+
+Based on what the app does (protecting PII before sending to AI), here are the suggestions I'd prioritise:
+
+1.==High impact — core use case improvements
+Clipboard auto-protect — A "Paste & Protect" button that grabs whatever is on the clipboard, 
+masks it instantly, and puts the protected version back on the clipboard. No typing needed. 
+This is the most natural workflow.
+
+2.==More PII types auto-detected — Currently only emails, phones, and custom terms. Should also catch:
+Physical addresses
+Credit card numbers
+National ID / passport numbers
+Dates of birth
+Bank account numbers
+3.==Protection profiles / templates — Pre-built sets for different contexts. E.g. Medical (mask patient names, DOB, NHS numbers), 
+Legal (mask client names, case numbers), HR (mask employee names, salaries). One click switches the whole ruleset.
+Custom regex patterns — Power users (developers, lawyers) often need to mask things emails/phones won't catch. 
+Let them define their own pattern e.g. INV-\d{5} for invoice numbers.
+
+
+Trust and compliance — makes it serious for business use
+5.==Audit log — A tab showing every masking session: date, how many items protected, what types. 
+Important for GDPR/HIPAA compliance — companies need to prove they protected data.
+
+6.==App lock / PIN — Lock the app after idle time. If someone walks up to an unlocked screen they shouldn't see stored chat history.
+
+
+Team use — unlocks B2B revenue
+7.==Shared company terms list — You already have company-sync.js. A team admin defines the protected terms (client names, project codenames, internal systems) and everyone on the team gets them automatically. This is the feature that turns it from a personal tool into a company tool.
+Biggest single feature I'd add first: The Clipboard auto-protect — it removes all friction. Right now the user has to open the app, type or paste, then copy. With clipboard monitoring it becomes: copy from anywhere → click one button → paste protected text into AI. That's the killer workflow.
+
+for developers
+== terminal that has AI (warp AI)
+== vscode extension 
+
+slogan - enjoy AI with complete privacy / enjoy any AI  with complete privacy / enjoy your favourite AI with complete privacy
+
+
+Ledebe
+1.✅ When we say ask AI, it doesn't give us a change to say what we want to ask AI, maybe like a short pop or something to customise it better.
+2.✅ when the AI responds, the "with your info and protected version, nothing is different.
+3.✅ we border when the text are starting and ending are too close to the edge
+4. the chat name should be named according to the content.
+5.✅ the user's request or chat should have a different background
+6. upload document and it should be able to customize it
+7.✅ More PII types auto-detected, maybe a line underneet it or something, when someone selects a word, a menu that allows to protect
+8.✅ the rename and delete buttons not showing for thr last chat history it's hiding behind the custom terms box
+9. QA testing for all functionalities
+10. clean up the code 
+

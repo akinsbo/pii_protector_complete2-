@@ -12,20 +12,20 @@
     <style>
         :root {
             --primary-blue: #1e3a8a;
-            --accent-green: #4ade80;
+            --accent-green: #f59e0b;
             --text-dark: #1f2937;
             --text-gray: #6b7280;
-            --bg-light: #f8fafc;
+            --bg-light: #fffbeb;
             --white: #ffffff;
             --border: #e2e8f0;
         }
 
         [data-theme="dark"] {
-            --primary-blue: #3b82f6;
-            --accent-green: #10b981;
+            --primary-blue: #1e3a8a;
+            --accent-green: #f59e0b;
             --text-dark: #f9fafb;
             --text-gray: #d1d5db;
-            --bg-light: #1f2937;
+            --bg-light: #1c1a14;
             --white: #111827;
             --border: #374151;
         }
@@ -135,6 +135,8 @@
             display: flex;
             flex-direction: column;
             transition: width 0.3s ease;
+            overflow: hidden;
+            height: 100%;
         }
 
         .history-sidebar.collapsed {
@@ -144,6 +146,7 @@
         .history-sidebar.collapsed .history-header h3,
         .history-sidebar.collapsed .history-list,
         .history-sidebar.collapsed .custom-terms-section,
+        .history-sidebar.collapsed #ai-sidebar-section,
         .history-sidebar.collapsed .new-chat-btn span:last-child {
             display: none;
         }
@@ -151,30 +154,25 @@
         .history-sidebar.collapsed .new-chat-btn {
             justify-content: center;
             padding: 0.6rem;
+            flex: unset;
+            width: auto;
         }
 
         .sidebar-toggle {
-            position: absolute;
-            left: 8px;
-            top: 8px;
             background: none;
             border: none;
-            color: white;
+            color: var(--text-dark);
             cursor: pointer;
             font-size: 1.2rem;
             padding: 0.5rem;
             border-radius: 6px;
-            z-index: 10;
             transition: all 0.2s;
+            flex-shrink: 0;
+            line-height: 1;
         }
 
         .sidebar-toggle:hover {
-            background: rgba(255,255,255,0.1);
-        }
-
-        .history-sidebar.collapsed .sidebar-toggle {
-            left: 50%;
-            transform: translateX(-50%);
+            background: rgba(0,0,0,0.08);
         }
 
         .history-header {
@@ -193,7 +191,7 @@
 
         .new-chat-btn {
             background: var(--accent-green);
-            color: #065f46;
+            color: #78350f;
             border: none;
             padding: 0.6rem 1rem;
             border-radius: 6px;
@@ -204,13 +202,12 @@
             align-items: center;
             gap: 0.5rem;
             transition: all 0.2s;
-            margin-bottom: 0.75rem;
             width: 100%;
             justify-content: center;
         }
 
         .new-chat-btn:hover {
-            background: #22c55e;
+            background: #d97706;
             transform: translateY(-1px);
         }
 
@@ -236,28 +233,65 @@
         .history-list {
             flex: 1;
             overflow-y: auto;
-            padding: 0.5rem;
+            padding: 0.5rem 0.5rem 1rem;
             min-height: 0;
         }
 
         .custom-terms-section {
-            padding: 1rem;
+            padding: 0;
             border-top: 1px solid var(--border);
             background: var(--bg-light);
+            flex-shrink: 0;
         }
 
-        .custom-terms-section h4 {
-            font-size: 0.9rem;
-            margin-bottom: 0.5rem;
-            color: var(--text-dark);
+        .custom-terms-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            padding: 0.6rem 1rem;
+            cursor: pointer;
+            user-select: none;
+            gap: 0.5rem;
+        }
+
+        .custom-terms-header:hover {
+            background: rgba(0,0,0,0.04);
+        }
+
+        .custom-terms-header h4 {
+            font-size: 0.85rem;
+            margin: 0;
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            flex: 1;
+        }
+
+        .custom-terms-arrow {
+            font-size: 0.7rem;
+            color: var(--text-gray);
+            transition: transform 0.2s;
+        }
+
+        .custom-terms-section.open .custom-terms-arrow {
+            transform: rotate(180deg);
+        }
+
+        .custom-terms-body {
+            display: none;
+            padding: 0 1rem 1rem;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .custom-terms-section.open .custom-terms-body {
+            display: flex;
         }
 
         .save-close-btn {
             background: var(--accent-green);
-            color: #065f46;
+            color: #78350f;
             border: none;
             padding: 0.4rem 0.8rem;
             border-radius: 6px;
@@ -268,7 +302,7 @@
         }
 
         .save-close-btn:hover {
-            background: #22c55e;
+            background: #d97706;
         }
 
         .custom-terms-section textarea {
@@ -282,11 +316,10 @@
             resize: vertical;
             background: var(--white);
             color: var(--text-dark);
+            box-sizing: border-box;
         }
 
         .custom-terms-section small {
-            display: block;
-            margin-top: 0.25rem;
             color: var(--text-gray);
             font-size: 0.75rem;
         }
@@ -309,13 +342,14 @@
             border-color: var(--accent-green);
         }
 
-        .history-item:hover .history-actions {
+        .history-item:hover .history-actions,
+        .history-item.active .history-actions {
             opacity: 1;
         }
 
         .history-item.active {
             background: var(--accent-green);
-            color: #065f46;
+            color: #78350f;
         }
 
         .history-item-content {
@@ -339,7 +373,7 @@
         .history-actions {
             display: flex;
             gap: 0.25rem;
-            opacity: 0;
+            opacity: 0.35;
             transition: opacity 0.2s;
             position: relative;
         }
@@ -363,9 +397,8 @@
         }
 
         .history-menu {
-            position: absolute;
-            right: 0;
-            top: 100%;
+            position: fixed;
+            right: auto;
             background: var(--white);
             border: 1px solid var(--border);
             border-radius: 6px;
@@ -416,16 +449,16 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            padding: 0 5rem;
         }
 
         .chat-area {
             flex: 1;
             overflow-y: auto;
-            padding: 2rem;
+            padding: 2rem 0;
             display: flex;
             flex-direction: column;
             gap: 1.5rem;
-            align-items: center;
         }
 
         .welcome-prompt {
@@ -446,7 +479,6 @@
             flex-direction: column;
             gap: 0.5rem;
             width: 100%;
-            max-width: 1200px;
         }
 
         .chat-message-inner {
@@ -472,16 +504,20 @@
         }
 
         .message-content {
-            background: var(--white);
-            border: 2px solid var(--border);
+            background: transparent;
+            border: none;
             border-radius: 12px;
             padding: 1rem;
             position: relative;
         }
 
         .message-content.user {
-            border-color: var(--primary-blue);
-            background: var(--bg-light);
+            background: #f0f0f0;
+            border: none;
+        }
+
+        [data-theme="dark"] .message-content.user {
+            background: #2d2d2d;
         }
 
         .message-text {
@@ -552,13 +588,69 @@
             background: var(--border);
         }
 
+        /* Word Suggestion Chips */
+        #word-suggestions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            padding: 0.35rem 0 0.2rem;
+            min-height: 0;
+        }
+
+        .word-chip {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.45);
+            border-radius: 20px;
+            padding: 0.2rem 0.35rem 0.2rem 0.55rem;
+            font-size: 0.78rem;
+            animation: chipIn 0.18s ease;
+        }
+
+        @keyframes chipIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .word-chip-label { color: var(--text-dark); }
+
+        .word-chip-protect {
+            background: var(--primary-blue);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 0.15rem 0.5rem;
+            font-size: 0.75rem;
+            font-family: inherit;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .word-chip-protect:hover {
+            background: var(--accent-green);
+            color: #78350f;
+        }
+
+        .word-chip-dismiss {
+            background: none;
+            border: none;
+            color: var(--text-gray);
+            cursor: pointer;
+            font-size: 0.85rem;
+            padding: 0 0.15rem;
+            line-height: 1;
+            font-family: inherit;
+        }
+
+        .word-chip-dismiss:hover { color: var(--text-dark); }
+
         /* Bottom Input */
         .input-container {
-            padding: 1rem 2rem;
+            padding: 1rem 0;
             border-top: 1px solid var(--border);
             background: var(--white);
-            max-width: 1200px;
-            margin: 0 auto;
             width: 100%;
             box-sizing: border-box;
         }
@@ -723,7 +815,7 @@
 
         .download-btn {
             background: var(--accent-green);
-            color: #065f46;
+            color: #78350f;
             border: none;
             padding: 0.5rem 1rem;
             border-radius: 6px;
@@ -737,7 +829,7 @@
         }
 
         .download-btn:hover {
-            background: #22c55e;
+            background: #d97706;
         }
 
         /* Document Card (Claude-style) */
@@ -833,12 +925,54 @@
 
         .doc-action-btn.primary {
             background: var(--accent-green);
-            color: #065f46;
+            color: #78350f;
             border-color: var(--accent-green);
         }
 
         .doc-action-btn.primary:hover {
-            background: #22c55e;
+            background: #d97706;
+        }
+
+        /* Selection Protect Button */
+        #selection-protect-btn {
+            display: none;
+            position: fixed;
+            background: var(--primary-blue);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.35rem 0.7rem;
+            font-size: 0.8rem;
+            font-family: inherit;
+            cursor: pointer;
+            z-index: 10002;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.25);
+            align-items: center;
+            gap: 0.3rem;
+            white-space: nowrap;
+            transition: background 0.15s, transform 0.1s;
+            user-select: none;
+        }
+
+        #selection-protect-btn:hover {
+            background: var(--accent-green);
+            color: #78350f;
+            transform: scale(1.05);
+        }
+
+        #selection-protect-btn::before {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 5px solid var(--primary-blue);
+        }
+
+        #selection-protect-btn:hover::before {
+            border-top-color: var(--accent-green);
         }
 
         /* Toast Notifications */
@@ -869,7 +1003,7 @@
 
         .toast.success {
             background: var(--accent-green);
-            color: #065f46;
+            color: #78350f;
         }
 
         .toast.error {
@@ -1081,11 +1215,11 @@
 
         .preview-btn.primary {
             background: var(--accent-green);
-            color: #065f46;
+            color: #78350f;
         }
 
         .preview-btn.primary:hover {
-            background: #22c55e;
+            background: #d97706;
             transform: translateY(-1px);
         }
 
@@ -1180,7 +1314,7 @@
         .action-btn {
             padding: 0.75rem 1.5rem;
             background: var(--accent-green);
-            color: #065f46;
+            color: #78350f;
             border: none;
             border-radius: 12px;
             font-weight: 600;
@@ -1190,7 +1324,7 @@
         }
 
         .action-btn:hover {
-            background: #22c55e;
+            background: #d97706;
             transform: translateY(-1px);
         }
 
@@ -1198,6 +1332,31 @@
             background: #ccc;
             cursor: not-allowed;
             transform: none;
+        }
+
+        /* AI Prompt Chips */
+        .ai-chip {
+            padding: 0.35rem 0.75rem;
+            background: var(--bg-light);
+            border: 1.5px solid var(--border);
+            border-radius: 20px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.15s;
+            color: var(--text-dark);
+            white-space: nowrap;
+            font-weight: 500;
+        }
+
+        .ai-chip:hover {
+            border-color: var(--primary-blue);
+            background: var(--white);
+        }
+
+        .ai-chip.selected {
+            background: var(--primary-blue);
+            border-color: var(--primary-blue);
+            color: white;
         }
 
         /* Dark Mode Toggle */
@@ -1329,7 +1488,6 @@
 
             .input-container {
                 padding: 1rem;
-                max-width: 100%;
             }
         }
 
@@ -1401,37 +1559,46 @@
         <div class="app-body">
         <!-- Left Sidebar -->
         <div class="history-sidebar" id="history-sidebar">
-            <div style="padding: 0.75rem; border-bottom: 1px solid var(--border); position: relative;">
-                <button class="sidebar-toggle" id="sidebar-toggle-btn" onclick="toggleSidebar()">☰</button>
-                <button class="new-chat-btn" onclick="createNewChat()">
+            <div style="padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 0.5rem;">
+                <button class="sidebar-toggle" id="sidebar-toggle-btn" onclick="toggleSidebar()" title="Toggle sidebar">☰</button>
+                <button class="new-chat-btn" onclick="createNewChat()" style="margin-bottom: 0; flex: 1;">
                     <span style="font-size: 1.2rem;">+</span>
                     <span>New Chat</span>
                 </button>
             </div>
             
             <!-- Multi-AI Selection -->
-            <div style="padding: 15px; border-bottom: 1px solid var(--border); background: var(--bg-light);">
+            <div id="ai-sidebar-section" style="padding: 15px; border-bottom: 1px solid var(--border); background: var(--bg-light);">
                 <button id="ai-models-toggle" onclick="toggleAIModels()" style="width: 100%; padding: 10px; background: var(--white); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-size: 14px; font-weight: 500; color: var(--text-dark);">
-                    <span>🤖 Select AI Models</span>
+                    <span>🤖 AI Integration</span>
                     <span id="ai-toggle-icon">▼</span>
                 </button>
-                <div id="ai-models-list" style="display: none; margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
-                    <label style="display: flex; align-items: center; gap: 8px; padding: 8px; background: var(--white); border-radius: 6px; cursor: pointer;">
-                        <input type="checkbox" id="enable-chatgpt" style="width: 18px; height: 18px;">
-                        <span style="flex: 1; font-size: 14px; color: var(--text-dark);">ChatGPT</span>
-                        <span id="chatgpt-status">⚠️</span>
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 8px; padding: 8px; background: var(--white); border-radius: 6px; cursor: pointer;">
-                        <input type="checkbox" id="enable-claude" style="width: 18px; height: 18px;">
-                        <span style="flex: 1; font-size: 14px; color: var(--text-dark);">Claude</span>
-                        <span id="claude-status">⚠️</span>
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 8px; padding: 8px; background: var(--white); border-radius: 6px; cursor: pointer;">
-                        <input type="checkbox" id="enable-gemini" style="width: 18px; height: 18px;">
-                        <span style="flex: 1; font-size: 14px; color: var(--text-dark);">Gemini</span>
-                        <span id="gemini-status">⚠️</span>
-                    </label>
-                    <button onclick="alert('Configure API keys feature coming soon!')" style="width: 100%; margin-top: 5px; padding: 8px; background: var(--primary-blue); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;">⚙️ Configure API Keys</button>
+                <div id="ai-models-list" style="display: none; margin-top: 10px; flex-direction: column; gap: 8px;">
+                    <!-- Locked state: shown when no verified API key -->
+                    <div id="ai-locked-panel" style="display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 16px 12px; background: var(--white); border-radius: 8px; border: 1px dashed var(--border); text-align: center;">
+                        <span style="font-size: 2rem;">🔒</span>
+                        <div style="font-size: 13px; color: var(--text-gray); line-height: 1.4;">Set up a valid AI API key to unlock AI chat features</div>
+                        <button onclick="showSettings()" style="width: 100%; padding: 8px; background: var(--primary-blue); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">⚙️ Set Up API Key</button>
+                    </div>
+                    <!-- Unlocked state: shown when API key is verified -->
+                    <div id="ai-unlocked-panel" style="display: none; flex-direction: column; gap: 8px;">
+                        <label style="display: flex; align-items: center; gap: 8px; padding: 8px; background: var(--white); border-radius: 6px; cursor: pointer;">
+                            <input type="checkbox" id="enable-chatgpt" style="width: 18px; height: 18px;">
+                            <span style="flex: 1; font-size: 14px; color: var(--text-dark);">ChatGPT</span>
+                            <span id="chatgpt-status">⚠️</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; padding: 8px; background: var(--white); border-radius: 6px; cursor: pointer;">
+                            <input type="checkbox" id="enable-claude" style="width: 18px; height: 18px;">
+                            <span style="flex: 1; font-size: 14px; color: var(--text-dark);">Claude</span>
+                            <span id="claude-status">⚠️</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; padding: 8px; background: var(--white); border-radius: 6px; cursor: pointer;">
+                            <input type="checkbox" id="enable-gemini" style="width: 18px; height: 18px;">
+                            <span style="flex: 1; font-size: 14px; color: var(--text-dark);">Gemini</span>
+                            <span id="gemini-status">⚠️</span>
+                        </label>
+                        <button onclick="showSettings()" style="width: 100%; margin-top: 5px; padding: 8px; background: var(--white); color: var(--text-dark); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px;">⚙️ Manage API Keys</button>
+                    </div>
                 </div>
             </div>
             
@@ -1445,12 +1612,15 @@
             
             <!-- Custom Terms Section -->
             <div class="custom-terms-section" id="custom-terms-section">
-                <h4>
-                    ⚙️ Custom Terms
+                <div class="custom-terms-header" onclick="toggleCustomTerms()">
+                    <h4>⚙️ Custom Terms</h4>
+                    <span class="custom-terms-arrow">▲</span>
+                </div>
+                <div class="custom-terms-body">
+                    <textarea id="custom-terms" placeholder="Sandra&#10;John&#10;TechCorp"></textarea>
+                    <small>Add names, companies, or terms to protect (one per line)</small>
                     <button class="save-close-btn" onclick="saveAndCloseCustomTerms()">💾 Save & Close</button>
-                </h4>
-                <textarea id="custom-terms" placeholder="Sandra&#10;John&#10;TechCorp"></textarea>
-                <small>Add names, companies, or terms to protect (one per line)</small>
+                </div>
             </div>
         </div>
 
@@ -1466,6 +1636,7 @@
 
             <!-- Bottom Input -->
             <div class="input-container">
+                <div id="word-suggestions"></div>
                 <div id="uploaded-files-container"></div>
                 <div class="input-wrapper">
                     <button class="upload-btn" onclick="toggleUploadMenu()" title="Attach file">+</button>
@@ -1491,6 +1662,53 @@
             <p style="color: var(--text-gray); font-size: 0.9rem;" id="processing-status">Extracting text from image</p>
         </div>
     </div>
+
+    <!-- Ask AI Prompt Modal -->
+    <div class="shortcuts-modal" id="ask-ai-modal" onclick="if(event.target===this) closeAskAIModal()">
+        <div class="shortcuts-content" style="max-width: 520px; width: 95%;">
+            <h3 style="margin-bottom: 1rem;">🤖 Ask AI</h3>
+
+            <!-- Quick suggestions -->
+            <div style="margin-bottom: 1rem;">
+                <div style="font-size: 0.8rem; color: var(--text-gray); margin-bottom: 0.5rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;">Quick actions</div>
+                <div id="ai-chips" style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
+                    <button class="ai-chip" onclick="selectAIChip(this, 'Summarise this text')">💡 Summarise</button>
+                    <button class="ai-chip" onclick="selectAIChip(this, 'Fix the grammar and spelling in this text')">✍️ Fix grammar</button>
+                    <button class="ai-chip" onclick="selectAIChip(this, 'What are the key points in this text?')">🔑 Key points</button>
+                    <button class="ai-chip" onclick="selectAIChip(this, 'Write a professional reply to this')">💬 Reply to this</button>
+                    <button class="ai-chip" onclick="selectAIChip(this, 'Make this text more professional and formal')">👔 Make professional</button>
+                    <button class="ai-chip" onclick="selectAIChip(this, 'Translate this text to English')">🌍 Translate</button>
+                    <button class="ai-chip" onclick="selectAIChip(this, 'Explain this text in simple terms')">📖 Explain simply</button>
+                    <button class="ai-chip" onclick="selectAIChip(this, 'Make this text shorter and more concise')">✂️ Shorten</button>
+                </div>
+            </div>
+
+            <!-- Custom instruction -->
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; font-size: 0.85rem; color: var(--text-gray); font-weight: 600; margin-bottom: 0.4rem;">Your instruction</label>
+                <textarea id="ai-instruction-input" rows="3" placeholder="e.g. Summarise this. Fix the grammar. What are the key points? Reply professionally…"
+                    style="width: 100%; padding: 0.6rem 0.75rem; border: 2px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 0.9rem; resize: vertical; background: var(--white); color: var(--text-dark); outline: none; transition: border-color 0.2s;"
+                    onfocus="this.style.borderColor='var(--primary-blue)'"
+                    onblur="this.style.borderColor='var(--border)'"
+                    onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();confirmAskAI();}"
+                ></textarea>
+            </div>
+
+            <!-- Context preview -->
+            <div style="margin-bottom: 1.25rem; padding: 0.6rem 0.75rem; background: var(--bg-light); border-radius: 8px; border: 1px solid var(--border); font-size: 0.8rem; color: var(--text-gray);">
+                <span style="font-weight: 600; color: var(--text-dark);">📄 Your text (protected):</span>
+                <div id="ai-context-preview" style="margin-top: 0.25rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></div>
+            </div>
+
+            <div style="display: flex; gap: 0.75rem;">
+                <button class="action-btn" id="ai-send-confirm-btn" onclick="confirmAskAI()" style="flex: 1;">🤖 Send to AI</button>
+                <button onclick="closeAskAIModal()" style="flex: 1; padding: 0.75rem; background: var(--border); color: var(--text-dark); border: none; border-radius: 12px; font-weight: 600; cursor: pointer; font-size: 1rem;">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Selection Protect Button -->
+    <button id="selection-protect-btn">🛡️ + Protect</button>
 
     <!-- Toast Notification -->
     <div class="toast" id="toast">
@@ -1588,9 +1806,10 @@
                     <label style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--text-gray);">API Key</label>
                     <input type="password" id="settings-ai-key" placeholder="Enter your API key" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; background: var(--white); color: var(--text-dark);">
                     <small style="display: block; margin-top: 0.5rem; color: var(--text-gray); font-size: 0.75rem;">🔒 Your API key is stored locally and never sent to our servers</small>
-                    <button onclick="testAIConnection()" style="margin-top: 0.75rem; padding: 0.5rem 1rem; background: var(--primary-blue); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem; width: 100%;">
+                    <button onclick="testAIConnection()" id="test-ai-btn" style="margin-top: 0.75rem; padding: 0.5rem 1rem; background: var(--primary-blue); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem; width: 100%;">
                         📡 Test Connection
                     </button>
+                    <div id="ai-verification-status" style="margin-top: 0.5rem; font-size: 0.8rem; display: none;"></div>
                 </div>
             </div>
             
@@ -1652,6 +1871,49 @@
     </div>
 
     <script>
+        // Central PII masking function — all masking goes through here
+        function applyPIIMasking(text, targetMap) {
+            let masked = text;
+            let count = Object.keys(targetMap).length;
+
+            const rules = [
+                { prefix: 'LDB_EMAIL',  pattern: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g },
+                { prefix: 'LDB_IP',     pattern: /\b(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\b/g },
+                { prefix: 'LDB_CC',     pattern: /\b(?:\d{4}[\s\-]?){3}\d{4}\b/g },
+                { prefix: 'LDB_NINO',   pattern: /\b[A-Z]{2}\s?\d{2}\s?\d{2}\s?\d{2}\s?[A-Z]\b/g },
+                { prefix: 'LDB_ID',     pattern: /\b\d{3}[-\s]\d{2}[-\s]\d{4}\b/g },
+                { prefix: 'LDB_PHONE',  pattern: /(?:\+?[1-9]\d{6,14}|\(?\d{3}\)?[-\s]\d{3}[-\s]\d{4})/g },
+            ];
+
+            rules.forEach(rule => {
+                masked = masked.replace(rule.pattern, function(match) {
+                    // Skip if already a placeholder
+                    if (match.startsWith('[LDB_')) return match;
+                    count++;
+                    const placeholder = '[' + rule.prefix + count + ']';
+                    targetMap[placeholder] = match;
+                    return placeholder;
+                });
+            });
+
+            // Custom terms
+            const customTermsEl = document.getElementById('custom-terms');
+            const customTerms = (customTermsEl ? customTermsEl.value : '')
+                .split('\n').map(t => t.trim()).filter(Boolean);
+            customTerms.forEach(term => {
+                const regex = new RegExp('\\b' + term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'gi');
+                masked = masked.replace(regex, function(match) {
+                    if (match.startsWith('[LDB_')) return match;
+                    count++;
+                    const placeholder = '[LDB_CUSTOM' + count + ']';
+                    targetMap[placeholder] = match;
+                    return placeholder;
+                });
+            });
+
+            return { masked, count };
+        }
+
         // Placeholder map for protection/restoration
         let placeholderMap = {};
         let historyItems = JSON.parse(localStorage.getItem('historyItems') || '[]');
@@ -1666,7 +1928,7 @@
         const darkMode = document.getElementById('darkMode');
         darkMode.addEventListener('change', function() {
             document.documentElement.setAttribute('data-theme', darkMode.checked ? 'dark' : 'light');
-            localStorage.setItem('darkMode', darkMode.checked);
+            localStorage.setItem('theme', darkMode.checked ? 'dark' : 'light');
         });
 
         // Load saved dark mode preference and apply theme on startup
@@ -1690,6 +1952,197 @@
             this.style.height = 'auto';
             this.style.height = Math.min(this.scrollHeight, 200) + 'px';
         });
+
+        // Selection-based protect feature
+        (function() {
+            const selBtn = document.getElementById('selection-protect-btn');
+            let hideTimer = null;
+
+            // Show button when text is selected in the textarea
+            textInput.addEventListener('mouseup', function(e) {
+                const selected = this.value.substring(this.selectionStart, this.selectionEnd).trim();
+                if (selected.length > 1) {
+                    clearTimeout(hideTimer);
+                    selBtn.dataset.word = selected;
+                    selBtn.style.display = 'flex';
+                    // Position above the mouse cursor
+                    const x = Math.min(e.clientX - 50, window.innerWidth - 160);
+                    const y = e.clientY - 46;
+                    selBtn.style.left = Math.max(8, x) + 'px';
+                    selBtn.style.top = Math.max(8, y) + 'px';
+                } else {
+                    selBtn.style.display = 'none';
+                }
+            });
+
+            // Also trigger on keyboard selection (shift+arrow etc.)
+            textInput.addEventListener('keyup', function(e) {
+                if (!e.shiftKey) return;
+                const selected = this.value.substring(this.selectionStart, this.selectionEnd).trim();
+                if (selected.length > 1) {
+                    selBtn.dataset.word = selected;
+                    selBtn.style.display = 'flex';
+                    // Position near the textarea top-right as fallback for keyboard
+                    const rect = this.getBoundingClientRect();
+                    selBtn.style.left = Math.max(8, rect.right - 160) + 'px';
+                    selBtn.style.top = Math.max(8, rect.top - 46) + 'px';
+                } else {
+                    selBtn.style.display = 'none';
+                }
+            });
+
+            // Hide when clicking outside
+            document.addEventListener('mousedown', function(e) {
+                if (e.target !== selBtn) {
+                    hideTimer = setTimeout(() => { selBtn.style.display = 'none'; }, 150);
+                }
+            });
+
+            // Add selected word/phrase to custom terms
+            selBtn.addEventListener('click', function() {
+                const word = this.dataset.word;
+                if (!word) return;
+
+                const customTermsEl = document.getElementById('custom-terms');
+                const existing = customTermsEl.value.trim();
+                const terms = existing ? existing.split('\n').map(t => t.trim()).filter(Boolean) : [];
+
+                if (!terms.some(t => t.toLowerCase() === word.toLowerCase())) {
+                    terms.push(word);
+                    customTermsEl.value = terms.join('\n');
+                    localStorage.setItem('customTerms', customTermsEl.value);
+                    showToast(`🛡️ "${word}" added to protected terms`, 'success');
+                } else {
+                    showToast(`"${word}" is already in your protected terms`, 'success');
+                }
+
+                selBtn.style.display = 'none';
+                textInput.focus();
+            });
+        })();
+
+        // ── Word detection: options 1 & 2 ───────────────────────────────────
+        const COMMON_NAMES = new Set([
+            // Male
+            'james','john','robert','michael','william','david','richard','joseph','thomas','charles',
+            'christopher','daniel','matthew','anthony','mark','donald','steven','paul','andrew','kenneth',
+            'george','joshua','kevin','brian','edward','ronald','timothy','jason','jeffrey','ryan',
+            'jacob','gary','nicholas','eric','jonathan','stephen','larry','justin','scott','brandon',
+            'benjamin','samuel','raymond','gregory','frank','alexander','patrick','jack','dennis','jerry',
+            'peter','henry','adam','nathan','zachary','walter','kyle','harold','carl','arthur',
+            'ethan','alan','jake','oliver','noah','liam','mason','logan','lucas','elijah',
+            // Female
+            'mary','patricia','jennifer','linda','barbara','elizabeth','susan','jessica','sarah','karen',
+            'lisa','nancy','betty','margaret','sandra','ashley','emily','donna','michelle','carol',
+            'amanda','dorothy','melissa','deborah','stephanie','rebecca','sharon','laura','cynthia','kathleen',
+            'helen','amy','shirley','angela','anna','brenda','pamela','emma','nicole','samantha',
+            'katherine','christine','debra','rachel','carolyn','janet','catherine','maria','heather',
+            'diane','julie','joyce','victoria','kelly','christina','lauren','joan','evelyn','olivia',
+            'judith','megan','cheryl','andrea','hannah','jacqueline','martha','gloria','teresa','grace',
+            'faith','charlotte','sophia','isabella','mia','ava','abigail','ella','scarlett','aria',
+            // Nigerian / West African
+            'chioma','adaeze','chidi','emeka','tunde','funmi','seun','olaolu','adewale','adeola',
+            'tobi','damilola','ayoola','babatunde','oluwaseun','blessing','chiamaka','ngozi','obiora',
+            'chukwuemeka','ifeanyi','nnamdi','amara','yetunde','folake','kemi','sade','yemi','wale',
+            // East African / Arabic
+            'fatima','aisha','yusuf','ibrahim','hassan','ahmed','omar','ali','kwame','amara',
+            // South Asian
+            'priya','raj','arjun','amit','neha','pooja','vikram','anita','sanjay','deepak','rahul',
+            // Common surnames
+            'smith','jones','williams','brown','taylor','davies','wilson','evans','thomas','johnson',
+            'martin','robinson','white','thompson','jackson','harris','clark','lewis','walker','hall',
+            'okafor','okonkwo','nwosu','adeyemi','bello','aliyu','musa','abubakar','usman','garba'
+        ]);
+
+        const _dismissedWords = new Set();
+
+        function _shouldFlagWord(word, cursorPos, fullText) {
+            if (!word || word.length < 2) return false;
+            const clean = word.replace(/[^a-zA-Z''-]/g, '');
+            if (clean.length < 2) return false;
+
+            // Skip if already in custom terms
+            const customTermsEl = document.getElementById('custom-terms');
+            const existing = (customTermsEl ? customTermsEl.value : '')
+                .split('\n').map(t => t.trim().toLowerCase()).filter(Boolean);
+            if (existing.includes(clean.toLowerCase())) return false;
+
+            // Skip if user already dismissed it this session
+            if (_dismissedWords.has(clean.toLowerCase())) return false;
+
+            // Option 1: known common name (any case)
+            if (COMMON_NAMES.has(clean.toLowerCase())) return true;
+
+            // Option 2: capitalised mid-sentence (not at start of text/sentence)
+            if (/^[A-Z]/.test(clean)) {
+                const wordStart = fullText.lastIndexOf(word, cursorPos - 2);
+                if (wordStart <= 0) return false;
+                const before = fullText.substring(0, wordStart).trimEnd();
+                if (!before.length) return false;
+                const lastChar = before[before.length - 1];
+                if (['.', '!', '?', '\n'].includes(lastChar)) return false;
+                return true;
+            }
+
+            return false;
+        }
+
+        function _showWordChip(word) {
+            const el = document.getElementById('word-suggestions');
+            // No duplicate chips
+            for (const chip of el.querySelectorAll('[data-word]')) {
+                if (chip.dataset.word.toLowerCase() === word.toLowerCase()) return;
+            }
+            // Max 4 chips
+            if (el.querySelectorAll('.word-chip').length >= 4) return;
+
+            const chip = document.createElement('div');
+            chip.className = 'word-chip';
+            chip.dataset.word = word;
+            chip.innerHTML =
+                `<span class="word-chip-label">🔍 <strong>${word}</strong></span>` +
+                `<button class="word-chip-protect" onclick="_protectWordChip(this,'${word.replace(/'/g,"\\'")}')">🛡️ Protect</button>` +
+                `<button class="word-chip-dismiss" title="Dismiss" onclick="_dismissWordChip(this,'${word.replace(/'/g,"\\'")}')">✕</button>`;
+            el.appendChild(chip);
+        }
+
+        function _protectWordChip(btn, word) {
+            const customTermsEl = document.getElementById('custom-terms');
+            const existing = customTermsEl.value.trim();
+            const terms = existing ? existing.split('\n').map(t => t.trim()).filter(Boolean) : [];
+            if (!terms.some(t => t.toLowerCase() === word.toLowerCase())) {
+                terms.push(word);
+                customTermsEl.value = terms.join('\n');
+                localStorage.setItem('customTerms', customTermsEl.value);
+                showToast(`🛡️ "${word}" added to protected terms`, 'success');
+            }
+            btn.closest('.word-chip').remove();
+        }
+
+        function _dismissWordChip(btn, word) {
+            _dismissedWords.add(word.toLowerCase());
+            btn.closest('.word-chip').remove();
+        }
+
+        // Clear chips when a message is sent
+        function _clearWordChips() {
+            document.getElementById('word-suggestions').innerHTML = '';
+            _dismissedWords.clear();
+        }
+
+        // Trigger detection on space / Enter
+        textInput.addEventListener('keyup', function(e) {
+            if (e.key !== ' ' && e.key !== 'Enter') return;
+            const cursorPos = this.selectionStart;
+            const text = this.value;
+            const beforeCursor = text.substring(0, cursorPos).trimEnd();
+            const parts = beforeCursor.split(/\s+/);
+            const lastWord = parts[parts.length - 1];
+            if (_shouldFlagWord(lastWord, cursorPos, text)) {
+                _showWordChip(lastWord.replace(/[^a-zA-Z''-]/g, ''));
+            }
+        });
+        // ── End word detection ────────────────────────────────────────────────
 
         // Send message on Enter (Shift+Enter for new line)
         textInput.addEventListener('keydown', function(e) {
@@ -1736,6 +2189,7 @@
             if (e.key === 'Escape') {
                 closeShortcutsModal();
                 closeSettingsModal();
+                closeAskAIModal();
             }
         });
 
@@ -1850,45 +2304,8 @@
             }
             
             // Regular text file processing
-            const customTermsInput = document.getElementById('custom-terms');
-            
-            // Protect the text
             placeholderMap = {};
-            let protectedText = originalText;
-            let count = 0;
-
-            // Get custom terms
-            const customTerms = customTermsInput.value
-                .split('\n')
-                .map(t => t.trim())
-                .filter(Boolean);
-
-            // Mask emails
-            protectedText = protectedText.replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, function(match) {
-                count++;
-                const placeholder = '[LDB_EMAIL' + count + ']';
-                placeholderMap[placeholder] = match;
-                return placeholder;
-            });
-
-            // Mask phones
-            protectedText = protectedText.replace(/\+?[1-9]\d{1,14}|\(?\d{3}\)?[-\s]?\d{3}[-\s]?\d{4}/g, function(match) {
-                count++;
-                const placeholder = '[LDB_PHONE' + count + ']';
-                placeholderMap[placeholder] = match;
-                return placeholder;
-            });
-
-            // Mask custom terms
-            customTerms.forEach(term => {
-                const regex = new RegExp('\\b' + term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'gi');
-                protectedText = protectedText.replace(regex, function(match) {
-                    count++;
-                    const placeholder = '[LDB_CUSTOM' + count + ']';
-                    placeholderMap[placeholder] = match;
-                    return placeholder;
-                });
-            });
+            const { masked: protectedText, count } = applyPIIMasking(originalText, placeholderMap);
 
             // Store preview data
             previewData = {
@@ -1994,45 +2411,9 @@
 
         // Document Preview Functions
         function showDocumentPreview(originalText, fileName) {
-            const customTermsInput = document.getElementById('custom-terms');
-            
             // Protect the text
             placeholderMap = {};
-            let protectedText = originalText;
-            let count = 0;
-
-            // Get custom terms
-            const customTerms = customTermsInput.value
-                .split('\n')
-                .map(t => t.trim())
-                .filter(Boolean);
-
-            // Mask emails
-            protectedText = protectedText.replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, function(match) {
-                count++;
-                const placeholder = '[LDB_EMAIL' + count + ']';
-                placeholderMap[placeholder] = match;
-                return placeholder;
-            });
-
-            // Mask phones
-            protectedText = protectedText.replace(/\+?[1-9]\d{1,14}|\(?\d{3}\)?[-\s]?\d{3}[-\s]?\d{4}/g, function(match) {
-                count++;
-                const placeholder = '[LDB_PHONE' + count + ']';
-                placeholderMap[placeholder] = match;
-                return placeholder;
-            });
-
-            // Mask custom terms
-            customTerms.forEach(term => {
-                const regex = new RegExp('\\b' + term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'gi');
-                protectedText = protectedText.replace(regex, function(match) {
-                    count++;
-                    const placeholder = '[LDB_CUSTOM' + count + ']';
-                    placeholderMap[placeholder] = match;
-                    return placeholder;
-                });
-            });
+            const { masked: protectedText, count } = applyPIIMasking(originalText, placeholderMap);
 
             // Store preview data
             previewData = {
@@ -2249,7 +2630,7 @@
         .page { background: white; margin: 20px auto; padding: 20px; max-width: 800px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); page-break-after: always; }
         .page-header { background: #1e3a8a; color: white; padding: 10px; margin: -20px -20px 20px -20px; font-size: 14px; }
         .page-image { width: 100%; border: 1px solid #ddd; margin: 10px 0; }
-        .protected-badge { background: #4ade80; color: #065f46; padding: 8px 16px; border-radius: 6px; display: inline-block; margin: 10px 0; font-weight: 600; }
+        .protected-badge { background: #f59e0b; color: #78350f; padding: 8px 16px; border-radius: 6px; display: inline-block; margin: 10px 0; font-weight: 600; }
         .text-content { background: #f8f9fa; padding: 15px; border-radius: 6px; margin: 10px 0; font-family: monospace; white-space: pre-wrap; font-size: 12px; }
         @media print { .page { box-shadow: none; margin: 0; page-break-after: always; } }
     </style>
@@ -2413,39 +2794,8 @@
                 overlay.classList.remove('show');
                 
                 // Protect the extracted text for PII detection
-                const customTermsInput = document.getElementById('custom-terms');
-                const customTerms = customTermsInput.value.split('\n').map(t => t.trim()).filter(Boolean);
-                
-                let protectedText = fullText;
-                let count = 0;
                 const pdfPlaceholderMap = {};
-                
-                // Mask emails
-                protectedText = protectedText.replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, function(match) {
-                    count++;
-                    const placeholder = '[LDB_EMAIL' + count + ']';
-                    pdfPlaceholderMap[placeholder] = match;
-                    return placeholder;
-                });
-                
-                // Mask phones
-                protectedText = protectedText.replace(/\+?[1-9]\d{1,14}|\(?\d{3}\)?[-\s]?\d{3}[-\s]?\d{4}/g, function(match) {
-                    count++;
-                    const placeholder = '[LDB_PHONE' + count + ']';
-                    pdfPlaceholderMap[placeholder] = match;
-                    return placeholder;
-                });
-                
-                // Mask custom terms
-                customTerms.forEach(term => {
-                    const regex = new RegExp('\\b' + term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'gi');
-                    protectedText = protectedText.replace(regex, function(match) {
-                        count++;
-                        const placeholder = '[LDB_CUSTOM' + count + ']';
-                        pdfPlaceholderMap[placeholder] = match;
-                        return placeholder;
-                    });
-                });
+                const { masked: protectedText, count } = applyPIIMasking(fullText, pdfPlaceholderMap);
                 
                 // Store PDF pages for preview
                 previewData = {
@@ -2744,7 +3094,6 @@
         // Send message function
         function sendMessage() {
             const input = document.getElementById('text-input');
-            const customTermsInput = document.getElementById('custom-terms');
             let text = input.value.trim();
             
             // Check if there's an uploaded image ready to process
@@ -2782,43 +3131,8 @@
             } else {
                 // Protection operation: mask sensitive data
                 const originalText = text;
-                
                 placeholderMap = {};
-                let masked = text;
-                let count = 0;
-
-                // Get custom terms
-                const customTerms = customTermsInput.value
-                    .split('\n')
-                    .map(t => t.trim())
-                    .filter(Boolean);
-
-                // Mask emails
-                masked = masked.replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, function(match) {
-                    count++;
-                    const placeholder = '[LDB_EMAIL' + count + ']';
-                    placeholderMap[placeholder] = match;
-                    return placeholder;
-                });
-
-                // Mask phones
-                masked = masked.replace(/\+?[1-9]\d{1,14}|\(?\d{3}\)?[-\s]?\d{3}[-\s]?\d{4}/g, function(match) {
-                    count++;
-                    const placeholder = '[LDB_PHONE' + count + ']';
-                    placeholderMap[placeholder] = match;
-                    return placeholder;
-                });
-
-                // Mask custom terms
-                customTerms.forEach(term => {
-                    const regex = new RegExp('\\b' + term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'gi');
-                    masked = masked.replace(regex, function(match) {
-                        count++;
-                        const placeholder = '[LDB_CUSTOM' + count + ']';
-                        placeholderMap[placeholder] = match;
-                        return placeholder;
-                    });
-                });
+                const { masked, count } = applyPIIMasking(text, placeholderMap);
 
                 // Add message to chat
                 addMessageToChat(originalText, masked, count);
@@ -2830,6 +3144,7 @@
             // Clear input
             input.value = '';
             input.style.height = 'auto';
+            _clearWordChips();
         }
 
         function addMessageToChat(originalText, protectedText, maskedCount) {
@@ -2894,7 +3209,7 @@
                 const textDiv = messageDiv.querySelector('.message-text');
                 const badge = document.createElement('div');
                 badge.className = 'protection-badge';
-                badge.style.cssText = 'display: inline-block; background: var(--accent-green); color: #065f46; padding: 0.25rem 0.5rem; border-radius: 6px; font-size: 0.75rem; margin-top: 0.5rem;';
+                badge.style.cssText = 'display: inline-block; background: var(--accent-green); color: #78350f; padding: 0.25rem 0.5rem; border-radius: 6px; font-size: 0.75rem; margin-top: 0.5rem;';
                 badge.textContent = `🛡️ ${maskedCount} item${maskedCount > 1 ? 's' : ''} protected`;
                 textDiv.appendChild(badge);
             }
@@ -2961,7 +3276,7 @@
                 if (count > 0 && !messageDiv.querySelector('.protection-badge')) {
                     const badge = document.createElement('div');
                     badge.className = 'protection-badge';
-                    badge.style.cssText = 'display: inline-block; background: var(--accent-green); color: #065f46; padding: 0.25rem 0.5rem; border-radius: 6px; font-size: 0.75rem; margin-top: 0.5rem;';
+                    badge.style.cssText = 'display: inline-block; background: var(--accent-green); color: #78350f; padding: 0.25rem 0.5rem; border-radius: 6px; font-size: 0.75rem; margin-top: 0.5rem;';
                     badge.textContent = `🛡️ ${count} item${count > 1 ? 's' : ''} protected`;
                     textDiv.appendChild(badge);
                 }
@@ -2971,10 +3286,15 @@
         function copyMessage(messageId) {
             const messageDiv = document.getElementById(messageId);
             if (!messageDiv) return;
-            
+
             const textDiv = messageDiv.querySelector('.message-text');
             const view = textDiv.dataset.view;
-            const text = view === 'plain' ? messageDiv.dataset.originalText : messageDiv.dataset.protectedText;
+            // For AI response messages: 'safe' view copies the masked version
+            const text = view === 'safe'
+                ? messageDiv.dataset.safeText
+                : view === 'plain'
+                    ? messageDiv.dataset.originalText
+                    : (messageDiv.dataset.protectedText || messageDiv.dataset.originalText);
             
             navigator.clipboard.writeText(text).then(() => {
                 showToast('✅ Text copied!', 'success');
@@ -3136,14 +3456,29 @@
             e.stopPropagation();
             const menu = document.getElementById('menu-' + id);
             const allMenus = document.querySelectorAll('.history-menu');
-            
+
             // Close all other menus
             allMenus.forEach(m => {
                 if (m !== menu) m.classList.remove('show');
             });
-            
-            // Toggle current menu
-            menu.classList.toggle('show');
+
+            const isOpen = menu.classList.contains('show');
+            menu.classList.remove('show');
+            if (isOpen) return;
+
+            // Position using fixed coords from the trigger button
+            const btn = e.currentTarget;
+            const rect = btn.getBoundingClientRect();
+            const menuHeight = 80; // approx height of the two menu items
+
+            // Flip upward if too close to the bottom of the viewport
+            if (rect.bottom + menuHeight > window.innerHeight - 10) {
+                menu.style.top = (rect.top - menuHeight) + 'px';
+            } else {
+                menu.style.top = rect.bottom + 'px';
+            }
+            menu.style.left = (rect.right - 130) + 'px';
+            menu.classList.add('show');
         }
 
         // Close menus when clicking outside
@@ -3152,22 +3487,32 @@
         // Load history on page load
         loadHistory();
 
+        // Toggle custom terms open/closed
+        function toggleCustomTerms() {
+            const section = document.getElementById('custom-terms-section');
+            section.classList.toggle('open');
+            localStorage.setItem('customTermsOpen', section.classList.contains('open'));
+        }
+
         // Save and close custom terms
         function saveAndCloseCustomTerms() {
             const customTerms = document.getElementById('custom-terms').value;
             localStorage.setItem('customTerms', customTerms);
-            
-            const btn = event.target;
-            btn.textContent = '✔ Saved!';
-            setTimeout(() => {
-                btn.textContent = '💾 Save & Close';
-            }, 1500);
+            // Collapse after saving
+            const section = document.getElementById('custom-terms-section');
+            section.classList.remove('open');
+            localStorage.setItem('customTermsOpen', 'false');
+            showToast('💾 Custom terms saved', 'success');
         }
 
         // Load saved custom terms on page load
         const savedTerms = localStorage.getItem('customTerms');
         if (savedTerms) {
             document.getElementById('custom-terms').value = savedTerms;
+        }
+        // Restore open/closed state (default: closed)
+        if (localStorage.getItem('customTermsOpen') === 'true') {
+            document.getElementById('custom-terms-section').classList.add('open');
         }
 
         // Header button functions
@@ -3201,7 +3546,25 @@
             
             // Show/hide AI config
             document.getElementById('ai-config').style.display = savedAiEnabled ? 'block' : 'none';
-            
+
+            // Show verification status if key is verified
+            const verified = localStorage.getItem('aiKeyVerified') === 'true';
+            const verifiedKey = localStorage.getItem('aiVerifiedKey') || '';
+            const statusDiv = document.getElementById('ai-verification-status');
+            if (statusDiv) {
+                if (verified && verifiedKey === savedAiKey && savedAiKey.length > 0) {
+                    statusDiv.style.display = 'block';
+                    statusDiv.style.color = '#16a34a';
+                    statusDiv.textContent = '✅ API key verified — AI features are active';
+                    const testBtn = document.getElementById('test-ai-btn');
+                    if (testBtn) testBtn.textContent = '✅ Connection Verified';
+                } else {
+                    statusDiv.style.display = 'none';
+                    const testBtn = document.getElementById('test-ai-btn');
+                    if (testBtn) testBtn.textContent = '📡 Test Connection';
+                }
+            }
+
             modal.classList.add('show');
         }
         
@@ -3238,7 +3601,16 @@
             localStorage.setItem('aiEnabled', aiEnabled);
             localStorage.setItem('aiProvider', aiProvider);
             localStorage.setItem('aiKey', aiKey);
-            
+
+            // If key or provider changed, clear verification (user must re-test)
+            const verifiedKey = localStorage.getItem('aiVerifiedKey') || '';
+            const verifiedProvider = localStorage.getItem('aiVerifiedProvider') || '';
+            if (aiKey !== verifiedKey || aiProvider !== verifiedProvider) {
+                localStorage.removeItem('aiKeyVerified');
+                localStorage.removeItem('aiVerifiedKey');
+                localStorage.removeItem('aiVerifiedProvider');
+            }
+
             // Reinitialize AI Chat with new settings
             if (aiChat) {
                 aiChat.provider = aiProvider;
@@ -3246,6 +3618,9 @@
                 aiChat.enabled = aiEnabled;
                 console.log('✅ AI settings updated:', { provider: aiProvider, enabled: aiEnabled, hasKey: !!aiKey });
             }
+
+            // Update sidebar lock state
+            updateAISidebarLock();
             
             // Apply theme
             if (theme === 'dark') {
@@ -3270,36 +3645,57 @@
             const aiEnabled = document.getElementById('settings-ai-enabled').checked;
             const aiProvider = document.getElementById('settings-ai-provider').value;
             const aiKey = document.getElementById('settings-ai-key').value;
-            
+
             if (!aiEnabled) {
                 showToast('⚠️ Please enable AI integration first', 'error');
                 return;
             }
-            
+
             if (!aiKey || aiKey.trim().length === 0) {
                 showToast('⚠️ Please enter an API key', 'error');
                 return;
             }
-            
+
+            const testBtn = document.getElementById('test-ai-btn');
+            const statusDiv = document.getElementById('ai-verification-status');
+            if (testBtn) { testBtn.disabled = true; testBtn.textContent = '📡 Testing...'; }
+            if (statusDiv) { statusDiv.style.display = 'none'; }
+
             showToast('📡 Testing connection to ' + aiProvider + '...', 'success');
-            
+
             try {
                 // Create temporary AI instance with current settings
                 const testAI = new AIChat();
                 testAI.provider = aiProvider;
                 testAI.apiKey = aiKey;
                 testAI.enabled = true;
-                
+
                 // Send a simple test message
                 const testMessage = 'Hello, this is a test message. Please respond with "Test successful".';
                 const result = await testAI.sendMessage(testMessage, {}, false);
-                
+
                 console.log('✅ Test successful:', result);
-                showToast('✅ Connection successful! AI is working.', 'success');
+
+                // Save verification — key + provider are confirmed working
+                localStorage.setItem('aiKeyVerified', 'true');
+                localStorage.setItem('aiVerifiedProvider', aiProvider);
+                localStorage.setItem('aiVerifiedKey', aiKey);
+
+                showToast('✅ Connection successful! AI is ready to use.', 'success');
+
+                // Unlock the sidebar AI section
+                updateAISidebarLock();
+
+                if (testBtn) { testBtn.disabled = false; testBtn.textContent = '✅ Connection Verified'; }
+                if (statusDiv) {
+                    statusDiv.style.display = 'block';
+                    statusDiv.style.color = '#16a34a';
+                    statusDiv.textContent = '✅ API key verified — AI features are now active';
+                }
             } catch (error) {
                 console.error('❌ Test failed:', error);
                 let errorMsg = error.message || 'Unknown error';
-                
+
                 if (errorMsg.includes('401') || errorMsg.includes('authentication') || errorMsg.includes('API key')) {
                     errorMsg = 'Invalid API key. Please check your key.';
                 } else if (errorMsg.includes('429')) {
@@ -3307,8 +3703,44 @@
                 } else if (errorMsg.includes('network') || errorMsg.includes('fetch') || errorMsg.includes('CORS')) {
                     errorMsg = 'Network error. Check your internet connection or try a different provider.';
                 }
-                
+
+                // Clear any previous verification
+                localStorage.removeItem('aiKeyVerified');
+                localStorage.removeItem('aiVerifiedProvider');
+                localStorage.removeItem('aiVerifiedKey');
+                updateAISidebarLock();
+
                 showToast('❌ Test failed: ' + errorMsg, 'error');
+                if (testBtn) { testBtn.disabled = false; testBtn.textContent = '📡 Test Connection'; }
+                if (statusDiv) {
+                    statusDiv.style.display = 'block';
+                    statusDiv.style.color = '#ef4444';
+                    statusDiv.textContent = '❌ ' + errorMsg;
+                }
+            }
+        }
+
+        // Update the sidebar AI lock state based on verification
+        function updateAISidebarLock() {
+            const verified = localStorage.getItem('aiKeyVerified') === 'true';
+            const verifiedKey = localStorage.getItem('aiVerifiedKey') || '';
+            const currentKey = localStorage.getItem('aiKey') || '';
+
+            // If key has changed since last verification, treat as unverified
+            const isUnlocked = verified && verifiedKey === currentKey && currentKey.length > 0;
+
+            const lockedPanel = document.getElementById('ai-locked-panel');
+            const unlockedPanel = document.getElementById('ai-unlocked-panel');
+
+            if (!lockedPanel || !unlockedPanel) return;
+
+            if (isUnlocked) {
+                lockedPanel.style.display = 'none';
+                unlockedPanel.style.display = 'flex';
+                updateAICheckboxes();
+            } else {
+                lockedPanel.style.display = 'flex';
+                unlockedPanel.style.display = 'none';
             }
         }
 
@@ -3399,54 +3831,97 @@
             }
         }
 
-        // Ask AI function
-        async function askAI(messageId) {
-            console.log('🤖 askAI called for message:', messageId);
-            
+        // Current message ID pending AI send
+        let pendingAIMessageId = null;
+
+        // Ask AI — opens instruction popup
+        function askAI(messageId) {
             if (!aiChat) {
                 showToast('❌ AI Chat not initialized. Please refresh the page.', 'error');
                 return;
             }
-            
+
             const messageDiv = document.getElementById(messageId);
             if (!messageDiv) {
-                console.error('Message not found:', messageId);
                 showToast('❌ Message not found', 'error');
                 return;
             }
-            
+
             // Check if AI is configured
             if (!aiChat.isConfigured()) {
-                console.warn('AI not configured');
                 showToast('⚠️ Please configure AI in Settings first', 'error');
                 setTimeout(() => showSettings(), 500);
                 return;
             }
-            
-            const protectedText = messageDiv.dataset.protectedText;
-            console.log('Protected text to send:', protectedText.substring(0, 100) + '...');
-            
+
+            const protectedText = messageDiv.dataset.protectedText || '';
+
+            // Store pending message
+            pendingAIMessageId = messageId;
+
+            // Populate preview
+            const preview = document.getElementById('ai-context-preview');
+            if (preview) {
+                preview.textContent = protectedText.length > 120
+                    ? protectedText.substring(0, 120) + '…'
+                    : protectedText || '(no text)';
+            }
+
+            // Clear previous instruction + chip selection
+            const input = document.getElementById('ai-instruction-input');
+            if (input) input.value = '';
+            document.querySelectorAll('.ai-chip').forEach(c => c.classList.remove('selected'));
+
+            // Open modal
+            document.getElementById('ask-ai-modal').classList.add('show');
+            setTimeout(() => input && input.focus(), 100);
+        }
+
+        function closeAskAIModal() {
+            document.getElementById('ask-ai-modal').classList.remove('show');
+            pendingAIMessageId = null;
+        }
+
+        function selectAIChip(chipEl, instruction) {
+            document.querySelectorAll('.ai-chip').forEach(c => c.classList.remove('selected'));
+            chipEl.classList.add('selected');
+            const input = document.getElementById('ai-instruction-input');
+            if (input) {
+                input.value = instruction;
+                input.focus();
+            }
+        }
+
+        // Confirm + send to AI with the instruction
+        async function confirmAskAI() {
+            const messageId = pendingAIMessageId;
+            if (!messageId) return;
+
+            const instruction = (document.getElementById('ai-instruction-input').value || '').trim();
+            const messageDiv = document.getElementById(messageId);
+            if (!messageDiv) return;
+
+            const protectedText = messageDiv.dataset.protectedText || '';
+
+            // Build the combined message to send to AI
+            // If user gave an instruction, prepend it; otherwise send as-is with a default prompt
+            const combinedMessage = instruction
+                ? `${instruction}\n\n---\n${protectedText}`
+                : `Please review the following text and provide a helpful response:\n\n---\n${protectedText}`;
+
+            closeAskAIModal();
+
             const sendBtn = document.getElementById('send-btn');
-            
+            sendBtn.disabled = true;
+            sendBtn.textContent = '🤖 Asking AI...';
+            showToast('🤖 Sending to AI...', 'success');
+
             try {
-                // Show loading
-                sendBtn.disabled = true;
-                sendBtn.textContent = '🤖 Asking AI...';
-                showToast('🤖 Sending to AI...', 'success');
-                
-                // Send to AI
-                const result = await aiChat.sendMessage(protectedText, placeholderMap);
-                console.log('✅ AI response received');
-                
-                // Add AI response to chat
+                const result = await aiChat.sendMessage(combinedMessage, placeholderMap);
                 addAIResponse(result.restored, result.protected);
-                
                 showToast('✅ AI responded!', 'success');
             } catch (error) {
-                console.error('❌ AI Error:', error);
                 let errorMsg = error.message || 'Unknown error';
-                
-                // Provide helpful error messages
                 if (errorMsg.includes('401') || errorMsg.includes('authentication')) {
                     errorMsg = 'Invalid API key. Please check your settings.';
                 } else if (errorMsg.includes('429')) {
@@ -3454,7 +3929,6 @@
                 } else if (errorMsg.includes('network') || errorMsg.includes('fetch')) {
                     errorMsg = 'Network error. Please check your connection.';
                 }
-                
                 showToast('❌ ' + errorMsg, 'error');
             } finally {
                 sendBtn.disabled = false;
@@ -3462,15 +3936,43 @@
             }
         }
 
+        // Re-mask AI response — restore known values back to placeholders,
+        // then run full PII detection on anything new the AI introduced
+        function maskAIResponse(text) {
+            let masked = text;
+
+            // First: replace any real values (from original session) back to their placeholders
+            for (const [placeholder, realValue] of Object.entries(placeholderMap)) {
+                if (!realValue || realValue.length < 2) continue;
+                const escaped = realValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                masked = masked.replace(new RegExp(escaped, 'gi'), placeholder);
+            }
+
+            // Then: catch any fresh PII the AI may have introduced
+            const freshMap = {};
+            const result = applyPIIMasking(masked, freshMap);
+            masked = result.masked;
+
+            return masked;
+        }
+
         // Add AI response to chat
-        function addAIResponse(restoredText, protectedText) {
+        function addAIResponse(restoredText, _unusedProtected) {
+            // Re-mask the AI's readable response so "Safe to Share" is genuinely different
+            const safeText = maskAIResponse(restoredText);
+
             const chatArea = document.getElementById('chat-area');
             const messageId = 'ai-msg-' + (++messageCounter);
-            
+
             const messageDiv = document.createElement('div');
             messageDiv.className = 'chat-message restore';
             messageDiv.id = messageId;
-            
+
+            const hasDiff = safeText !== restoredText;
+            const safeBadge = hasDiff
+                ? `<span style="display:inline-block;background:var(--accent-green);color:#78350f;padding:0.2rem 0.5rem;border-radius:6px;font-size:0.75rem;margin-bottom:0.5rem;">🛡️ ${(restoredText.match(/\[LDB_/g)||[]).length + (safeText !== restoredText ? 1 : 0)} item(s) re-protected</span>`
+                : `<span style="display:inline-block;background:var(--bg-light);color:var(--text-gray);padding:0.2rem 0.5rem;border-radius:6px;font-size:0.75rem;margin-bottom:0.5rem;border:1px solid var(--border);">✅ No personal info found in response</span>`;
+
             messageDiv.innerHTML = `
                 <div class="chat-message-inner">
                     <div class="message-label">
@@ -3479,9 +3981,10 @@
                     <div class="message-content" style="border-color: var(--primary-blue);">
                         <div class="message-text" data-view="restored">${escapeHtml(restoredText)}</div>
                         <div class="message-tabs">
-                            <button class="message-tab active" onclick="switchAIView('${messageId}', 'restored')">With Your Info</button>
-                            <button class="message-tab" onclick="switchAIView('${messageId}', 'protected')">Protected Version</button>
+                            <button class="message-tab active" onclick="switchAIView('${messageId}', 'restored')">📖 AI's Response</button>
+                            <button class="message-tab" onclick="switchAIView('${messageId}', 'safe')">🛡️ Safe to Share</button>
                         </div>
+                        <div id="${messageId}-safe-note" style="display:none;margin-top:0.5rem;">${safeBadge}</div>
                         <div class="message-actions">
                             <button class="message-action-btn" data-label="Copy" onclick="copyMessage('${messageId}')">📋</button>
                             <button class="message-action-btn" data-label="Ask Again" onclick="askAI('${messageId}')">🤖</button>
@@ -3490,10 +3993,10 @@
                     </div>
                 </div>
             `;
-            
+
             messageDiv.dataset.originalText = restoredText;
-            messageDiv.dataset.protectedText = protectedText;
-            
+            messageDiv.dataset.safeText = safeText;
+
             chatArea.appendChild(messageDiv);
             chatArea.scrollTop = chatArea.scrollHeight;
         }
@@ -3502,20 +4005,23 @@
         function switchAIView(messageId, view) {
             const messageDiv = document.getElementById(messageId);
             if (!messageDiv) return;
-            
+
             const textDiv = messageDiv.querySelector('.message-text');
             const tabs = messageDiv.querySelectorAll('.message-tab');
-            
+            const safeNote = document.getElementById(messageId + '-safe-note');
+
             tabs.forEach(tab => tab.classList.remove('active'));
-            
+
             if (view === 'restored') {
                 textDiv.textContent = messageDiv.dataset.originalText;
                 textDiv.dataset.view = 'restored';
                 tabs[0].classList.add('active');
+                if (safeNote) safeNote.style.display = 'none';
             } else {
-                textDiv.textContent = messageDiv.dataset.protectedText;
-                textDiv.dataset.view = 'protected';
+                textDiv.textContent = messageDiv.dataset.safeText;
+                textDiv.dataset.view = 'safe';
                 tabs[1].classList.add('active');
+                if (safeNote) safeNote.style.display = 'block';
             }
         }
     </script>
@@ -3541,11 +4047,15 @@
         }
         
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', updateAICheckboxes);
+            document.addEventListener('DOMContentLoaded', function() {
+                updateAICheckboxes();
+                updateAISidebarLock();
+            });
         } else {
             updateAICheckboxes();
+            updateAISidebarLock();
         }
-        
+
         // Toggle AI models dropdown
         function toggleAIModels() {
             const list = document.getElementById('ai-models-list');
@@ -3553,6 +4063,8 @@
             if (list.style.display === 'none' || !list.style.display) {
                 list.style.display = 'flex';
                 icon.textContent = '▲';
+                // Re-evaluate lock state each time dropdown opens
+                updateAISidebarLock();
             } else {
                 list.style.display = 'none';
                 icon.textContent = '▼';

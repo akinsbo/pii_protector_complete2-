@@ -36,7 +36,8 @@
     "format:check": "prettier --check \"**/*.{ts,js,json,md}\"",
     "security:audit": "npm audit",
     "test:all": "npm run lint && npm run format:check && npm run build && npm run test:core",
-    "deploy:website": "./deployments/deploy.sh"
+    "deploy:website": "./deployments/deploy.sh",
+    "test:install": "playwright install chromium"
   },
   "devDependencies": {
     "@electron-forge/cli": "^7.10.2",
@@ -74,7 +75,6 @@
     "appId": "com.ledebe.protector",
     "productName": "Ledebe Protector",
     "copyright": "Copyright © 2025 Ledebe. All rights reserved.",
-
     "files": [
       "dist/**/*",
       "*.html",
@@ -98,11 +98,17 @@
       "target": [
         {
           "target": "dmg",
-          "arch": ["arm64", "x64"]
+          "arch": [
+            "arm64",
+            "x64"
+          ]
         },
         {
           "target": "zip",
-          "arch": ["arm64", "x64"]
+          "arch": [
+            "arm64",
+            "x64"
+          ]
         }
       ]
     },
@@ -132,7 +138,9 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "forceCodeSigning": false
@@ -141,7 +149,9 @@
       "target": [
         {
           "target": "AppImage",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "category": "Utility"
@@ -164,7 +174,9 @@
       {
         "from": "assets/",
         "to": "assets/",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       }
     ]
   }

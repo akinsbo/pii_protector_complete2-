@@ -13,8 +13,9 @@ export default defineConfig({
     setupNodeEvents(on, config) {
       // implement node event listeners here
     },
-    specPattern: 'cypress/e2e/**/*.cy.{js,jsx,ts,tsx}',
-    supportFile: 'cypress/support/e2e.ts',
+    specPattern: 'QA testing/cypress/e2e/**/*.cy.{js,jsx,ts,tsx}',
+    supportFile: 'QA testing/cypress/support/e2e.ts',
+    fixturesFolder: 'QA testing/cypress/fixtures',
   },
   component: {
     devServer: {

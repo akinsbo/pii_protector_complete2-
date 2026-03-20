@@ -2,7 +2,7 @@ appId: com.ledebe.protector
 productName: Ledebe Protector
 files:
   - dist/**
-  - index.prod.html
+  - index.html
   - src/**/*
   - package.json
 extraMetadata:

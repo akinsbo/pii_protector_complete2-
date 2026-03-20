@@ -6,6 +6,12 @@
       "Principal": "*",
       "Action": "s3:GetObject",
       "Resource": "arn:aws:s3:::ledebe/*"
+    },
+    {
+      "Effect": "Deny",
+      "Principal": "*",
+      "Action": "s3:PutObject",
+      "Resource": "arn:aws:s3:::ledebe/*"
     }
   ]
 }

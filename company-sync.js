@@ -154,6 +154,7 @@ class CompanyTermsSync {
 
 // Initialize sync
 const companySync = new CompanyTermsSync();
+window.companySync = companySync; // expose for test access
 
 // Example: Set company after employee login
 // companySync.setCompany('acme');

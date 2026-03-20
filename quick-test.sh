@@ -27,7 +27,7 @@ npm run build
 
 # Run core functionality tests only
 print_status "Running core functionality tests..."
-npm run cypress:run -- --spec "cypress/e2e/app-functionality.cy.ts"
+npm run cypress:run -- --spec "QA testing/cypress/e2e/app-functionality.cy.ts"
 
 # Run linting
 print_status "Checking code quality..."

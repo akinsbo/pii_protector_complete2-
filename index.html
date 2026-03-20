@@ -1646,8 +1646,8 @@
                         </div>
                     </div>
                     <input type="file" id="file-input" class="file-input" accept=".txt,.md,.csv,.pdf,image/*" onchange="handleFileUpload(event)">
-                    <textarea id="text-input" placeholder="Type your message here..." rows="1"></textarea>
-                    <button class="action-btn" onclick="sendMessage()" id="send-btn">Send</button>
+                    <textarea id="text-input" placeholder="Type your message here..." rows="1" oninput="document.getElementById('send-btn').disabled = !this.value.trim()"></textarea>
+                    <button class="action-btn" onclick="sendMessage()" id="send-btn" disabled>Send</button>
                 </div>
             </div>
         </div>
@@ -1889,6 +1889,9 @@
                 masked = masked.replace(rule.pattern, function(match) {
                     // Skip if already a placeholder
                     if (match.startsWith('[LDB_')) return match;
+                    // Re-use placeholder if same value already mapped
+                    const existing = Object.entries(targetMap).find(([, v]) => v === match);
+                    if (existing) return existing[0];
                     count++;
                     const placeholder = '[' + rule.prefix + count + ']';
                     targetMap[placeholder] = match;
@@ -1896,10 +1899,10 @@
                 });
             });
 
-            // Custom terms
-            const customTermsEl = document.getElementById('custom-terms');
-            const customTerms = (customTermsEl ? customTermsEl.value : '')
-                .split('\n').map(t => t.trim()).filter(Boolean);
+            // Custom terms — include company-synced terms if available
+            const customTerms = (typeof companySync !== 'undefined')
+                ? companySync.getAllTerms()
+                : (document.getElementById('custom-terms')?.value || '').split('\n').map(t => t.trim()).filter(Boolean);
             customTerms.forEach(term => {
                 const regex = new RegExp('\\b' + term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'gi');
                 masked = masked.replace(regex, function(match) {
@@ -2317,6 +2320,7 @@
                 words: words,
                 pages: pages
             };
+            window.previewData = previewData; // expose for test access
 
             // Add document card to chat
             const chatArea = document.getElementById('chat-area');
@@ -2443,8 +2447,43 @@
 
         // Enhanced format detection and preservation
         function detectAndPreserveFormat(content, fileName) {
-            // ALWAYS preserve exact formatting by default
-            // This ensures tabular data, spacing, and alignment are maintained exactly as in the original
+            const name = (fileName || '').toLowerCase();
+            const ext = name.split('.').pop();
+
+            // CSV / TSV — render as table
+            if (ext === 'csv' || ext === 'tsv') {
+                const delimiter = ext === 'tsv' ? '\t' : ',';
+                return formatAsTable(content, delimiter);
+            }
+
+            // Markdown
+            if (ext === 'md' || ext === 'markdown') {
+                return formatAsMarkdown(content);
+            }
+
+            // Content-based detection when extension is not decisive
+            const firstLines = content.split('\n').slice(0, 5).join('\n');
+
+            // Looks like CSV: multiple lines each with the same number of commas
+            const csvLines = content.trim().split('\n').filter(l => l.trim());
+            if (csvLines.length >= 2) {
+                const commaCount = csvLines[0].split(',').length;
+                if (commaCount >= 2 && csvLines.slice(1, 4).every(l => l.split(',').length === commaCount)) {
+                    return formatAsTable(content, ',');
+                }
+            }
+
+            // Looks like Markdown: has headers or bold/italic syntax
+            if (/^#{1,3} /m.test(firstLines) || /\*\*.*\*\*/.test(firstLines)) {
+                return formatAsMarkdown(content);
+            }
+
+            // Looks like a bullet list
+            if (/^(\s*[-*•] )/m.test(firstLines)) {
+                return formatAsList(content);
+            }
+
+            // Default: preserve exact spacing
             return formatAsPreservedText(content);
         }
         
@@ -3129,9 +3168,8 @@
                 addRestoreMessage(text, restored);
                 saveToHistory(text, restored, text);
             } else {
-                // Protection operation: mask sensitive data
+                // Protection operation: mask sensitive data — accumulate map across turns
                 const originalText = text;
-                placeholderMap = {};
                 const { masked, count } = applyPIIMasking(text, placeholderMap);
 
                 // Add message to chat
@@ -3141,9 +3179,10 @@
                 saveToHistory(text, masked, originalText);
             }
             
-            // Clear input
+            // Clear input and re-disable send button
             input.value = '';
             input.style.height = 'auto';
+            document.getElementById('send-btn').disabled = true;
             _clearWordChips();
         }
 
@@ -3306,20 +3345,91 @@
         function editMessage(messageId) {
             const messageDiv = document.getElementById(messageId);
             if (!messageDiv) return;
-            
-            const newText = prompt('Edit your message:', messageDiv.dataset.originalText);
-            if (!newText || newText === messageDiv.dataset.originalText) return;
-            
-            // Remove old message and create new one
-            messageDiv.remove();
-            document.getElementById('text-input').value = newText;
-            sendMessage();
+            if (messageDiv.querySelector('.edit-textarea')) return; // already editing
+
+            const textDiv = messageDiv.querySelector('.message-text');
+            // Store current HTML so Cancel can restore it
+            textDiv.dataset.preEditHtml = textDiv.innerHTML;
+
+            textDiv.innerHTML = `
+                <textarea class="edit-textarea" style="width:100%;min-height:80px;padding:0.5rem;border:2px solid var(--primary-blue,#3b82f6);border-radius:6px;font-size:inherit;font-family:inherit;resize:vertical;background:var(--white);color:var(--text-dark);box-sizing:border-box;"></textarea>
+                <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
+                    <button onclick="saveMessageEdit('${messageId}')" style="padding:0.35rem 0.75rem;background:var(--primary-blue,#3b82f6);color:white;border:none;border-radius:6px;cursor:pointer;font-size:0.85rem;font-weight:600;">Save</button>
+                    <button onclick="cancelMessageEdit('${messageId}')" style="padding:0.35rem 0.75rem;background:var(--bg-light,#f3f4f6);color:var(--text-dark);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:0.85rem;">Cancel</button>
+                </div>
+            `;
+            // Set value directly to avoid HTML escaping issues
+            const ta = textDiv.querySelector('.edit-textarea');
+            ta.value = messageDiv.dataset.originalText;
+            ta.focus();
+            ta.setSelectionRange(ta.value.length, ta.value.length);
+        }
+
+        function saveMessageEdit(messageId) {
+            const messageDiv = document.getElementById(messageId);
+            if (!messageDiv) return;
+
+            const textDiv = messageDiv.querySelector('.message-text');
+            const ta = textDiv.querySelector('.edit-textarea');
+            const newText = ta.value.trim();
+
+            if (!newText) { cancelMessageEdit(messageId); return; }
+
+            // Re-run PII masking on the edited text
+            const newMap = {};
+            const { masked: newProtected, count: newCount } = applyPIIMasking(newText, newMap);
+
+            // Update stored data
+            messageDiv.dataset.originalText = newText;
+            messageDiv.dataset.protectedText = newProtected;
+            messageDiv.dataset.maskedCount = newCount;
+
+            // Restore the text view (keep whatever tab was active)
+            const currentView = textDiv.dataset.view || 'protected';
+            textDiv.textContent = currentView === 'plain' ? newText : newProtected;
+
+            // Re-add protection badge if needed
+            if (newCount > 0) {
+                const badge = document.createElement('div');
+                badge.className = 'protection-badge';
+                badge.style.cssText = 'display:inline-block;background:var(--accent-green);color:#78350f;padding:0.25rem 0.5rem;border-radius:6px;font-size:0.75rem;margin-top:0.5rem;';
+                badge.textContent = `🛡️ ${newCount} item${newCount > 1 ? 's' : ''} protected`;
+                textDiv.appendChild(badge);
+            }
+
+            delete textDiv.dataset.preEditHtml;
+            showToast('✅ Message updated', 'success');
+        }
+
+        function cancelMessageEdit(messageId) {
+            const messageDiv = document.getElementById(messageId);
+            if (!messageDiv) return;
+            const textDiv = messageDiv.querySelector('.message-text');
+            if (textDiv.dataset.preEditHtml !== undefined) {
+                textDiv.innerHTML = textDiv.dataset.preEditHtml;
+                delete textDiv.dataset.preEditHtml;
+            }
         }
 
         function deleteMessage(messageId) {
-            if (!confirm('Delete this message?')) return;
             const messageDiv = document.getElementById(messageId);
-            if (messageDiv) messageDiv.remove();
+            if (!messageDiv) return;
+            if (messageDiv.querySelector('.delete-confirm')) return; // already showing
+
+            messageDiv.style.position = 'relative';
+            const overlay = document.createElement('div');
+            overlay.className = 'delete-confirm';
+            overlay.style.cssText = 'position:absolute;inset:0;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;border-radius:inherit;z-index:10;';
+            overlay.innerHTML = `
+                <div style="background:var(--white,#fff);padding:1rem 1.5rem;border-radius:10px;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,0.2);min-width:200px;">
+                    <p style="margin:0 0 0.75rem;font-weight:600;color:var(--text-dark);">Delete this message?</p>
+                    <div style="display:flex;gap:0.5rem;justify-content:center;">
+                        <button onclick="document.getElementById('${messageId}').remove()" style="padding:0.4rem 1rem;background:#ef4444;color:white;border:none;border-radius:6px;cursor:pointer;font-weight:600;">Delete</button>
+                        <button onclick="this.closest('.delete-confirm').remove()" style="padding:0.4rem 1rem;background:var(--bg-light,#f3f4f6);color:var(--text-dark);border:1px solid var(--border);border-radius:6px;cursor:pointer;">Cancel</button>
+                    </div>
+                </div>
+            `;
+            messageDiv.appendChild(overlay);
         }
 
         function downloadProtectedDocument(messageId) {
@@ -3432,24 +3542,93 @@
             const item = historyItems.find(h => h.id === id);
             if (!item) return;
 
-            const newName = prompt('Rename:', item.text);
-            if (newName && newName.trim()) {
-                item.text = newName.trim();
-                localStorage.setItem('historyItems', JSON.stringify(historyItems));
-                loadHistory();
+            // Close any open menus
+            document.querySelectorAll('.history-menu').forEach(m => m.classList.remove('show'));
+
+            // Find the history item element
+            const historyEl = document.querySelector('[data-id="' + id + '"]');
+            if (!historyEl) return;
+
+            // Remove any existing overlay
+            const existingOverlay = historyEl.querySelector('.rename-overlay');
+            if (existingOverlay) existingOverlay.remove();
+
+            const overlay = document.createElement('div');
+            overlay.className = 'rename-overlay';
+            overlay.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;background:var(--bg-primary,#fff);display:flex;align-items:center;gap:6px;padding:4px 8px;z-index:10;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);';
+            overlay.innerHTML = '<input type="text" class="rename-input" value="' + (item.text || '').replace(/"/g, '&quot;') + '" style="flex:1;padding:4px 8px;border:1px solid #667eea;border-radius:4px;font-size:0.85rem;" />'
+                + '<button onclick="saveHistoryRename(\'' + id + '\')" style="padding:4px 10px;background:#667eea;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:0.8rem;">Save</button>'
+                + '<button onclick="cancelHistoryRename(\'' + id + '\')" style="padding:4px 10px;background:#ccc;color:#333;border:none;border-radius:4px;cursor:pointer;font-size:0.8rem;">Cancel</button>';
+
+            historyEl.style.position = 'relative';
+            historyEl.appendChild(overlay);
+
+            const input = overlay.querySelector('.rename-input');
+            input.focus();
+            input.select();
+        }
+
+        function saveHistoryRename(id) {
+            const historyEl = document.querySelector('[data-id="' + id + '"]');
+            if (!historyEl) return;
+            const input = historyEl.querySelector('.rename-input');
+            const newName = input ? input.value.trim() : '';
+            if (newName) {
+                const item = historyItems.find(h => h.id === id);
+                if (item) {
+                    item.text = newName;
+                    localStorage.setItem('historyItems', JSON.stringify(historyItems));
+                }
             }
+            loadHistory();
+        }
+
+        function cancelHistoryRename(id) {
+            const historyEl = document.querySelector('[data-id="' + id + '"]');
+            if (!historyEl) return;
+            const overlay = historyEl.querySelector('.rename-overlay');
+            if (overlay) overlay.remove();
         }
 
         function deleteHistoryItem(id) {
             event.stopPropagation();
-            if (!confirm('Delete this item?')) return;
 
+            // Close any open menus
+            document.querySelectorAll('.history-menu').forEach(m => m.classList.remove('show'));
+
+            // Find the history item element
+            const historyEl = document.querySelector('[data-id="' + id + '"]');
+            if (!historyEl) return;
+
+            // Remove any existing overlay
+            const existingOverlay = historyEl.querySelector('.delete-confirm-overlay');
+            if (existingOverlay) existingOverlay.remove();
+
+            const overlay = document.createElement('div');
+            overlay.className = 'delete-confirm-overlay';
+            overlay.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;background:var(--bg-primary,#fff);display:flex;align-items:center;gap:6px;padding:4px 8px;z-index:10;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);';
+            overlay.innerHTML = '<span style="flex:1;font-size:0.82rem;color:#e74c3c;">Delete this item?</span>'
+                + '<button onclick="confirmDeleteHistory(\'' + id + '\')" style="padding:4px 10px;background:#e74c3c;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:0.8rem;">Delete</button>'
+                + '<button onclick="cancelDeleteHistory(\'' + id + '\')" style="padding:4px 10px;background:#ccc;color:#333;border:none;border-radius:4px;cursor:pointer;font-size:0.8rem;">Cancel</button>';
+
+            historyEl.style.position = 'relative';
+            historyEl.appendChild(overlay);
+        }
+
+        function confirmDeleteHistory(id) {
             historyItems = historyItems.filter(h => h.id !== id);
             localStorage.setItem('historyItems', JSON.stringify(historyItems));
             if (currentHistoryId === id) {
                 currentHistoryId = null;
             }
             loadHistory();
+        }
+
+        function cancelDeleteHistory(id) {
+            const historyEl = document.querySelector('[data-id="' + id + '"]');
+            if (!historyEl) return;
+            const overlay = historyEl.querySelector('.delete-confirm-overlay');
+            if (overlay) overlay.remove();
         }
 
         function toggleHistoryMenu(e, id) {
@@ -3524,9 +3703,9 @@
             alert('Tutorial:\n\n1. Type text with personal info\n2. Click Send - it automatically masks emails, phones, and custom terms\n3. Use tabs to switch between Plain Text and Protected Text views\n4. Copy protected text to use with AI\n5. History saves all your messages');
         }
 
-        function showSettings() {
+        async function showSettings() {
             const modal = document.getElementById('settings-modal');
-            
+
             // Load current settings
             const savedLanguage = localStorage.getItem('language') || 'en';
             const savedTheme = localStorage.getItem('theme') || 'auto';
@@ -3534,8 +3713,13 @@
             const savedAutoSave = localStorage.getItem('autoSave') !== 'false';
             const savedAiEnabled = localStorage.getItem('aiEnabled') === 'true';
             const savedAiProvider = localStorage.getItem('aiProvider') || 'openai';
-            const savedAiKey = localStorage.getItem('aiKey') || '';
-            
+            // Decrypt API key — fall back to old plaintext 'aiKey' for migration
+            const encryptedKey = localStorage.getItem('aiKeyEncrypted') || localStorage.getItem('aiKey') || '';
+            let savedAiKey = encryptedKey;
+            if (window.electronAPI && encryptedKey) {
+                savedAiKey = await window.electronAPI.invoke('safeStorage:decrypt', encryptedKey);
+            }
+
             document.getElementById('settings-language').value = savedLanguage;
             document.getElementById('settings-theme').value = savedTheme;
             document.getElementById('settings-notifications').checked = savedNotifications;
@@ -3552,7 +3736,8 @@
             const verifiedKey = localStorage.getItem('aiVerifiedKey') || '';
             const statusDiv = document.getElementById('ai-verification-status');
             if (statusDiv) {
-                if (verified && verifiedKey === savedAiKey && savedAiKey.length > 0) {
+                // Compare encrypted forms — both were stored at the same time if key hasn't changed
+                if (verified && verifiedKey === encryptedKey && savedAiKey.length > 0) {
                     statusDiv.style.display = 'block';
                     statusDiv.style.color = '#16a34a';
                     statusDiv.textContent = '✅ API key verified — AI features are active';
@@ -3585,7 +3770,7 @@
             document.getElementById('settings-modal').classList.remove('show');
         }
         
-        function saveSettings() {
+        async function saveSettings() {
             const language = document.getElementById('settings-language').value;
             const theme = document.getElementById('settings-theme').value;
             const notifications = document.getElementById('settings-notifications').checked;
@@ -3593,25 +3778,32 @@
             const aiEnabled = document.getElementById('settings-ai-enabled').checked;
             const aiProvider = document.getElementById('settings-ai-provider').value;
             const aiKey = document.getElementById('settings-ai-key').value;
-            
+
+            // Encrypt API key before storing
+            let encryptedKey = aiKey;
+            if (window.electronAPI && aiKey) {
+                encryptedKey = await window.electronAPI.invoke('safeStorage:encrypt', aiKey);
+            }
+
             localStorage.setItem('language', language);
             localStorage.setItem('theme', theme);
             localStorage.setItem('notifications', notifications);
             localStorage.setItem('autoSave', autoSave);
             localStorage.setItem('aiEnabled', aiEnabled);
             localStorage.setItem('aiProvider', aiProvider);
-            localStorage.setItem('aiKey', aiKey);
+            localStorage.setItem('aiKeyEncrypted', encryptedKey);
+            localStorage.removeItem('aiKey'); // remove old plaintext key if present
 
             // If key or provider changed, clear verification (user must re-test)
             const verifiedKey = localStorage.getItem('aiVerifiedKey') || '';
             const verifiedProvider = localStorage.getItem('aiVerifiedProvider') || '';
-            if (aiKey !== verifiedKey || aiProvider !== verifiedProvider) {
+            if (encryptedKey !== verifiedKey || aiProvider !== verifiedProvider) {
                 localStorage.removeItem('aiKeyVerified');
                 localStorage.removeItem('aiVerifiedKey');
                 localStorage.removeItem('aiVerifiedProvider');
             }
 
-            // Reinitialize AI Chat with new settings
+            // Reinitialize AI Chat with new settings (plaintext key in memory)
             if (aiChat) {
                 aiChat.provider = aiProvider;
                 aiChat.apiKey = aiKey;
@@ -3676,10 +3868,10 @@
 
                 console.log('✅ Test successful:', result);
 
-                // Save verification — key + provider are confirmed working
+                // Save verification — store the same encrypted form for later comparison
                 localStorage.setItem('aiKeyVerified', 'true');
                 localStorage.setItem('aiVerifiedProvider', aiProvider);
-                localStorage.setItem('aiVerifiedKey', aiKey);
+                localStorage.setItem('aiVerifiedKey', localStorage.getItem('aiKeyEncrypted') || aiKey);
 
                 showToast('✅ Connection successful! AI is ready to use.', 'success');
 
@@ -3724,7 +3916,7 @@
         function updateAISidebarLock() {
             const verified = localStorage.getItem('aiKeyVerified') === 'true';
             const verifiedKey = localStorage.getItem('aiVerifiedKey') || '';
-            const currentKey = localStorage.getItem('aiKey') || '';
+            const currentKey = localStorage.getItem('aiKeyEncrypted') || localStorage.getItem('aiKey') || '';
 
             // If key has changed since last verification, treat as unverified
             const isUnlocked = verified && verifiedKey === currentKey && currentKey.length > 0;
@@ -3799,6 +3991,15 @@
         let aiChat;
         try {
             aiChat = new AIChat();
+            // Decrypt and inject API key (safeStorage keeps it off disk in plaintext)
+            (async () => {
+                const encryptedKey = localStorage.getItem('aiKeyEncrypted') || localStorage.getItem('aiKey') || '';
+                if (encryptedKey && window.electronAPI) {
+                    aiChat.apiKey = await window.electronAPI.invoke('safeStorage:decrypt', encryptedKey);
+                } else {
+                    aiChat.apiKey = encryptedKey; // fallback for browser/test env
+                }
+            })();
             console.log('✅ AI Chat initialized successfully');
         } catch (error) {
             console.error('❌ Failed to initialize AI Chat:', error);
@@ -3814,7 +4015,7 @@
             
             const isConfigured = aiChat.isConfigured();
             const provider = localStorage.getItem('aiProvider') || 'openai';
-            const hasKey = !!localStorage.getItem('aiKey');
+            const hasKey = !!(localStorage.getItem('aiKeyEncrypted') || localStorage.getItem('aiKey'));
             const enabled = localStorage.getItem('aiEnabled') === 'true';
             
             console.log('AI Configuration Test:', {
@@ -4030,8 +4231,8 @@
         function updateAICheckboxes() {
             const aiEnabled = localStorage.getItem('aiEnabled') === 'true';
             const aiProvider = localStorage.getItem('aiProvider') || 'openai';
-            const aiKey = localStorage.getItem('aiKey') || '';
-            
+            const aiKey = localStorage.getItem('aiKeyEncrypted') || localStorage.getItem('aiKey') || '';
+
             if (aiEnabled && aiKey) {
                 if (aiProvider === 'openai') {
                     document.getElementById('enable-chatgpt').checked = true;
@@ -4072,6 +4273,13 @@
         }
         
         document.addEventListener('DOMContentLoaded', function() {
+            // Initialize send button state
+            const sendBtn = document.getElementById('send-btn');
+            const textInput = document.getElementById('text-input');
+            if (sendBtn && textInput) {
+                sendBtn.disabled = !textInput.value.trim();
+            }
+
             ['chatgpt', 'claude', 'gemini'].forEach(function(provider) {
                 const checkbox = document.getElementById('enable-' + provider);
                 if (checkbox) {

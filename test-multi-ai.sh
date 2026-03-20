@@ -9,16 +9,16 @@ echo ""
 
 # Check if new plugin files exist
 echo "📁 Checking for new plugin files..."
-if [ -f "src/plugins/ClaudePlugin.ts" ]; then
-    echo "✅ ClaudePlugin.ts exists"
+if [ -f "multi-ai-chat.js" ]; then
+    echo "✅ multi-ai-chat.js exists"
 else
-    echo "❌ ClaudePlugin.ts missing"
+    echo "❌ multi-ai-chat.js missing"
 fi
 
-if [ -f "src/plugins/GeminiPlugin.ts" ]; then
-    echo "✅ GeminiPlugin.ts exists"
+if [ -f "ai-chat.js" ]; then
+    echo "✅ ai-chat.js exists"
 else
-    echo "❌ GeminiPlugin.ts missing"
+    echo "❌ ai-chat.js missing"
 fi
 
 echo ""

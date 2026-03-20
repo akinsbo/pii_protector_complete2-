@@ -192,6 +192,7 @@ Biggest single feature I'd add first: The Clipboard auto-protect — it removes 
 for developers
 == terminal that has AI (warp AI)
 == vscode extension 
+==for the vscode extension add copy icon like ChatGPT
 
 slogan - enjoy AI with complete privacy / enjoy any AI  with complete privacy / enjoy your favourite AI with complete privacy
 
@@ -205,6 +206,14 @@ Ledebe
 6. upload document and it should be able to customize it
 7.✅ More PII types auto-detected, maybe a line underneet it or something, when someone selects a word, a menu that allows to protect
 8.✅ the rename and delete buttons not showing for thr last chat history it's hiding behind the custom terms box
-9. QA testing for all functionalities
-10. clean up the code 
+9.✅  QA testing for all functionalities
+10.✅ clean up the code 
+11. protected words should look different in the paragraph, maybe a different colour or underline
+12. the keyboard short cuts (help) should show commands based on app
+13. tutorial should link to "documentation" page
+14. the documentation page should have "how to use/tutorial"
+15. changing language on the app, it's not working
+
+
+
 

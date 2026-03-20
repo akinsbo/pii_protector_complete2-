@@ -4,9 +4,10 @@
 class AIChat {
     constructor() {
         this.provider = localStorage.getItem('aiProvider') || 'openai';
-        this.apiKey = localStorage.getItem('aiKey') || '';
+        this.apiKey = ''; // Set by index.html after decryption via safeStorage
         this.enabled = localStorage.getItem('aiEnabled') === 'true';
         this.conversationHistory = []; // Track conversation context
+        this.cumulativePlaceholderMap = {}; // Accumulates all PII mappings across turns
         console.log('AIChat initialized:', { provider: this.provider, enabled: this.enabled, hasKey: !!this.apiKey });
     }
 
@@ -18,7 +19,11 @@ class AIChat {
 
     async sendMessage(protectedText, placeholderMap, useContext = true) {
         console.log('AI sendMessage called:', { textLength: protectedText.length, hasPlaceholders: !!placeholderMap });
-        
+
+        // Merge this turn's placeholders into the cumulative map so earlier
+        // turns' placeholders remain restorable in future AI responses
+        Object.assign(this.cumulativePlaceholderMap, placeholderMap);
+
         if (!this.isConfigured()) {
             const error = 'AI not configured. Please add your API key in Settings.';
             console.error(error);
@@ -51,9 +56,9 @@ class AIChat {
                 this.conversationHistory.push({ role: 'assistant', content: response });
             }
 
-            // Restore PII in response
+            // Restore PII in response using cumulative map (covers all previous turns too)
             let restoredResponse = response;
-            for (const [placeholder, original] of Object.entries(placeholderMap)) {
+            for (const [placeholder, original] of Object.entries(this.cumulativePlaceholderMap)) {
                 const regex = new RegExp(placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
                 restoredResponse = restoredResponse.replace(regex, original);
             }
@@ -74,6 +79,7 @@ class AIChat {
 
     clearConversation() {
         this.conversationHistory = [];
+        this.cumulativePlaceholderMap = {};
     }
 
     async sendToOpenAI(message, useContext) {
@@ -88,7 +94,7 @@ class AIChat {
                 'Authorization': `Bearer ${this.apiKey}`
             },
             body: JSON.stringify({
-                model: 'gpt-5-mini',
+                model: 'gpt-4o-mini',
                 messages: messages
             })
         });
@@ -115,7 +121,7 @@ class AIChat {
                 'anthropic-version': '2023-06-01'
             },
             body: JSON.stringify({
-                model: 'claude-3-sonnet-20240229',
+                model: 'claude-3-5-sonnet-20241022',
                 max_tokens: 1024,
                 messages: messages
             })
@@ -142,7 +148,7 @@ class AIChat {
             contents = [{ parts: [{ text: message }] }];
         }
 
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${this.apiKey}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${this.apiKey}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

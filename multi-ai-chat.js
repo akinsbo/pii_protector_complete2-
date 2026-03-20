@@ -206,29 +206,36 @@ class MultiAIChat {
 
     async sendToAIs() {
         const input = document.getElementById('multi-ai-input');
-        const message = input.value.trim();
-        
-        if (!message) return;
+        const rawMessage = input.value.trim();
+
+        if (!rawMessage) return;
+
+        // Apply PII masking before sending to any AI provider
+        const placeholderMap = {};
+        const { masked: maskedMessage, count } = applyPIIMasking(rawMessage, placeholderMap);
+        const hasProtections = count > 0;
 
         const enabled = Object.entries(this.providers).filter(([_, p]) => p.enabled && p.apiKey);
-        
+
         if (enabled.length === 0) {
             alert('⚠️ Please enable at least one AI and configure its API key');
             return;
         }
 
         const chatArea = document.getElementById('chat-area');
-        
-        // Show user message
+
+        // Show the masked message (what is actually sent to AI)
         const userMsg = document.createElement('div');
         userMsg.style.cssText = 'background: #3498db; color: white; padding: 10px; border-radius: 8px; margin-bottom: 10px;';
-        userMsg.textContent = message;
+        userMsg.innerHTML = hasProtections
+            ? `<span style="font-size:11px;opacity:0.8;">🛡️ PII protected (${count} item${count > 1 ? 's' : ''} masked)</span><br>${maskedMessage}`
+            : maskedMessage;
         chatArea.appendChild(userMsg);
-        
+
         input.value = '';
         chatArea.scrollTop = chatArea.scrollHeight;
 
-        // Send to each enabled AI
+        // Send masked text to each enabled AI
         for (const [key, provider] of enabled) {
             const aiMsg = document.createElement('div');
             aiMsg.style.cssText = 'background: #ecf0f1; color: #2c3e50; padding: 10px; border-radius: 8px; margin-bottom: 10px;';
@@ -237,12 +244,20 @@ class MultiAIChat {
             chatArea.scrollTop = chatArea.scrollHeight;
 
             try {
-                const response = await this.callAI(key, message, provider.apiKey);
-                aiMsg.innerHTML = `<strong>${provider.name}:</strong><br>${response}`;
+                const response = await this.callAI(key, maskedMessage, provider.apiKey);
+
+                // Restore PII in the AI's response
+                let restoredResponse = response;
+                for (const [placeholder, original] of Object.entries(placeholderMap)) {
+                    const regex = new RegExp(placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+                    restoredResponse = restoredResponse.replace(regex, original);
+                }
+
+                aiMsg.innerHTML = `<strong>${provider.name}:</strong><br>${restoredResponse}`;
             } catch (error) {
                 aiMsg.innerHTML = `<strong>${provider.name}:</strong><br><span style="color: #e74c3c;">❌ ${error.message}</span>`;
             }
-            
+
             chatArea.scrollTop = chatArea.scrollHeight;
         }
     }
@@ -252,7 +267,7 @@ class MultiAIChat {
             const res = await fetch('https://api.openai.com/v1/chat/completions', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-                body: JSON.stringify({ model: 'gpt-3.5-turbo', messages: [{ role: 'user', content: message }] })
+                body: JSON.stringify({ model: 'gpt-4o-mini', messages: [{ role: 'user', content: message }] })
             });
             if (!res.ok) throw new Error('OpenAI API error');
             const data = await res.json();
@@ -263,7 +278,7 @@ class MultiAIChat {
             const res = await fetch('https://api.anthropic.com/v1/messages', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
-                body: JSON.stringify({ model: 'claude-3-sonnet-20240229', max_tokens: 1024, messages: [{ role: 'user', content: message }] })
+                body: JSON.stringify({ model: 'claude-3-5-sonnet-20241022', max_tokens: 1024, messages: [{ role: 'user', content: message }] })
             });
             if (!res.ok) throw new Error('Claude API error');
             const data = await res.json();
@@ -271,7 +286,7 @@ class MultiAIChat {
         }
         
         if (provider === 'gemini') {
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ contents: [{ parts: [{ text: message }] }] })

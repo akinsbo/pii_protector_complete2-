@@ -8,15 +8,13 @@
  * @license MIT
  */
 
-const { app, BrowserWindow, ipcMain, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, safeStorage } = require('electron');
 const path = require('path');
-const { Anonymizer } = require('./src/pii/Anonymizer');
 const os = require('os');
 const { crashReporter } = require('./src/crash-reporter');
 const { BrowserAuth } = require('./src/auth/BrowserAuth');
 
 let win: any = null;
-const anonymizer = new Anonymizer({ consistentMapKey: 'default-session' });
 const browserAuth = new BrowserAuth();
 
 /**
@@ -112,40 +110,21 @@ function createWindow() {
 app.whenReady().then(() => {
   crashReporter.addBreadcrumb('app', 'Application started', 'info');
   
-  // Fix SSL issues without compromising security
-  app.commandLine.appendSwitch('ignore-certificate-errors-spki-list');
-  app.commandLine.appendSwitch('ignore-ssl-errors');
+  // SSL bypass — development only. Never disable SSL validation in production.
+  if (process.env.NODE_ENV === 'development') {
+    app.commandLine.appendSwitch('ignore-certificate-errors-spki-list');
+    app.commandLine.appendSwitch('ignore-ssl-errors');
+  }
   
   createWindow();
   sendInstallationEvent();
 });
 app.on('window-all-closed', () => {
-  anonymizer.clear();
   if (process.platform !== 'darwin') app.quit();
 });
 
-ipcMain.handle(
-  'pii:mask',
-  (
-    _evt: any,
-    payload: { text: string; customTerms?: string[]; sessionId?: string }
-  ) => {
-    crashReporter.addBreadcrumb('pii', 'Mask operation started', 'info', { textLength: payload.text.length });
-    if (payload?.customTerms) anonymizer.setCustomTerms(payload.customTerms);
-    const result = anonymizer.mask(payload.text);
-    crashReporter.addBreadcrumb('pii', 'Mask operation completed', 'info');
-    return result;
-  }
-);
-ipcMain.handle('pii:unmask', (_evt: any, payload: { text: string }) => {
-  crashReporter.addBreadcrumb('pii', 'Unmask operation started', 'info');
-  const result = anonymizer.unmask(payload.text);
-  crashReporter.addBreadcrumb('pii', 'Unmask operation completed', 'info');
-  return result;
-});
-ipcMain.handle('pii:clear', () => {
-  anonymizer.clear();
-  return { ok: true };
+app.on('activate', () => {
+  if (!win) createWindow();
 });
 
 ipcMain.handle(
@@ -317,8 +296,23 @@ ipcMain.handle('auth:isAuthenticated', async (_evt: any, providerName: string) =
 
 // Handle return to app from browser auth
 ipcMain.handle('auth:return-to-app', () => {
-  // This is handled by the BrowserAuth class
+  app.emit('auth:return-to-app-internal');
   return { success: true };
+});
+
+// Secure key storage using OS keychain via safeStorage
+ipcMain.handle('safeStorage:encrypt', (_evt: any, plaintext: string): string => {
+  if (!plaintext || !safeStorage.isEncryptionAvailable()) return plaintext;
+  return safeStorage.encryptString(plaintext).toString('base64');
+});
+
+ipcMain.handle('safeStorage:decrypt', (_evt: any, value: string): string => {
+  if (!value || !safeStorage.isEncryptionAvailable()) return value;
+  try {
+    return safeStorage.decryptString(Buffer.from(value, 'base64'));
+  } catch {
+    return value; // value was stored as plaintext before migration
+  }
 });
 
 /**

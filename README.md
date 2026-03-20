@@ -27,10 +27,10 @@ npm run test:e2e:ui           # With UI
 npm run test:core             # Core functionality only
 
 # Specific Cypress Test Files
-npm run cypress:run -- --spec "cypress/e2e/app-functionality.cy.ts"
-npm run cypress:run -- --spec "cypress/e2e/file-upload.cy.ts"
-npm run cypress:run -- --spec "cypress/e2e/ui-accessibility.cy.ts"
-npm run cypress:run -- --spec "cypress/e2e/advanced-features.cy.ts"
+npm run cypress:run -- --spec "QA testing/cypress/e2e/app-functionality.cy.ts"
+npm run cypress:run -- --spec "QA testing/cypress/e2e/file-upload.cy.ts"
+npm run cypress:run -- --spec "QA testing/cypress/e2e/ui-accessibility.cy.ts"
+npm run cypress:run -- --spec "QA testing/cypress/e2e/advanced-features.cy.ts"
 ```
 
 ### Test Coverage
@@ -77,7 +77,7 @@ npm run cypress:run -- --spec "cypress/e2e/advanced-features.cy.ts"
 - ✅ Workflow integration testing
 
 ### Test Data
-Test fixtures are located in `cypress/fixtures/testData.json` and include:
+Test fixtures are located in `QA testing/cypress/fixtures/testData.json` and include:
 - Sample texts with various PII types
 - Custom terms for testing
 - Protected pattern examples

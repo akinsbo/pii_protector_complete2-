@@ -9,12 +9,6 @@
  */
 
 const { contextBridge, ipcRenderer } = require('electron');
-contextBridge.exposeInMainWorld('pii', {
-  mask: (text: string, customTerms?: string[], sessionId?: string) =>
-    ipcRenderer.invoke('pii:mask', { text, customTerms, sessionId }),
-  unmask: (text: string) => ipcRenderer.invoke('pii:unmask', { text }),
-  clear: () => ipcRenderer.invoke('pii:clear'),
-});
 
 contextBridge.exposeInMainWorld('feedback', {
   send: (message: string, email?: string) =>
@@ -60,11 +54,6 @@ ipcRenderer.on('menu:clear-all', () => {
 
 // Type declarations for exposed APIs
 interface Window {
-  pii: {
-    mask: (text: string, customTerms?: string[], sessionId?: string) => Promise<any>;
-    unmask: (text: string) => Promise<any>;
-    clear: () => Promise<any>;
-  };
   feedback: {
     send: (message: string, email?: string) => Promise<any>;
   };

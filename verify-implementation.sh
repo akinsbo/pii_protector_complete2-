@@ -27,16 +27,16 @@ check_status() {
 echo "📁 Step 1: Checking File Structure"
 echo "-----------------------------------"
 
-echo -n "Checking ClaudePlugin.ts... "
-[ -f "src/plugins/ClaudePlugin.ts" ]
+echo -n "Checking multi-AI chat... "
+[ -f "multi-ai-chat.js" ]
 check_status
 
-echo -n "Checking GeminiPlugin.ts... "
-[ -f "src/plugins/GeminiPlugin.ts" ]
+echo -n "Checking company sync... "
+[ -f "company-sync.js" ]
 check_status
 
 echo -n "Checking test file... "
-[ -f "cypress/e2e/multi-ai-integration.cy.ts" ]
+[ -f "QA testing/cypress/e2e/multi-ai-integration.cy.ts" ]
 check_status
 
 echo -n "Checking documentation... "
@@ -76,15 +76,15 @@ echo "📦 Step 4: Checking Existing Features"
 echo "--------------------------------------"
 
 echo -n "Checking main app files... "
-[ -f "index.html" ] && [ -f "src/renderer.ts" ]
+[ -f "index.html" ] && [ -f "main.ts" ]
 check_status
 
-echo -n "Checking PII protection... "
-[ -f "src/pii/Anonymizer.ts" ]
+echo -n "Checking AI chat module... "
+[ -f "ai-chat.js" ]
 check_status
 
-echo -n "Checking plugin system... "
-[ -f "src/plugins/PluginManager.ts" ] && [ -f "src/plugins/ChatInterface.ts" ]
+echo -n "Checking auth module... "
+[ -f "src/auth/BrowserAuth.ts" ]
 check_status
 
 echo ""
@@ -92,11 +92,11 @@ echo "🧪 Step 5: Test Files"
 echo "---------------------"
 
 echo -n "Checking existing tests... "
-[ -f "cypress/e2e/app-functionality.cy.ts" ]
+[ -f "QA testing/cypress/e2e/app-functionality.cy.ts" ]
 check_status
 
 echo -n "Checking new tests... "
-[ -f "cypress/e2e/multi-ai-integration.cy.ts" ]
+[ -f "QA testing/cypress/e2e/multi-ai-integration.cy.ts" ]
 check_status
 
 echo ""

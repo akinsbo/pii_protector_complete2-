@@ -206,6 +206,13 @@
         const s3Region = 'us-east-2';
         const s3Url = `https://${s3Bucket}.s3.${s3Region}.amazonaws.com/${institutionId}/data.json`;
 
+        // Admin token — must be configured for cloud sync to work.
+        // Cloud writes require a pre-signed URL or API Gateway endpoint with proper AWS auth.
+        // Direct unauthenticated S3 PutObject is blocked by the bucket policy.
+        function getAdminToken() {
+            return localStorage.getItem(`ledebe-admin-token-${institutionId}`) || '';
+        }
+
         // Load data from S3 or localStorage
         async function loadData() {
             try {
@@ -224,15 +231,27 @@
         async function saveData(data) {
             // Save to localStorage first
             localStorage.setItem(storageKey, JSON.stringify(data));
-            
-            // Try to save to S3
+
+            // Cloud sync requires a configured admin token — direct unauthenticated
+            // S3 PutObject is blocked by the bucket policy. To enable cloud sync,
+            // set up an API Gateway endpoint or presigned URL flow and store the
+            // token via: localStorage.setItem('ledebe-admin-token-acme', '<token>')
+            const adminToken = getAdminToken();
+            if (!adminToken) {
+                showNotification('✅ Saved locally (configure admin token for cloud sync)');
+                return;
+            }
+
             try {
                 const response = await fetch(s3Url, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${adminToken}`
+                    },
                     body: JSON.stringify(data)
                 });
-                
+
                 if (response.ok) {
                     console.log('✅ Synced to S3');
                     showNotification('✅ Changes saved and synced to cloud');
@@ -290,12 +309,12 @@
         }
 
         // Remove term
-        function removeTerm(id) {
+        async function removeTerm(id) {
             if (!confirm('Remove this protected term?')) return;
-            
-            const data = loadData();
+
+            const data = await loadData();
             data.terms = data.terms.filter(t => t.id !== id);
-            saveData(data);
+            await saveData(data);
             renderTerms();
             updateStats();
         }
@@ -327,16 +346,16 @@
         }
 
         // Invite employee
-        function inviteEmployee() {
+        async function inviteEmployee() {
             const emailInput = document.getElementById('employee-email');
             const email = emailInput.value.trim();
-            
+
             if (!email || !email.includes('@')) {
                 alert('Please enter a valid email address');
                 return;
             }
 
-            const data = loadData();
+            const data = await loadData();
             data.employees = data.employees || [];
             data.employees.push({
                 id: Date.now(),
@@ -344,7 +363,7 @@
                 status: 'pending',
                 invitedAt: new Date().toISOString()
             });
-            saveData(data);
+            await saveData(data);
             
             emailInput.value = '';
             renderEmployees();
@@ -353,8 +372,8 @@
         }
 
         // Render employees
-        function renderEmployees() {
-            const data = loadData();
+        async function renderEmployees() {
+            const data = await loadData();
             const list = document.getElementById('employee-list');
             
             if (!data.employees || data.employees.length === 0) {
@@ -377,25 +396,25 @@
         }
 
         // Remove employee
-        function removeEmployee(id) {
+        async function removeEmployee(id) {
             if (!confirm('Remove this employee?')) return;
-            
-            const data = loadData();
+
+            const data = await loadData();
             data.employees = data.employees.filter(e => e.id !== id);
-            saveData(data);
+            await saveData(data);
             renderEmployees();
             updateStats();
         }
 
         // Update stats
-        function updateStats() {
-            const data = loadData();
+        async function updateStats() {
+            const data = await loadData();
             document.getElementById('total-employees').textContent = (data.employees || []).length;
             document.getElementById('total-terms').textContent = (data.terms || []).length;
-            document.getElementById('total-protections').textContent = Math.floor(Math.random() * 500) + 100;
+            document.getElementById('total-protections').textContent = (data.terms || []).length;
             document.getElementById('active-devices').textContent = (data.employees || []).filter(e => e.status === 'active').length;
             document.getElementById('billing-employees').textContent = (data.employees || []).length;
-            document.getElementById('billing-protections').textContent = Math.floor(Math.random() * 500) + 100;
+            document.getElementById('billing-protections').textContent = (data.terms || []).length;
         }
 
         // Initialize

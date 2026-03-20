@@ -72,10 +72,10 @@ FAILED_TESTS=0
 # Test suites to run
 declare -A TEST_SUITES=(
     ["Playwright E2E Tests"]="npm run test:e2e"
-    ["Cypress Core Functionality"]="npm run cypress:run -- --spec 'cypress/e2e/app-functionality.cy.ts'"
-    ["Cypress File Upload Tests"]="npm run cypress:run -- --spec 'cypress/e2e/file-upload.cy.ts'"
-    ["Cypress UI/Accessibility Tests"]="npm run cypress:run -- --spec 'cypress/e2e/ui-accessibility.cy.ts'"
-    ["Cypress Advanced Features"]="npm run cypress:run -- --spec 'cypress/e2e/advanced-features.cy.ts'"
+    ["Cypress Core Functionality"]="npm run cypress:run -- --spec 'QA testing/cypress/e2e/app-functionality.cy.ts'"
+    ["Cypress File Upload Tests"]="npm run cypress:run -- --spec 'QA testing/cypress/e2e/file-upload.cy.ts'"
+    ["Cypress UI/Accessibility Tests"]="npm run cypress:run -- --spec 'QA testing/cypress/e2e/ui-accessibility.cy.ts'"
+    ["Cypress Advanced Features"]="npm run cypress:run -- --spec 'QA testing/cypress/e2e/advanced-features.cy.ts'"
     ["Linting"]="npm run lint"
     ["Format Check"]="npm run format:check"
 )

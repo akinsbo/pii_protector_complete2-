@@ -4,6 +4,7 @@
  */
 
 import { BrowserWindow, shell } from 'electron';
+import * as path from 'path';
 
 export interface AuthProvider {
   name: string;
@@ -78,13 +79,18 @@ export class BrowserAuth {
       // Open authentication in default browser
       shell.openExternal(provider.authUrl);
 
-      // Create a return-to-app window
+      // Create a return-to-app window (loads local data: HTML only)
       this.authWindow = new BrowserWindow({
         width: 450,
         height: 350,
         webPreferences: {
           nodeIntegration: false,
-          contextIsolation: true
+          contextIsolation: true,
+          sandbox: true,
+          preload: path.join(__dirname, '../../preload.js'),
+          allowRunningInsecureContent: false,
+          experimentalFeatures: false,
+          navigateOnDragDrop: false
         },
         title: `Sign in to ${provider.displayName}`,
         resizable: false,
@@ -110,101 +116,65 @@ export class BrowserAuth {
         `);
       });
 
-      // Add IPC handler for return button
-      const { ipcMain } = require('electron');
+      // Listen for return-to-app via app event emitter
+      const { app } = require('electron');
       const returnHandler = async () => {
         const isAuth = await this.testServiceAccess(provider);
         if (isAuth) {
           if (this.authWindow) {
             this.authWindow.close();
           }
-          resolve({ 
-            success: true, 
+          resolve({
+            success: true,
             token: 'browser-session',
             expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
           });
         } else {
           // Show error in the window
           this.authWindow?.webContents.executeJavaScript(`
-            document.getElementById('status').innerHTML = '
-              <div style="color: #e74c3c; margin-top: 1rem;">
-                ❌ Not signed in yet. Please complete sign-in in your browser first.
-              </div>';
+            document.getElementById('status').innerHTML = '<div style="color: #e74c3c; margin-top: 1rem;">Not signed in yet. Please complete sign-in in your browser first.</div>';
           `);
         }
-        ipcMain.removeListener('auth:return-to-app', returnHandler);
       };
-      
-      ipcMain.once('auth:return-to-app', returnHandler);
+
+      app.once('auth:return-to-app-internal', returnHandler);
     });
-  }
-
-  /**
-   * Check if user is authenticated by testing service access
-   */
-  private async checkAuthStatus(provider: AuthProvider, resolve: (result: AuthResult) => void) {
-    let attempts = 0;
-    const maxAttempts = 60; // 5 minutes
-
-    const checkInterval = setInterval(async () => {
-      attempts++;
-      
-      if (attempts > maxAttempts) {
-        clearInterval(checkInterval);
-        if (this.authWindow) {
-          this.authWindow.close();
-        }
-        resolve({ success: false, error: 'Authentication timeout' });
-        return;
-      }
-
-      // Test if user can access the service
-      const isAuthenticated = await this.testServiceAccess(provider);
-      
-      if (isAuthenticated) {
-        clearInterval(checkInterval);
-        if (this.authWindow) {
-          this.authWindow.close();
-        }
-        resolve({ 
-          success: true, 
-          token: 'browser-session', // Placeholder - using browser session
-          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
-        });
-      }
-    }, 5000); // Check every 5 seconds
   }
 
   /**
    * Test if service is accessible (user is signed in)
    */
   private async testServiceAccess(provider: AuthProvider): Promise<boolean> {
-    try {
-      // Create a hidden window to test access
-      const testWindow = new BrowserWindow({
-        show: false,
-        webPreferences: {
-          nodeIntegration: false,
-          contextIsolation: true
-        }
-      });
+    const testWindow = new BrowserWindow({
+      show: false,
+      webPreferences: {
+        nodeIntegration: false,
+        contextIsolation: true,
+        sandbox: true,
+        allowRunningInsecureContent: false,
+        experimentalFeatures: false
+      }
+    });
 
+    try {
       await testWindow.loadURL(provider.redirectUrl);
-      
+
       // Check if we're on the main service page (not login page)
       const url = testWindow.webContents.getURL();
       const title = testWindow.webContents.getTitle();
-      
-      testWindow.close();
 
       // Simple heuristics to detect successful login
-      return !url.includes('login') && 
-             !url.includes('signin') && 
+      return !url.includes('login') &&
+             !url.includes('signin') &&
              !url.includes('auth') &&
              !title.toLowerCase().includes('sign in');
-             
+
     } catch (error) {
       return false;
+    } finally {
+      if (!testWindow.isDestroyed()) {
+        testWindow.destroy();
+      }
     }
   }
 
@@ -221,9 +191,25 @@ export class BrowserAuth {
       webPreferences: {
         nodeIntegration: false,
         contextIsolation: true,
+        sandbox: true,
+        allowRunningInsecureContent: false,
+        experimentalFeatures: false,
         partition: `persist:${providerName}` // Separate session for each service
       },
       title: `${provider.displayName} - Ledebe Protector`
+    });
+
+    // Restrict navigation to the provider's own domain
+    const allowedHost = new URL(provider.redirectUrl).hostname;
+    chatWindow.webContents.on('will-navigate', (event, url) => {
+      try {
+        const host = new URL(url).hostname;
+        if (!host.endsWith(allowedHost) && host !== allowedHost) {
+          event.preventDefault();
+        }
+      } catch {
+        event.preventDefault();
+      }
     });
 
     await chatWindow.loadURL(provider.redirectUrl);

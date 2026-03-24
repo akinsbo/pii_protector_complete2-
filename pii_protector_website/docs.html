@@ -328,6 +328,7 @@
             <h4>Getting Started</h4>
             <ul>
                 <li><a href="#overview">Overview</a></li>
+                <li><a href="#how-to-use">How to Use</a></li>
                 <li><a href="#requirements">System Requirements</a></li>
             </ul>
             <h4>Installation</h4>
@@ -371,6 +372,52 @@
                     <li><strong>NIN / BVN</strong> — national identity numbers</li>
                     <li><strong>Custom terms</strong> — any word or phrase you define</li>
                 </ul>
+            </div>
+
+            <!-- How to Use -->
+            <div class="doc-section" id="how-to-use">
+                <div style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); border-radius: 12px; padding: 2rem 2.5rem; margin-bottom: 2rem; color: white;">
+                    <h2 style="font-size: 2rem; font-weight: 800; color: white; margin-bottom: 0.4rem; display: block;">🚀 How to Use Ledebe</h2>
+                    <p style="opacity: 0.85; margin: 0; font-size: 1rem;">New to Ledebe? Follow these steps to protect and share text safely in under a minute.</p>
+                </div>
+
+                <h3>Step 1 — Type or paste your text</h3>
+                <p>Open the app and type (or paste) any text that contains sensitive information into the main input area. It could be an email, a support ticket, a contract excerpt — anything.</p>
+                <div class="callout callout-info">
+                    <span class="callout-icon">ℹ️</span>
+                    <div>Example: <em>"Hi, my name is Sarah Jones, email sarah@company.com and my phone is 07911 123456."</em></div>
+                </div>
+
+                <h3>Step 2 — Click Send / Protect</h3>
+                <p>Click the <strong>Send</strong> button (or press <strong>Ctrl + Enter</strong> / <strong>⌘ Cmd + Enter</strong> on Mac). Ledebe automatically scans your text and replaces every piece of detected PII with a safe placeholder.</p>
+                <div class="callout callout-tip">
+                    <span class="callout-icon">💡</span>
+                    <div>The result will look like: <em>"Hi, my name is [LDB_CUSTOM1], email [LDB_EMAIL1] and my phone is [LDB_PHONE1]."</em> — safe to share anywhere.</div>
+                </div>
+
+                <h3>Step 3 — Switch between views</h3>
+                <p>Each message has two tabs beneath it:</p>
+                <ul>
+                    <li><strong>Plain Text</strong> — your original, unmasked text (visible only to you).</li>
+                    <li><strong>Protected Text</strong> — the masked version with placeholders, safe to copy and share.</li>
+                </ul>
+
+                <h3>Step 4 — Copy the protected text</h3>
+                <p>Click the <strong>📋 Copy</strong> button on the message, or press <strong>Ctrl/⌘ Cmd + Shift + X</strong>, to copy the protected version to your clipboard. Paste it into ChatGPT, an email, a support system — wherever you need it.</p>
+
+                <h3>Step 5 — Restore the original (optional)</h3>
+                <p>If you receive a reply that contains placeholders (e.g. from an AI tool), paste it back into Ledebe. It will automatically swap the placeholders back to the real values, so you can read the response with your actual data.</p>
+
+                <h3>Step 6 — Add custom terms (optional)</h3>
+                <p>Have specific words you always want to hide — like your company name, a project code, or a client name? Add them to <strong>Custom Terms</strong> in the sidebar. They'll be masked automatically every time.</p>
+
+                <div class="callout callout-tip">
+                    <span class="callout-icon">💡</span>
+                    <div><strong>Quick tip:</strong> As you type, Ledebe suggests words to add as custom terms. If a word is already protected, it shows a green <em>"already protected"</em> chip so you never add the same term twice.</div>
+                </div>
+
+                <h3>Using AI Chat</h3>
+                <p>Enable AI Chat in <strong>Settings</strong> by entering your API key (OpenAI, Anthropic, or Google). Then type your message normally — Ledebe masks your PII before sending it to the AI, and restores the real values in the response. Switch between <strong>📖 AI's Response</strong> (full, readable reply) and <strong>🛡️ Safe to Share</strong> (re-masked version) using the tabs on each AI message.</p>
             </div>
 
             <!-- System Requirements -->

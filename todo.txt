@@ -161,23 +161,6 @@
 
 Based on what the app does (protecting PII before sending to AI), here are the suggestions I'd prioritise:
 
-1.==High impact — core use case improvements
-Clipboard auto-protect — A "Paste & Protect" button that grabs whatever is on the clipboard, 
-masks it instantly, and puts the protected version back on the clipboard. No typing needed. 
-This is the most natural workflow.
-
-2.==More PII types auto-detected — Currently only emails, phones, and custom terms. Should also catch:
-Physical addresses
-Credit card numbers
-National ID / passport numbers
-Dates of birth
-Bank account numbers
-3.==Protection profiles / templates — Pre-built sets for different contexts. E.g. Medical (mask patient names, DOB, NHS numbers), 
-Legal (mask client names, case numbers), HR (mask employee names, salaries). One click switches the whole ruleset.
-Custom regex patterns — Power users (developers, lawyers) often need to mask things emails/phones won't catch. 
-Let them define their own pattern e.g. INV-\d{5} for invoice numbers.
-
-
 Trust and compliance — makes it serious for business use
 5.==Audit log — A tab showing every masking session: date, how many items protected, what types. 
 Important for GDPR/HIPAA compliance — companies need to prove they protected data.
@@ -209,11 +192,35 @@ Ledebe
 9.✅  QA testing for all functionalities
 10.✅ clean up the code 
 11. protected words should look different in the paragraph, maybe a different colour or underline
-12. the keyboard short cuts (help) should show commands based on app
-13. tutorial should link to "documentation" page
-14. the documentation page should have "how to use/tutorial"
-15. changing language on the app, it's not working
+12.✅ the keyboard short cuts (help) should show commands based on app
+13.✅ tutorial should link to "documentation" page
+14.✅ the documentation page should have "how to use/tutorial"
+15.✅ changing language on the app, it's not working
 
+==High Priority (Broken/Missing)
+Help button does nothing useful — clicking ❓ Help just shows keyboard shortcuts. Should open actual help content or the docs page.
+AI provider checkboxes (ChatGPT/Claude/Gemini) in sidebar — the checkboxes exist visually but only one provider can actually be active. Selecting one doesn't properly switch and disable others in real-time.
+Notifications setting does nothing — the "Enable notifications" checkbox in Settings is saved but never actually triggers any OS notifications.
+No loading indicator when AI is thinking — user gets no visual feedback while waiting for an AI response. The send button just says "Sending..." but there's no spinner or progress state.
+PII data logged to browser console — placeholderMap (with real names/emails) is logged to the console on restore. A user could accidentally expose their data if they share a screenshot with DevTools open.
 
+🟡 Medium Priority (UX & Polish)
+No timestamps on chat messages — you can't tell when a message was sent. History items show dates but individual chat bubbles don't.
+No file size warning on upload — uploading a very large PDF or image gives no warning; OCR can hang silently for 30+ seconds.
+Empty history sidebar is too plain — just says "No history yet". Could guide a new user on what to do.
+No confirmation before clearing custom terms — if a "clear all" action ever fires, all terms vanish with no warning.
+Dark mode contrast — a few elements (some form inputs and modal borders) don't have enough contrast in dark mode.
+Max 20 history items — hardcoded limit with no way for the user to increase it or export older items.
+No search/filter for history — as history grows, there's no way to find a past entry without scrolling.
+Language translation only covers some UI strings — header, sidebar, and settings are translated, but AI response labels, toast messages, and error text are still English-only.
+
+🟢 Nice to Have (Future Features)
+Clipboard auto-protect — automatically detect and mask PII when the user pastes from clipboard, without having to click Send first.
+Custom regex PII patterns — let power users define patterns like INV-\d{5} or EMP-\w+ beyond just word-based custom terms.
+Export/import history — download history as JSON or CSV, and re-import it on another device.
+Message timestamps visible in chat — small grey timestamp under each bubble.
+Batch file upload — process multiple files at once instead of one at a time.
+Undo for message edits — once you save an edited message, the original is gone.
+Analytics summary — a small "this month you protected 47 emails, 12 phone numbers" stat somewhere in the sidebar.
 
 

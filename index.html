@@ -6,6 +6,7 @@
     <title>Ledebe Protector</title>
     <script src='https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js'></script>
     <script src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js'></script>
+    <script src='https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js'></script>
     <script src='ai-chat.js'></script>
     <script src='multi-ai-chat.js'></script>
     <script src='company-sync.js'></script>
@@ -1195,7 +1196,7 @@
             border-radius: 12px;
             max-width: 90vw;
             width: 1200px;
-            max-height: 90vh;
+            height: 90vh;
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -1266,27 +1267,18 @@
 
         .preview-body {
             flex: 1;
-            overflow-y: auto;
-            padding: 2rem;
-            background: var(--white);
+            min-height: 0;
+            position: relative;
+            background: var(--bg-light);
         }
 
-        .preview-document {
-            font-family: 'Monaco', 'Menlo', monospace;
-            font-size: 0.95rem;
-            line-height: 1.8;
-            color: var(--text-dark);
-            max-width: 100%;
-        }
-        
-        .preview-document table {
-            font-family: inherit;
-        }
-        
-        .preview-document h1,
-        .preview-document h2,
-        .preview-document h3 {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        .preview-frame {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
         }
 
         .preview-stats {
@@ -1347,6 +1339,13 @@
 
         .highlight-protected {
             display: inline;
+        }
+
+        /* Plain text view — subtle dotted underline shows which words were protected */
+        .was-protected {
+            text-decoration: underline dotted #94a3b8;
+            text-underline-offset: 3px;
+            cursor: default;
         }
 
         .shortcuts-content h3 {
@@ -1753,9 +1752,10 @@
                     <div class="upload-menu" id="upload-menu">
                         <div class="upload-menu-item" onclick="triggerFileUpload()">
                             📄 Upload file
+                            <div style="font-size:0.75rem;color:var(--text-gray);margin-top:2px;">.docx · .pdf · .txt · images</div>
                         </div>
                     </div>
-                    <input type="file" id="file-input" class="file-input" accept=".txt,.md,.csv,.pdf,image/*" onchange="handleFileUpload(event)">
+                    <input type="file" id="file-input" class="file-input" accept=".txt,.md,.csv,.pdf,.docx,image/*" onchange="handleFileUpload(event)">
                     <textarea id="text-input" placeholder="Type your message here..." rows="1" oninput="document.getElementById('send-btn').disabled = !this.value.trim()"></textarea>
                     <button class="action-btn" onclick="sendMessage()" id="send-btn" disabled>Send</button>
                 </div>
@@ -1859,7 +1859,7 @@
                 <span id="preview-note">💡 PDFs are displayed as images to preserve exact formatting (tables, columns, layout)</span>
             </div>
             <div class="preview-body">
-                <div class="preview-document" id="preview-document"></div>
+                <iframe id="preview-frame" class="preview-frame" sandbox="allow-same-origin allow-scripts"></iframe>
             </div>
             <div class="preview-stats">
                 <div class="preview-stats-info">
@@ -2079,37 +2079,58 @@
             const selBtn = document.getElementById('selection-protect-btn');
             let hideTimer = null;
 
-            // Show button when text is selected in the textarea
+            function showSelBtn(word, x, y, messageDiv) {
+                clearTimeout(hideTimer);
+                selBtn.dataset.word = word;
+                selBtn.dataset.messageId = messageDiv ? (messageDiv.id || '') : '';
+                selBtn.style.display = 'flex';
+                selBtn.style.left = Math.max(8, Math.min(x - 50, window.innerWidth - 160)) + 'px';
+                selBtn.style.top  = Math.max(8, y - 46) + 'px';
+            }
+
+            // textarea selection
             textInput.addEventListener('mouseup', function(e) {
                 const selected = this.value.substring(this.selectionStart, this.selectionEnd).trim();
+                if (selected.length > 1) showSelBtn(selected, e.clientX, e.clientY, null);
+                else selBtn.style.display = 'none';
+            });
+
+            textInput.addEventListener('keyup', function(e) {
+                if (!e.shiftKey) return;
+                const selected = this.value.substring(this.selectionStart, this.selectionEnd).trim();
                 if (selected.length > 1) {
-                    clearTimeout(hideTimer);
-                    selBtn.dataset.word = selected;
-                    selBtn.style.display = 'flex';
-                    // Position above the mouse cursor
-                    const x = Math.min(e.clientX - 50, window.innerWidth - 160);
-                    const y = e.clientY - 46;
-                    selBtn.style.left = Math.max(8, x) + 'px';
-                    selBtn.style.top = Math.max(8, y) + 'px';
+                    const rect = this.getBoundingClientRect();
+                    showSelBtn(selected, rect.right, rect.top, null);
                 } else {
                     selBtn.style.display = 'none';
                 }
             });
 
-            // Also trigger on keyboard selection (shift+arrow etc.)
-            textInput.addEventListener('keyup', function(e) {
-                if (!e.shiftKey) return;
-                const selected = this.value.substring(this.selectionStart, this.selectionEnd).trim();
-                if (selected.length > 1) {
-                    selBtn.dataset.word = selected;
-                    selBtn.style.display = 'flex';
-                    // Position near the textarea top-right as fallback for keyboard
-                    const rect = this.getBoundingClientRect();
-                    selBtn.style.left = Math.max(8, rect.right - 160) + 'px';
-                    selBtn.style.top = Math.max(8, rect.top - 46) + 'px';
-                } else {
-                    selBtn.style.display = 'none';
-                }
+            // Selection inside the preview iframe — postMessage bridge
+            window.addEventListener('message', function(e) {
+                if (!e.data || e.data.type !== 'pii-selection') return;
+                const text = e.data.text;
+                if (!text || text.length < 2) return;
+                const frame = document.getElementById('preview-frame');
+                if (!frame) return;
+                const rect = frame.getBoundingClientRect();
+                showSelBtn(text, rect.left + e.data.x, rect.top + e.data.y, null);
+            });
+
+            // Chat message selection — highlight text inside any sent message bubble
+            document.addEventListener('mouseup', function(e) {
+                if (e.target === textInput || e.target === selBtn) return;
+                const sel = window.getSelection();
+                if (!sel || sel.isCollapsed) return;
+                const selected = sel.toString().trim();
+                if (selected.length < 2) return;
+                // Only trigger when selection is inside a message-text div
+                const msgText = sel.anchorNode && sel.anchorNode.parentElement
+                    ? sel.anchorNode.parentElement.closest('.message-text')
+                    : null;
+                if (!msgText) return;
+                const messageDiv = msgText.closest('.chat-message');
+                showSelBtn(selected, e.clientX, e.clientY, messageDiv);
             });
 
             // Hide when clicking outside
@@ -2119,7 +2140,7 @@
                 }
             });
 
-            // Add selected word/phrase to custom terms
+            // Add to custom terms + re-protect the source message if from chat
             selBtn.addEventListener('click', function() {
                 const word = this.dataset.word;
                 if (!word) return;
@@ -2132,13 +2153,46 @@
                     terms.push(word);
                     customTermsEl.value = terms.join('\n');
                     localStorage.setItem('customTerms', customTermsEl.value);
-                    showToast(`🛡️ "${word}" added to protected terms`, 'success');
+                    showToast(`🛡️ "${word}" added and message re-protected`, 'success');
                 } else {
-                    showToast(`"${word}" is already in your protected terms`, 'success');
+                    showToast(`"${word}" is already in your protected terms`, 'info');
+                }
+
+                // Re-protect the source: either a chat message or the document preview
+                const msgId = this.dataset.messageId;
+                const previewOpen = document.getElementById('preview-modal').classList.contains('show');
+
+                if (previewOpen && previewData && (previewData.isDocx || previewData.originalHtml)) {
+                    // Re-mask the full document HTML with the new term included
+                    const newMap = {};
+                    const newProtectedHtml = maskHtmlContent(previewData.originalHtml, newMap);
+                    previewData.protectedHtml = newProtectedHtml;
+                    previewData.protectedCount = Object.keys(newMap).length;
+                    previewData.placeholderMap = newMap;
+                    placeholderMap = newMap;
+                    // Refresh whichever tab is active
+                    const activeTab = document.querySelector('.preview-tab.active');
+                    const currentView = activeTab && activeTab.textContent.includes('Protected') ? 'protected' : 'original';
+                    switchPreviewTab(currentView);
+
+                } else if (msgId) {
+                    const messageDiv = document.getElementById(msgId);
+                    if (messageDiv && messageDiv.dataset.originalText) {
+                        const { masked: newProtected, count } = applyPIIMasking(
+                            messageDiv.dataset.originalText, placeholderMap
+                        );
+                        messageDiv.dataset.protectedText = newProtected;
+                        messageDiv.dataset.maskedCount = count;
+                        const textDiv = messageDiv.querySelector('.message-text');
+                        if (textDiv && textDiv.dataset.view === 'protected') {
+                            textDiv.innerHTML = renderProtectedText(newProtected);
+                        }
+                        const badge = messageDiv.querySelector('.protection-badge');
+                        if (badge) badge.textContent = `🛡️ ${count} protected`;
+                    }
                 }
 
                 selBtn.style.display = 'none';
-                textInput.focus();
             });
         })();
 
@@ -2407,7 +2461,7 @@
         // Document Card Functions (Claude-style)
         function showDocumentCard(originalText, fileName, words, pages) {
             // Check if previewData already exists (e.g., from PDF processing)
-            if (previewData && previewData.isPDF) {
+            if (previewData && (previewData.isPDF || previewData.isDocx)) {
                 // PDF already processed, just show the card
                 const count = previewData.protectedCount;
                 
@@ -2460,9 +2514,12 @@
                 chatArea.appendChild(cardDiv);
                 chatArea.scrollTop = chatArea.scrollHeight;
                 document.getElementById('uploaded-files-container').innerHTML = '';
+
+                // Save document to history
+                saveDocumentToHistory(previewData);
                 return;
             }
-            
+
             // Regular text file processing
             placeholderMap = {};
             const { masked: protectedText, count } = applyPIIMasking(originalText, placeholderMap);
@@ -2528,9 +2585,12 @@
             
             chatArea.appendChild(cardDiv);
             chatArea.scrollTop = chatArea.scrollHeight;
-            
+
             // Clear uploaded file indicator
             document.getElementById('uploaded-files-container').innerHTML = '';
+
+            // Save document to history
+            saveDocumentToHistory(previewData);
         }
 
         function openDocumentPreview(cardId) {
@@ -2740,79 +2800,75 @@
 
         function switchPreviewTab(view) {
             if (!previewData) return;
-            
+
             const tabs = document.querySelectorAll('.preview-tab');
-            const previewDoc = document.getElementById('preview-document');
-            
+            const frame = document.getElementById('preview-frame');
+
             tabs.forEach(tab => tab.classList.remove('active'));
-            
-            if (view === 'protected') {
-                tabs[0].classList.add('active');
-                
-                if (previewData.isPDF && previewData.pdfPages) {
-                    // Show PDF pages as images with PII redacted visually
-                    let pdfHtml = '';
-                    previewData.pdfPages.forEach((page, index) => {
-                        // Create canvas to draw redactions on the page image
-                        const canvas = document.createElement('canvas');
-                        const img = new Image();
-                        img.src = page.image;
-                        
-                        pdfHtml += `
-                            <div style="margin-bottom: 2rem; border: 1px solid var(--border); border-radius: 8px; overflow: hidden;">
-                                <div style="background: var(--bg-light); padding: 0.5rem 1rem; font-size: 0.85rem; color: var(--text-gray);">Page ${page.pageNumber} - Protected</div>
-                                <div style="position: relative; background: white;">
-                                    <img src="${page.image}" style="width: 100%; height: auto; display: block; filter: blur(0px);" alt="Page ${page.pageNumber}">
-                                    <div style="position: absolute; top: 10%; left: 10%; right: 10%; bottom: 10%; background: rgba(0,0,0,0.05); border: 2px dashed #fbbf24; border-radius: 8px; display: flex; align-items: center; justify-content: center; pointer-events: none;">
-                                        <div style="background: #fef3c7; color: #92400e; padding: 1rem 2rem; border-radius: 8px; font-weight: 600; font-size: 0.9rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                                            🛡️ ${previewData.protectedCount} items protected in document
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                    });
-                    previewDoc.innerHTML = pdfHtml;
+            tabs[view === 'protected' ? 0 : 1].classList.add('active');
+
+            const isProtected = view === 'protected';
+
+            if (previewData.isDocx) {
+                // Use shared builder — preview is identical to download
+                frame.srcdoc = buildDocxHtml(isProtected ? previewData.protectedHtml : previewData.originalHtml, isProtected);
+
+            } else if (previewData.isPDF && previewData.pdfPages) {
+                // PDF: show page images + extracted protected/original text
+                let body = `<div style="font-family:Arial,sans-serif;padding:20px;background:#f5f5f5;min-height:100vh;">`;
+                if (isProtected) {
+                    body += `<div style="background:#1e3a8a;color:#fff;padding:10px 16px;border-radius:6px;margin-bottom:20px;font-size:0.875rem;">🛡️ Protected — ${previewData.protectedCount} item${previewData.protectedCount !== 1 ? 's' : ''} masked</div>`;
                 } else {
-                    // Regular text formatting
-                    const formattedContent = detectAndPreserveFormat(previewData.protectedText, previewData.fileName);
-                    let highlighted = formattedContent;
-                    Object.keys(previewData.placeholderMap).forEach(placeholder => {
-                        const escapedPlaceholder = escapeHtml(placeholder);
-                        const regex = new RegExp(escapedPlaceholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
-                        highlighted = highlighted.replace(
-                            regex,
-                            `<span class="highlight-protected">${escapedPlaceholder}</span>`
-                        );
-                    });
-                    previewDoc.innerHTML = highlighted;
+                    body += `<div style="background:#6b7280;color:#fff;padding:10px 16px;border-radius:6px;margin-bottom:20px;font-size:0.875rem;">📝 Original — showing real data</div>`;
                 }
+                previewData.pdfPages.forEach(page => {
+                    body += `<div style="background:white;margin-bottom:20px;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+                        <div style="background:#e5e7eb;padding:8px 16px;font-size:0.8rem;color:#374151;">Page ${page.pageNumber}</div>
+                        <img src="${page.image}" style="width:100%;display:block;" alt="Page ${page.pageNumber}">
+                    </div>`;
+                });
+                const extractedText = isProtected
+                    ? highlightProtectedHtml(escapeHtml(previewData.protectedText))
+                    : escapeHtml(previewData.originalText);
+                body += `<div style="background:white;border-radius:8px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+                    <div style="font-size:0.8rem;color:#6b7280;margin-bottom:12px;">Extracted text</div>
+                    <pre style="white-space:pre-wrap;font-family:monospace;font-size:0.85rem;margin:0;">${extractedText}</pre>
+                </div></div>`;
+                frame.srcdoc = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>.highlight-protected{background:#fef3c7;border:1px solid #f59e0b;padding:1px 5px;border-radius:3px;font-weight:600;color:#92400e;}</style></head><body style="margin:0;">${body}</body></html>`;
+
             } else {
-                tabs[1].classList.add('active');
-                
-                if (previewData.isPDF && previewData.pdfPages) {
-                    // Show original PDF pages
-                    let pdfHtml = '';
-                    previewData.pdfPages.forEach((page, index) => {
-                        pdfHtml += `
-                            <div style="margin-bottom: 2rem; border: 1px solid var(--border); border-radius: 8px; overflow: hidden;">
-                                <div style="background: var(--bg-light); padding: 0.5rem 1rem; font-size: 0.85rem; color: var(--text-gray);">Page ${page.pageNumber}</div>
-                                <img src="${page.image}" style="width: 100%; height: auto; display: block; background: white;" alt="Page ${page.pageNumber}">
-                            </div>
-                        `;
-                    });
-                    previewDoc.innerHTML = pdfHtml;
-                } else {
-                    // Regular text formatting
-                    const formattedOriginal = detectAndPreserveFormat(previewData.originalText, previewData.fileName);
-                    previewDoc.innerHTML = formattedOriginal;
+                // Plain text file
+                const text = isProtected ? previewData.protectedText : previewData.originalText;
+                const formatted = detectAndPreserveFormat(text, previewData.fileName);
+                let content = formatted;
+                if (isProtected) {
+                    content = highlightProtectedHtml(content);
                 }
+                const badge = isProtected
+                    ? `<div style="background:#1e3a8a;color:#fff;padding:10px 16px;border-radius:6px;margin-bottom:20px;font-size:0.875rem;font-family:Arial,sans-serif;">🛡️ Protected — ${previewData.protectedCount} item${previewData.protectedCount !== 1 ? 's' : ''} masked</div>`
+                    : `<div style="background:#6b7280;color:#fff;padding:10px 16px;border-radius:6px;margin-bottom:20px;font-size:0.875rem;font-family:Arial,sans-serif;">📝 Original — showing real data</div>`;
+                frame.srcdoc = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{font-family:'Monaco','Menlo',monospace;font-size:0.9rem;line-height:1.7;padding:24px;color:#111;background:#fff;} .highlight-protected{background:#fef3c7;border:1px solid #f59e0b;padding:1px 5px;border-radius:3px;font-weight:600;color:#92400e;}</style></head><body>${badge}${content}</body></html>`;
             }
         }
 
         function downloadFromPreview() {
             if (!previewData) return;
-            
+
+            if (previewData.isDocx) {
+                const baseName = previewData.fileName.replace(/\.[^/.]+$/, '');
+                const htmlContent = buildDocxHtml(previewData.protectedHtml, true, true);
+                const blob = new Blob([htmlContent], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `${baseName}_protected.html`;
+                link.click();
+                URL.revokeObjectURL(url);
+                showToast('✅ Protected document downloaded!', 'success');
+                closePreviewModal();
+                return;
+            }
+
             if (previewData.isPDF && previewData.pdfPages) {
                 // For PDFs, create a multi-page document with images and protected text
                 let htmlContent = `
@@ -2916,6 +2972,7 @@
             const sizeMB = file.size / (1024 * 1024);
             const isImage = file.type.startsWith('image/');
             const isPDF   = file.type === 'application/pdf' || file.name.endsWith('.pdf');
+            const isDocx  = file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || file.name.toLowerCase().endsWith('.docx');
             if (isImage && sizeMB > 5) {
                 if (!confirm(`This image is ${sizeMB.toFixed(1)} MB. Large images can take 30+ seconds to process. Continue?`)) {
                     event.target.value = '';
@@ -2936,7 +2993,10 @@
             uploadedFile = file;
 
             // Check if it's an image
-            if (isImage) {
+            if (isDocx) {
+                displayUploadedFile(file, null);
+                await processDocx(file);
+            } else if (isImage) {
                 processImageWithOCR(file);
             } else if (isPDF) {
                 // Process PDF and auto-protect
@@ -2963,6 +3023,133 @@
                     setTimeout(() => showDocumentCard(content, file.name, words, pages), 500);
                 };
                 reader.readAsText(file);
+            }
+        }
+
+        // Walk HTML text nodes and apply PII masking without touching tags
+        function maskHtmlContent(html, targetMap) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const walker = document.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT, null, false);
+            const nodes = [];
+            let n;
+            while ((n = walker.nextNode())) nodes.push(n);
+            nodes.forEach(node => {
+                if (node.textContent.trim()) {
+                    const { masked } = applyPIIMasking(node.textContent, targetMap);
+                    node.textContent = masked;
+                }
+            });
+            return doc.body.innerHTML;
+        }
+
+        // Wrap [LDB_X] placeholders in amber highlight spans for display
+        function highlightProtectedHtml(html) {
+            return html.replace(
+                /\[LDB_[A-Z]+\d+\]/g,
+                match => `<span class="highlight-protected">${match}</span>`
+            );
+        }
+
+        // Build the full HTML document used for both preview iframe and download
+        function buildDocxHtml(bodyHtml, isProtected, forDownload) {
+            const title = escapeHtml(previewData.fileName);
+            const count = previewData.protectedCount || 0;
+            const badge = isProtected
+                ? `<div class="header-bar">🛡️ Protected — ${count} item${count !== 1 ? 's' : ''} masked${count === 0 ? ' — highlight any word to protect it manually' : ''}</div>`
+                : `<div class="header-bar original">📝 Original — showing real data</div>`;
+            const content = isProtected ? highlightProtectedHtml(bodyHtml) : bodyHtml;
+
+            // Inject a selection bridge so highlighted text in the iframe reaches the parent
+            const selectionScript = forDownload ? '' : `
+<script>
+document.addEventListener('mouseup', function(e) {
+    var sel = window.getSelection();
+    var text = sel ? sel.toString().trim() : '';
+    if (text.length > 1) {
+        parent.postMessage({ type: 'pii-selection', text: text, x: e.clientX, y: e.clientY }, '*');
+    }
+});
+<\/script>`;
+
+            return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>${title}</title>
+<style>
+  *{box-sizing:border-box;}
+  body{font-family:Georgia,serif;max-width:820px;margin:0 auto;padding:32px 40px;color:#111;background:#fff;font-size:1rem;line-height:1.7;}
+  h1{font-size:1.7em;margin:1em 0 0.4em;}
+  h2{font-size:1.4em;margin:0.9em 0 0.35em;}
+  h3{font-size:1.15em;margin:0.8em 0 0.3em;}
+  p{margin:0 0 0.8em;}
+  table{border-collapse:collapse;width:100%;margin:1em 0;font-family:Arial,sans-serif;font-size:0.92em;}
+  td,th{border:1px solid #bbb;padding:6px 10px;vertical-align:top;word-break:break-word;}
+  th{background:#f3f4f6;font-weight:600;}
+  ul,ol{padding-left:1.5em;margin:0 0 0.8em;}
+  strong{font-weight:700;} em{font-style:italic;} u{text-decoration:underline;}
+  .header-bar{background:#1e3a8a;color:#fff;padding:10px 16px;border-radius:6px;margin-bottom:24px;font-size:0.875rem;font-family:Arial,sans-serif;}
+  .header-bar.original{background:#6b7280;}
+  .highlight-protected{background:#fef3c7;border:1px solid #f59e0b;padding:1px 5px;border-radius:3px;font-weight:600;color:#92400e;}
+</style>
+</head>
+<body>
+${badge}
+${content}
+${selectionScript}
+</body>
+</html>`;
+        }
+
+        async function processDocx(file) {
+            const overlay = document.getElementById('processing-overlay');
+            const statusText = document.getElementById('processing-status');
+            overlay.classList.add('show');
+            statusText.textContent = 'Reading document…';
+
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const result = await mammoth.convertToHtml({ arrayBuffer });
+                const originalHtml = result.value;
+
+                statusText.textContent = 'Protecting sensitive data…';
+
+                const docxPlaceholderMap = {};
+                const protectedHtml = maskHtmlContent(originalHtml, docxPlaceholderMap);
+
+                // Extract plain text for word count
+                const tmp = document.createElement('div');
+                tmp.innerHTML = originalHtml;
+                const plainText = tmp.textContent || tmp.innerText || '';
+                const words = plainText.split(/\s+/).filter(w => w.length > 0).length;
+                const pages = Math.ceil(words / 250);
+                const count = Object.keys(docxPlaceholderMap).length;
+
+                placeholderMap = docxPlaceholderMap;
+                previewData = {
+                    originalText: plainText,
+                    protectedText: plainText,
+                    originalHtml,
+                    protectedHtml,
+                    fileName: file.name,
+                    protectedCount: count,
+                    placeholderMap: docxPlaceholderMap,
+                    words,
+                    pages,
+                    isDocx: true
+                };
+                window.previewData = previewData;
+
+                overlay.classList.remove('show');
+                showToast(`📄 Loaded ${pages} page${pages !== 1 ? 's' : ''} (${words.toLocaleString()} words) — ${count} item${count !== 1 ? 's' : ''} protected`, 'success');
+                showDocumentCard(plainText, file.name, words, pages);
+
+            } catch (err) {
+                overlay.classList.remove('show');
+                console.error('Docx error:', err);
+                showToast('❌ Failed to process document', 'error');
+                removeUploadedFile();
             }
         }
 
@@ -3487,7 +3674,10 @@
             tabs.forEach(tab => tab.classList.remove('active'));
             
             if (view === 'plain') {
-                textDiv.textContent = messageDiv.dataset.originalText;
+                textDiv.innerHTML = renderPlainWithHints(
+                    messageDiv.dataset.protectedText,
+                    messageDiv.dataset.originalText
+                );
                 textDiv.dataset.view = 'plain';
                 tabs[0].classList.add('active');
             } else {
@@ -3655,6 +3845,20 @@
             );
         }
 
+        // Render plain text but with a dotted underline under words that were protected
+        function renderPlainWithHints(protectedText, originalText) {
+            // Build from protectedText — replace each [LDB_X] with the original value wrapped in a hint span
+            let result = escapeHtml(protectedText);
+            Object.entries(placeholderMap).forEach(([placeholder, original]) => {
+                const escaped = escapeHtml(placeholder).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                result = result.replace(
+                    new RegExp(escaped, 'g'),
+                    `<span class="was-protected" title="This word was protected">${escapeHtml(original)}</span>`
+                );
+            });
+            return result;
+        }
+
         // History management functions
         function loadHistory() {
             const historyList = document.getElementById('history-list');
@@ -3699,13 +3903,77 @@
             `).join('');
         }
 
+        function saveDocumentToHistory(pd) {
+            if (!pd) return;
+            if (!currentHistoryId) {
+                const id = Date.now().toString();
+                historyItems.unshift({
+                    id,
+                    text: '📄 ' + pd.fileName,
+                    messages: [],
+                    date: new Date().toLocaleString()
+                });
+                currentHistoryId = id;
+            }
+            const currentItem = historyItems.find(h => h.id === currentHistoryId);
+            if (currentItem) {
+                currentItem.messages.push({
+                    isDocument: true,
+                    fileName: pd.fileName,
+                    words: pd.words,
+                    pages: pd.pages,
+                    protectedCount: pd.protectedCount,
+                    protectedText: pd.protectedText || '',
+                    placeholderMap: {...(pd.placeholderMap || placeholderMap)},
+                    timestamp: new Date().toISOString()
+                });
+            }
+            if (historyItems.length > 100) historyItems.pop();
+            localStorage.setItem('historyItems', JSON.stringify(historyItems));
+            loadHistory();
+        }
+
+        function restoreDocumentCard(msg) {
+            const chatArea = document.getElementById('chat-area');
+            const cardId = 'doc-card-' + Date.now();
+            const cardDiv = document.createElement('div');
+            cardDiv.className = 'chat-message';
+            cardDiv.innerHTML = `
+                <div class="chat-message-inner">
+                    <div class="message-label"><span>📄 Document Uploaded</span></div>
+                    <div class="document-card" id="${cardId}">
+                        <div class="document-card-header">
+                            <div class="document-icon">📄</div>
+                            <div class="document-info">
+                                <div class="document-name">${escapeHtml(msg.fileName)}</div>
+                                <div class="document-meta">${msg.pages} page${msg.pages !== 1 ? 's' : ''} · ${(msg.words||0).toLocaleString()} words</div>
+                            </div>
+                        </div>
+                        <div class="document-stats">
+                            <div class="document-stat"><span>🛡️</span><span>${msg.protectedCount} protected</span></div>
+                        </div>
+                        <div style="font-size:0.78rem;color:var(--text-gray);padding:0.4rem 0.25rem;">Re-upload file to preview again</div>
+                    </div>
+                </div>
+            `;
+            chatArea.appendChild(cardDiv);
+        }
+
         function saveToHistory(text, protectedText, originalText) {
             // If no current chat, create new history item with first message as title
             if (!currentHistoryId) {
                 const id = Date.now().toString();
                 const item = {
                     id: id,
-                    text: text.substring(0, 50) + (text.length > 50 ? '...' : ''),
+                    text: (() => {
+                        const raw = text.trim();
+                        // Use first sentence if short enough, otherwise first ~60 chars at word boundary
+                        const sentence = raw.split(/[.!?\n]/)[0].trim();
+                        if (sentence.length >= 8 && sentence.length <= 72) return sentence;
+                        if (raw.length <= 72) return raw;
+                        const cut = raw.lastIndexOf(' ', 60);
+                        return raw.substring(0, cut > 20 ? cut : 60) + '…';
+                    })(),
                     messages: [],
                     date: new Date().toLocaleString()
                 };
@@ -3741,8 +4009,12 @@
             
             if (item.messages && item.messages.length > 0) {
                 item.messages.forEach(msg => {
-                    placeholderMap = msg.placeholderMap;
-                    addMessageToChat(msg.originalText, msg.protectedText, Object.keys(msg.placeholderMap).length);
+                    if (msg.isDocument) {
+                        restoreDocumentCard(msg);
+                    } else {
+                        placeholderMap = msg.placeholderMap;
+                        addMessageToChat(msg.originalText, msg.protectedText, Object.keys(msg.placeholderMap).length);
+                    }
                 });
             }
             

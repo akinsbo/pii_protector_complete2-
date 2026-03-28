@@ -196,6 +196,9 @@ Ledebe
 13.✅ tutorial should link to "documentation" page
 14.✅ the documentation page should have "how to use/tutorial"
 15.✅ changing language on the app, it's not working
+14, have a "how to plan".. 
+15. update documentation on everything ledebe can do
+16- 3 questions popup when it's open to everyone, rate the service, would you recommend . if no, why?
 
 ==High Priority (Broken/Missing)
 Help button does nothing useful — clicking ❓ Help just shows keyboard shortcuts. Should open actual help content or the docs page.

@@ -1918,3 +1918,257 @@ test.describe('File Upload — Error Handling', () => {
     await expect(lastDocName).toContainText('second.txt');
   });
 });
+
+// ── 44. DOCUMENT UPLOAD — ACCEPTED TYPES & HINTS ─────────────────────────────
+
+test.describe('Document Upload — File Type Hints', () => {
+  test.beforeEach(async ({ page }) => { await loadApp(page); });
+
+  test('file input accept attribute includes .docx', async ({ page }) => {
+    const accept = await page.getAttribute('#file-input', 'accept');
+    expect(accept).toContain('.docx');
+  });
+
+  test('upload menu shows accepted file type hint', async ({ page }) => {
+    await page.click('.upload-btn');
+    await page.waitForSelector('.upload-menu.show');
+    const menuText = await page.locator('.upload-menu').innerText();
+    expect(menuText).toContain('.docx');
+    expect(menuText).toContain('.pdf');
+    expect(menuText).toContain('.txt');
+  });
+});
+
+// ── 45. DOCUMENT PREVIEW — IFRAME & TABS ─────────────────────────────────────
+
+test.describe('Document Preview — iframe & tabs', () => {
+  test.beforeEach(async ({ page }) => { await loadApp(page); });
+
+  test('preview modal opens with an iframe when clicking a document card', async ({ page }) => {
+    await page.setInputFiles('#file-input', {
+      name: 'report.txt',
+      mimeType: 'text/plain',
+      buffer: Buffer.from('Contact alice@example.com or call 555-123-4567'),
+    });
+    await page.waitForSelector('.document-card', { timeout: 4000 });
+    await page.locator('.doc-action-btn').first().click();
+    await page.waitForSelector('#preview-modal.show');
+    await expect(page.locator('#preview-frame')).toBeVisible();
+  });
+
+  test('preview iframe has white background (not dark)', async ({ page }) => {
+    await page.setInputFiles('#file-input', {
+      name: 'doc.txt',
+      mimeType: 'text/plain',
+      buffer: Buffer.from('Send invoice to bob@company.com'),
+    });
+    await page.waitForSelector('.document-card', { timeout: 4000 });
+    await page.locator('.doc-action-btn').first().click();
+    await page.waitForSelector('#preview-modal.show');
+    // iframe srcdoc must contain explicit white background
+    const srcdoc = await page.locator('#preview-frame').getAttribute('srcdoc') ?? '';
+    expect(srcdoc).toContain('background:#fff');
+  });
+
+  test('protected tab shows placeholder chips, original tab shows real text', async ({ page }) => {
+    await page.setInputFiles('#file-input', {
+      name: 'data.txt',
+      mimeType: 'text/plain',
+      buffer: Buffer.from('Email me at carol@test.com'),
+    });
+    await page.waitForSelector('.document-card', { timeout: 4000 });
+    await page.locator('.doc-action-btn').first().click();
+    await page.waitForSelector('#preview-modal.show');
+
+    // Protected tab (default) — srcdoc should contain LDB placeholder
+    const protectedSrc = await page.locator('#preview-frame').getAttribute('srcdoc') ?? '';
+    expect(protectedSrc).toMatch(/LDB_EMAIL\d+/);
+
+    // Switch to original tab
+    await page.locator('.preview-tab').nth(1).click();
+    await page.waitForTimeout(300);
+    const originalSrc = await page.locator('#preview-frame').getAttribute('srcdoc') ?? '';
+    expect(originalSrc).toContain('carol@test.com');
+  });
+
+  test('preview modal is scrollable (iframe fills modal body)', async ({ page }) => {
+    await page.setInputFiles('#file-input', {
+      name: 'long.txt',
+      mimeType: 'text/plain',
+      buffer: Buffer.from(Array(50).fill('Line of text with email test@example.com').join('\n')),
+    });
+    await page.waitForSelector('.document-card', { timeout: 4000 });
+    await page.locator('.doc-action-btn').first().click();
+    await page.waitForSelector('#preview-modal.show');
+
+    const frameBox = await page.locator('#preview-frame').boundingBox();
+    expect(frameBox!.height).toBeGreaterThan(200);
+  });
+});
+
+// ── 46. DOCUMENT HISTORY PERSISTENCE ─────────────────────────────────────────
+
+test.describe('Document History — Persistence', () => {
+  test.beforeEach(async ({ page }) => { await loadApp(page); });
+
+  test('document upload is saved to history', async ({ page }) => {
+    await page.setInputFiles('#file-input', {
+      name: 'invoice.txt',
+      mimeType: 'text/plain',
+      buffer: Buffer.from('Invoice for dave@corp.com'),
+    });
+    await page.waitForSelector('.document-card', { timeout: 4000 });
+
+    // History sidebar should have an entry for this document
+    const historyItems = page.locator('.history-item');
+    await expect(historyItems.first()).toBeVisible({ timeout: 3000 });
+    const historyText = await historyItems.first().innerText();
+    expect(historyText).toContain('invoice.txt');
+  });
+
+  test('document card reappears after loading history item', async ({ page }) => {
+    await page.setInputFiles('#file-input', {
+      name: 'contract.txt',
+      mimeType: 'text/plain',
+      buffer: Buffer.from('Signed by eve@legal.com'),
+    });
+    await page.waitForSelector('.document-card', { timeout: 4000 });
+
+    // Navigate away — start a new chat
+    await page.click('#new-chat-btn');
+    await page.waitForTimeout(300);
+
+    // Return to the history item
+    await page.locator('.history-item').first().locator('.history-item-content').click();
+    await page.waitForTimeout(500);
+
+    // Document card should be restored
+    await expect(page.locator('.document-card')).toBeVisible();
+    await expect(page.locator('.document-name, .document-card')).toContainText('contract.txt');
+  });
+});
+
+// ── 47. AUTO-NAMING CHATS ─────────────────────────────────────────────────────
+
+test.describe('Auto-naming — History Labels', () => {
+  test.beforeEach(async ({ page }) => { await loadApp(page); });
+
+  test('history label uses first sentence when it is short enough', async ({ page }) => {
+    await typeAndSend(page, 'Please protect this file. It has sensitive data inside.');
+    await page.waitForSelector('.history-item');
+    const label = await page.locator('.history-item-text').first().innerText();
+    expect(label).toBe('Please protect this file');
+  });
+
+  test('history label breaks at word boundary for long first sentences', async ({ page }) => {
+    const long = 'This is a very long opening sentence that goes on and on without stopping and should be truncated at a word boundary rather than mid-word';
+    await typeAndSend(page, long);
+    await page.waitForSelector('.history-item');
+    const label = await page.locator('.history-item-text').first().innerText();
+    // Should end with '…' and not cut mid-word
+    expect(label).toContain('…');
+    expect(label).not.toMatch(/\w…$/); // no mid-word cut: last char before … must be space boundary
+  });
+
+  test('document upload history label shows filename with icon', async ({ page }) => {
+    await page.setInputFiles('#file-input', {
+      name: 'summary.txt',
+      mimeType: 'text/plain',
+      buffer: Buffer.from('Meeting notes from frank@team.com'),
+    });
+    await page.waitForSelector('.document-card', { timeout: 4000 });
+    await page.waitForSelector('.history-item');
+    const label = await page.locator('.history-item-text').first().innerText();
+    expect(label).toContain('summary.txt');
+  });
+});
+
+// ── 48. HELP BUTTON ───────────────────────────────────────────────────────────
+
+test.describe('Help Button — Shortcuts Modal', () => {
+  test.beforeEach(async ({ page }) => { await loadApp(page); });
+
+  test('clicking Help opens the shortcuts modal, not an external URL', async ({ page }) => {
+    const newTabPromise = page.context().waitForEvent('page', { timeout: 2000 }).catch(() => null);
+    await page.click('#help-btn');
+    const newTab = await newTabPromise;
+    // No new tab/window should open
+    expect(newTab).toBeNull();
+    // Shortcuts modal should be visible
+    await expect(page.locator('#shortcuts-modal, .shortcuts-modal')).toBeVisible({ timeout: 2000 });
+  });
+});
+
+// ── 49. PLAIN TEXT DOTTED UNDERLINE HINTS ────────────────────────────────────
+
+test.describe('Plain Text View — Protection Hints', () => {
+  test.beforeEach(async ({ page }) => { await loadApp(page); });
+
+  test('plain text view shows .was-protected spans on masked words', async ({ page }) => {
+    await typeAndSend(page, 'Call me at 555-987-6543 or email grace@example.com');
+    const msg = page.locator('.chat-message').first();
+
+    // Switch to plain text tab
+    await msg.locator('.message-tab').nth(0).click();
+    await page.waitForTimeout(300);
+
+    // Spans with class was-protected should exist for the masked values
+    const hints = msg.locator('.was-protected');
+    await expect(hints.first()).toBeVisible();
+  });
+
+  test('.was-protected spans have dotted underline style defined', async ({ page }) => {
+    const style = await page.evaluate(() => {
+      const el = document.createElement('span');
+      el.className = 'was-protected';
+      document.body.appendChild(el);
+      const cs = getComputedStyle(el);
+      const dec = cs.textDecorationStyle;
+      document.body.removeChild(el);
+      return dec;
+    });
+    expect(style).toBe('dotted');
+  });
+});
+
+// ── 50. SELECTION PROTECT — CHAT MESSAGES ────────────────────────────────────
+
+test.describe('Selection Protect — Chat Messages', () => {
+  test.beforeEach(async ({ page }) => { await loadApp(page); });
+
+  test('selecting text in a sent message shows the protect button', async ({ page }) => {
+    await typeAndSend(page, 'The project codeword is Nightingale and the lead is Dr. Henry.');
+    const msg = page.locator('.chat-message').first();
+
+    // Switch to plain text so we can select real words
+    await msg.locator('.message-tab').nth(0).click();
+    await page.waitForTimeout(200);
+
+    const textDiv = msg.locator('.message-text');
+    // Triple-click selects all text in the div
+    await textDiv.click({ clickCount: 3 });
+    await page.waitForTimeout(300);
+
+    await expect(page.locator('#selection-protect-btn')).toBeVisible({ timeout: 2000 });
+  });
+
+  test('protecting a word from a chat message re-renders the protected view', async ({ page }) => {
+    await typeAndSend(page, 'The secret phrase is Butterfly and must not be shared.');
+    const msg = page.locator('.chat-message').first();
+
+    // Switch to plain text, select "Butterfly"
+    await msg.locator('.message-tab').nth(0).click();
+    await page.waitForTimeout(200);
+    await msg.locator('.message-text').click({ clickCount: 3 });
+    await page.waitForTimeout(300);
+
+    await page.locator('#selection-protect-btn').click();
+    await page.waitForTimeout(400);
+
+    // Switch to protected view — Butterfly should now be a placeholder
+    await msg.locator('.message-tab').nth(1).click();
+    const protectedView = await msg.locator('.message-text').innerText();
+    expect(protectedView).not.toContain('Butterfly');
+    expect(protectedView).toMatch(/LDB_/);
+  });
+});

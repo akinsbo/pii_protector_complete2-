@@ -177,7 +177,12 @@ for developers
 == vscode extension 
 ==for the vscode extension add copy icon like ChatGPT
 
-slogan - enjoy AI with complete privacy / enjoy any AI  with complete privacy / enjoy your favourite AI with complete privacy
+slogan -- 
+enjoy AI with complete privacy / enjoy any AI  with complete privacy / enjoy your favourite AI with complete privacy
+Short & punchy:
+ "Ask AI freely — your privacy is protected"
+ ✅"Protected AI chat - type anything"
+current slogan= Ledebe Protector - Keep your personal info safe when using AI
 
 
 Ledebe
@@ -199,6 +204,11 @@ Ledebe
 14, have a "how to plan".. 
 15. update documentation on everything ledebe can do
 16- 3 questions popup when it's open to everyone, rate the service, would you recommend . if no, why?
+17- direct chat with ai
+18- monochrome colour like the chatgpt - in an almost monochromatic design
+19- offwhite shade for, then grey for darkmode
+20- there should be a search button to search the custom terms e.g we have 1k items protect, i should be able to earch
+21- when you highlight a protected word, there should be an option to unprotect
 
 ==High Priority (Broken/Missing)
 Help button does nothing useful — clicking ❓ Help just shows keyboard shortcuts. Should open actual help content or the docs page.

@@ -13,22 +13,26 @@
     <style>
         :root {
             --primary-blue: #1e3a8a;
-            --accent-green: #f59e0b;
-            --text-dark: #1f2937;
-            --text-gray: #6b7280;
-            --bg-light: #fffbeb;
+            --accent-green: #1e3a8a;
+            --pii-amber: #f59e0b;       /* amber reserved for PII highlights only */
+            --text-dark: #1a1a1a;
+            --text-gray: #6b6b6b;
+            --bg-light: #f5f4f0;        /* warm off-white, like Claude.ai */
             --white: #ffffff;
-            --border: #e2e8f0;
+            --border: #e3e0d8;
+            --sidebar-bg: #eceae4;      /* slightly darker warm for sidebar */
         }
 
         [data-theme="dark"] {
-            --primary-blue: #1e3a8a;
-            --accent-green: #f59e0b;
-            --text-dark: #f9fafb;
-            --text-gray: #d1d5db;
-            --bg-light: #1c1a14;
-            --white: #111827;
-            --border: #374151;
+            --primary-blue: #5b7fd4;
+            --accent-green: #5b7fd4;
+            --pii-amber: #f59e0b;
+            --text-dark: #f3f3f3;
+            --text-gray: #afafaf;
+            --bg-light: #1a1a1a;        /* main content area — dark gray */
+            --white: #212121;           /* cards/inputs — slightly lighter than main */
+            --border: #2a2a2a;          /* subtle separator */
+            --sidebar-bg: #111111;      /* sidebar — near black, darkest layer */
         }
 
         [data-theme="dark"] input,
@@ -49,25 +53,39 @@
         [data-theme="dark"] input[type="email"],
         [data-theme="dark"] textarea,
         [data-theme="dark"] select {
-            background: #1f2937;
-            border-color: #4b5563 !important;
-            color: #f9fafb;
+            background: #212121;
+            border-color: #2a2a2a !important;
+            color: #f3f3f3;
         }
 
         [data-theme="dark"] .shortcuts-content {
-            background: #1f2937;
-            border: 1px solid #4b5563;
+            background: #212121;
+            border: 1px solid #2a2a2a;
         }
 
         [data-theme="dark"] .faq-question {
-            background: #1f2937;
-            color: #f9fafb;
+            background: #212121;
+            color: #f3f3f3;
         }
 
         [data-theme="dark"] .history-search-input {
-            background: #1f2937;
-            border-color: #4b5563;
-            color: #f9fafb;
+            background: #212121;
+            border-color: #2a2a2a;
+            color: #f3f3f3;
+        }
+
+        [data-theme="dark"] .history-sidebar {
+            background: var(--sidebar-bg);
+        }
+
+        [data-theme="dark"] .history-item:hover,
+        [data-theme="dark"] .new-chat-btn:hover {
+            background: rgba(255,255,255,0.07);
+        }
+
+        [data-theme="dark"] .history-item.active {
+            background: rgba(255,255,255,0.12);
+            color: var(--text-dark);
         }
 
         * {
@@ -87,19 +105,27 @@
 
         .app-container {
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
             height: 100vh;
+        }
+
+        .main-column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-width: 0;
         }
 
         /* App Header */
         .app-header {
-            background: var(--primary-blue);
-            color: white;
+            background: var(--white);
+            color: var(--text-dark);
             padding: 0.75rem 1.5rem;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            border-bottom: 1px solid var(--border);
         }
 
         .header-left {
@@ -112,7 +138,7 @@
             width: 32px;
             height: 32px;
             background: #6b7280;
-            border-radius: 6px;
+            border-radius: 8px;
             padding: 4px;
         }
 
@@ -135,30 +161,31 @@
         }
 
         .header-btn {
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
-            color: white;
+            background: var(--bg-light);
+            border: 1px solid var(--border);
+            color: var(--text-dark);
             cursor: pointer;
             font-size: 0.9rem;
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
+            padding: 0.4rem 0.9rem;
+            border-radius: 9999px;
             transition: background 0.2s;
         }
 
         .header-btn:hover {
-            background: rgba(255,255,255,0.2);
+            background: var(--border);
         }
 
         .app-body {
             display: flex;
             flex: 1;
             overflow: hidden;
+            min-height: 0;
         }
 
         /* Left Sidebar */
         .history-sidebar {
             width: 280px;
-            background: var(--white);
+            background: var(--bg-light);
             border-right: 1px solid var(--border);
             display: flex;
             flex-direction: column;
@@ -171,10 +198,10 @@
             width: 60px;
         }
 
-        .history-sidebar.collapsed .history-header h3,
         .history-sidebar.collapsed .history-list,
         .history-sidebar.collapsed .custom-terms-section,
         .history-sidebar.collapsed #ai-sidebar-section,
+        .history-sidebar.collapsed .search-trigger-btn,
         .history-sidebar.collapsed .new-chat-btn span:last-child {
             display: none;
         }
@@ -193,7 +220,7 @@
             cursor: pointer;
             font-size: 1.2rem;
             padding: 0.5rem;
-            border-radius: 6px;
+            border-radius: 8px;
             transition: all 0.2s;
             flex-shrink: 0;
             line-height: 1;
@@ -203,60 +230,30 @@
             background: rgba(0,0,0,0.08);
         }
 
-        .history-header {
-            padding: 1rem;
-            background: var(--primary-blue);
-            color: white;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .history-header h3 {
-            font-size: 1rem;
-            font-weight: 600;
-        }
-
         .history-search-wrap {
-            padding: 0.5rem 0.75rem;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .history-search-input {
-            width: 100%;
-            padding: 0.4rem 0.6rem;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            font-size: 0.82rem;
-            background: var(--white);
-            color: var(--text-dark);
-            outline: none;
-        }
-
-        .history-search-input:focus {
-            border-color: var(--primary-blue);
+            display: none; /* replaced by command palette */
         }
 
         .new-chat-btn {
-            background: var(--accent-green);
-            color: #78350f;
+            background: transparent;
+            color: var(--text-dark);
             border: none;
-            padding: 0.6rem 1rem;
-            border-radius: 6px;
+            padding: 0.5rem 0.75rem;
+            border-radius: 10px;
             cursor: pointer;
             font-size: 0.85rem;
-            font-weight: 600;
+            font-weight: 500;
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            transition: all 0.2s;
+            transition: background 0.15s;
             width: 100%;
-            justify-content: center;
+            min-height: 36px;
+            user-select: none;
         }
 
         .new-chat-btn:hover {
-            background: #d97706;
-            transform: translateY(-1px);
+            background: rgba(0,0,0,0.05);
         }
 
         .close-btn {
@@ -281,7 +278,7 @@
         .history-list {
             flex: 1;
             overflow-y: auto;
-            padding: 0.5rem 0.5rem 1rem;
+            padding: 0.25rem 0.5rem 1rem;
             min-height: 0;
         }
 
@@ -339,10 +336,10 @@
 
         .save-close-btn {
             background: var(--accent-green);
-            color: #78350f;
+            color: #fff;
             border: none;
             padding: 0.4rem 0.8rem;
-            border-radius: 6px;
+            border-radius: 9999px;
             font-size: 0.75rem;
             cursor: pointer;
             font-weight: 600;
@@ -350,7 +347,7 @@
         }
 
         .save-close-btn:hover {
-            background: #d97706;
+            background: #1e40af;
         }
 
         .custom-terms-section textarea {
@@ -358,7 +355,7 @@
             height: 80px;
             padding: 0.5rem;
             border: 1px solid var(--border);
-            border-radius: 6px;
+            border-radius: 8px;
             font-size: 0.85rem;
             font-family: 'Monaco', 'Menlo', monospace;
             resize: vertical;
@@ -373,21 +370,23 @@
         }
 
         .history-item {
-            padding: 0.75rem;
-            margin-bottom: 0.5rem;
-            background: var(--bg-light);
-            border-radius: 6px;
+            padding: 0.45rem 0.75rem;
+            margin-bottom: 1px;
+            background: transparent;
+            border-radius: 10px;
             cursor: pointer;
-            border: 2px solid transparent;
-            transition: all 0.2s;
+            border: none;
+            transition: background 0.15s;
             display: flex;
             justify-content: space-between;
             align-items: center;
             gap: 0.5rem;
+            min-height: 36px;
+            user-select: none;
         }
 
         .history-item:hover {
-            border-color: var(--accent-green);
+            background: rgba(0,0,0,0.05);
         }
 
         .history-item:hover .history-actions,
@@ -396,8 +395,9 @@
         }
 
         .history-item.active {
-            background: var(--accent-green);
-            color: #78350f;
+            background: rgba(0,0,0,0.08);
+            color: var(--text-dark);
+            font-weight: 600;
         }
 
         .history-item-content {
@@ -441,7 +441,7 @@
         }
 
         .history-item.active .history-actions button:hover {
-            background: rgba(255,255,255,0.2);
+            background: rgba(0,0,0,0.1);
         }
 
         .history-menu {
@@ -449,7 +449,7 @@
             right: auto;
             background: var(--white);
             border: 1px solid var(--border);
-            border-radius: 6px;
+            border-radius: 10px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             min-width: 120px;
             z-index: 1000;
@@ -472,11 +472,11 @@
         }
 
         .history-menu-item:first-child {
-            border-radius: 6px 6px 0 0;
+            border-radius: 10px 10px 0 0;
         }
 
         .history-menu-item:last-child {
-            border-radius: 0 0 6px 6px;
+            border-radius: 0 0 10px 10px;
         }
 
         .history-menu-item:hover {
@@ -500,19 +500,39 @@
             padding: 0 5rem;
         }
 
+        /* Empty state: center input like ChatGPT/Claude */
+        .main-content.empty-state {
+            justify-content: center;
+            align-items: center;
+            padding-bottom: 40vh;
+        }
+
+        .main-content.empty-state .chat-area {
+            flex: 0 0 auto;
+            overflow: hidden;
+            padding: 0 0 1.5rem;
+            width: 100%;
+            max-width: 680px;
+        }
+
+        .main-content.empty-state .input-container {
+            width: 100%;
+            max-width: 680px;
+        }
+
         .chat-area {
             flex: 1;
             overflow-y: auto;
-            padding: 2rem 0;
+            padding: 1.5rem 0;
             display: flex;
             flex-direction: column;
-            gap: 1.5rem;
+            gap: 1rem;
         }
 
         .welcome-prompt {
             text-align: center;
             color: var(--text-gray);
-            padding: 3rem 1rem;
+            padding: 1.5rem 1rem;
             max-width: 800px;
             margin: 0 auto;
         }
@@ -569,12 +589,12 @@
         }
 
         .message-content.user {
-            background: #f0f0f0;
+            background: #e8e5de;
             border: none;
         }
 
         [data-theme="dark"] .message-content.user {
-            background: #2d2d2d;
+            background: #2a2a2a;
         }
 
         .message-text {
@@ -597,7 +617,7 @@
             padding: 0.4rem 0.9rem;
             background: transparent;
             border: 1.5px solid var(--border);
-            border-radius: 6px;
+            border-radius: 9999px;
             font-size: 0.8rem;
             cursor: pointer;
             transition: all 0.2s;
@@ -645,7 +665,7 @@
             padding: 0.4rem 0.8rem;
             background: var(--bg-light);
             border: 1px solid var(--border);
-            border-radius: 6px;
+            border-radius: 9999px;
             font-size: 0.8rem;
             cursor: pointer;
             transition: all 0.2s;
@@ -698,7 +718,7 @@
             background: var(--primary-blue);
             color: white;
             border: none;
-            border-radius: 12px;
+            border-radius: 9999px;
             padding: 0.15rem 0.5rem;
             font-size: 0.75rem;
             font-family: inherit;
@@ -708,7 +728,7 @@
 
         .word-chip-protect:hover {
             background: var(--accent-green);
-            color: #78350f;
+            color: #fff;
         }
 
         .word-chip-dismiss {
@@ -737,9 +757,8 @@
 
         /* Bottom Input */
         .input-container {
-            padding: 1rem 0;
-            border-top: 1px solid var(--border);
-            background: var(--white);
+            padding: 0.75rem 0;
+            background: transparent;
             width: 100%;
             box-sizing: border-box;
         }
@@ -824,7 +843,7 @@
             gap: 0.5rem;
             background: var(--bg-light);
             border: 1px solid var(--border);
-            border-radius: 6px;
+            border-radius: 10px;
             padding: 0.5rem 0.75rem;
             margin: 0.5rem 0;
             font-size: 0.85rem;
@@ -904,10 +923,10 @@
 
         .download-btn {
             background: var(--accent-green);
-            color: #78350f;
+            color: #fff;
             border: none;
             padding: 0.5rem 1rem;
-            border-radius: 6px;
+            border-radius: 9999px;
             font-weight: 600;
             cursor: pointer;
             display: inline-flex;
@@ -918,7 +937,7 @@
         }
 
         .download-btn:hover {
-            background: #d97706;
+            background: #1e40af;
         }
 
         /* Document Card (Claude-style) */
@@ -999,7 +1018,7 @@
             padding: 0.5rem;
             border: 1px solid var(--border);
             background: var(--white);
-            border-radius: 6px;
+            border-radius: 9999px;
             font-size: 0.8rem;
             cursor: pointer;
             transition: all 0.2s;
@@ -1014,12 +1033,12 @@
 
         .doc-action-btn.primary {
             background: var(--accent-green);
-            color: #78350f;
-            border-color: var(--accent-green);
+            color: #fff;
+            border-color: var(--primary-blue);
         }
 
         .doc-action-btn.primary:hover {
-            background: #d97706;
+            background: #1e40af;
         }
 
         /* Selection Protect Button */
@@ -1029,7 +1048,7 @@
             background: var(--primary-blue);
             color: white;
             border: none;
-            border-radius: 8px;
+            border-radius: 9999px;
             padding: 0.35rem 0.7rem;
             font-size: 0.8rem;
             font-family: inherit;
@@ -1045,7 +1064,7 @@
 
         #selection-protect-btn:hover {
             background: var(--accent-green);
-            color: #78350f;
+            color: #fff;
             transform: scale(1.05);
         }
 
@@ -1055,9 +1074,9 @@
             bottom: -5px;
             left: 50%;
             transform: translateX(-50%);
-            border-left: 5px solid transparent;
-            border-right: 5px solid transparent;
-            border-top: 5px solid var(--primary-blue);
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-top: 4px solid var(--primary-blue);
         }
 
         #selection-protect-btn:hover::before {
@@ -1067,12 +1086,12 @@
         /* Toast Notifications */
         .toast {
             position: fixed;
-            bottom: 2rem;
-            right: 2rem;
+            bottom: 1.5rem;
+            right: 1.5rem;
             background: var(--primary-blue);
             color: white;
-            padding: 1rem 1.5rem;
-            border-radius: 8px;
+            padding: 0.7rem 1.1rem;
+            border-radius: 10px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
             display: flex;
             align-items: center;
@@ -1091,8 +1110,8 @@
         }
 
         .toast.success {
-            background: var(--accent-green);
-            color: #78350f;
+            background: #059669;
+            color: #fff;
         }
 
         .toast.error {
@@ -1130,7 +1149,7 @@
             color: white;
             border: none;
             padding: 0.5rem 1rem;
-            border-radius: 6px;
+            border-radius: 9999px;
             font-weight: 600;
             cursor: pointer;
             display: inline-flex;
@@ -1143,6 +1162,240 @@
         .quick-copy-btn:hover {
             background: #1e40af;
             transform: translateY(-1px);
+        }
+
+        /* Command Palette (Cmd+K search) */
+        .cmd-palette-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 10010;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding-top: 15vh;
+            background: rgba(0,0,0,0.45);
+            backdrop-filter: brightness(0.8);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .cmd-palette-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .cmd-palette {
+            background: var(--white);
+            border-radius: 14px;
+            width: 100%;
+            max-width: 560px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.25), 0 4px 16px rgba(0,0,0,0.12);
+            overflow: hidden;
+            transform: translateY(-12px) scale(0.98);
+            transition: transform 0.2s ease, opacity 0.2s ease;
+            opacity: 0;
+        }
+
+        .cmd-palette-overlay.show .cmd-palette {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+        }
+
+        .cmd-palette-input-wrap {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .cmd-palette-icon {
+            font-size: 1.1rem;
+            color: var(--text-gray);
+            flex-shrink: 0;
+        }
+
+        .cmd-palette-input {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-size: 1rem;
+            font-family: inherit;
+            background: transparent;
+            color: var(--text-dark);
+        }
+
+        .cmd-palette-input::placeholder {
+            color: var(--text-gray);
+        }
+
+        .cmd-palette-esc {
+            font-size: 0.72rem;
+            color: var(--text-gray);
+            background: var(--bg-light);
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            padding: 0.15rem 0.4rem;
+            font-family: monospace;
+            flex-shrink: 0;
+        }
+
+        .cmd-palette-results {
+            max-height: 360px;
+            overflow-y: auto;
+            padding: 0.4rem;
+        }
+
+        .cmd-palette-section-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-gray);
+            padding: 0.5rem 0.75rem 0.3rem;
+        }
+
+        .cmd-palette-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.6rem 0.75rem;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.1s;
+            user-select: none;
+        }
+
+        .cmd-palette-item:hover,
+        .cmd-palette-item.selected {
+            background: rgba(0,0,0,0.05);
+        }
+
+        .cmd-palette-item-icon {
+            font-size: 0.9rem;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-light);
+            border-radius: 7px;
+            flex-shrink: 0;
+        }
+
+        .cmd-palette-item-body {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .cmd-palette-item-title {
+            font-size: 0.88rem;
+            color: var(--text-dark);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-weight: 500;
+        }
+
+        .cmd-palette-item-meta {
+            font-size: 0.72rem;
+            color: var(--text-gray);
+            margin-top: 1px;
+        }
+
+        .cmd-palette-item-title mark {
+            background: rgba(245,158,11,0.25);
+            color: inherit;
+            border-radius: 2px;
+            padding: 0 1px;
+        }
+
+        .cmd-palette-empty {
+            padding: 2rem 1rem;
+            text-align: center;
+            color: var(--text-gray);
+            font-size: 0.88rem;
+        }
+
+        .cmd-palette-footer {
+            padding: 0.6rem 1rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 1rem;
+            font-size: 0.72rem;
+            color: var(--text-gray);
+        }
+
+        .cmd-palette-footer span {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .cmd-palette-footer kbd {
+            background: var(--bg-light);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 0.1rem 0.35rem;
+            font-family: monospace;
+            font-size: 0.7rem;
+        }
+
+        /* Search trigger button in sidebar */
+        .search-trigger-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            width: calc(100% - 1rem);
+            margin: 0.35rem 0.5rem 0;
+            padding: 0.45rem 0.75rem;
+            background: var(--bg-light);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.82rem;
+            color: var(--text-gray);
+            transition: all 0.15s;
+            text-align: left;
+        }
+
+        .search-trigger-btn:hover {
+            background: var(--border);
+            color: var(--text-dark);
+        }
+
+        .search-trigger-shortcut {
+            margin-left: auto;
+            font-size: 0.68rem;
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 0.1rem 0.35rem;
+            font-family: monospace;
+        }
+
+        [data-theme="dark"] .cmd-palette {
+            background: #212121;
+        }
+
+        [data-theme="dark"] .cmd-palette-input-wrap,
+        [data-theme="dark"] .cmd-palette-footer {
+            border-color: #2a2a2a;
+        }
+
+        [data-theme="dark"] .cmd-palette-item:hover,
+        [data-theme="dark"] .cmd-palette-item.selected {
+            background: rgba(255,255,255,0.08);
+        }
+
+        [data-theme="dark"] .cmd-palette-item-icon {
+            background: #2a2a2a;
+        }
+
+        [data-theme="dark"] .search-trigger-btn {
+            background: #1a1a1a;
+            border-color: #2a2a2a;
         }
 
         /* Keyboard Shortcuts Help */
@@ -1226,7 +1479,7 @@
             cursor: pointer;
             color: var(--text-gray);
             padding: 0.25rem 0.5rem;
-            border-radius: 6px;
+            border-radius: 8px;
             transition: all 0.2s;
         }
 
@@ -1247,7 +1500,7 @@
             padding: 0.6rem 1.2rem;
             background: var(--white);
             border: 2px solid var(--border);
-            border-radius: 8px;
+            border-radius: 9999px;
             font-size: 0.9rem;
             cursor: pointer;
             transition: all 0.2s;
@@ -1307,7 +1560,7 @@
         .preview-btn {
             padding: 0.6rem 1.2rem;
             border: none;
-            border-radius: 8px;
+            border-radius: 9999px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
@@ -1319,18 +1572,18 @@
 
         .preview-btn.primary {
             background: var(--accent-green);
-            color: #78350f;
+            color: #fff;
         }
 
         .preview-btn.primary:hover {
-            background: #d97706;
+            background: #1e40af;
             transform: translateY(-1px);
         }
 
         .preview-btn.secondary {
             background: var(--white);
             color: var(--text-dark);
-            border: 2px solid var(--border);
+            border: 1.5px solid var(--border);
         }
 
         .preview-btn.secondary:hover {
@@ -1391,17 +1644,17 @@
         .input-wrapper textarea {
             flex: 1;
             padding: 0.75rem 1rem 0.75rem 3rem;
-            border: 3px solid var(--primary-blue);
-            border-radius: 12px;
+            border: 1.5px solid var(--border);
+            border-radius: 24px;
             font-family: inherit;
             font-size: 1rem;
             outline: none;
             transition: all 0.2s;
-            resize: vertical;
-            min-height: 80px;
+            resize: none;
+            min-height: 52px;
             max-height: 300px;
             overflow-y: auto;
-            box-shadow: 0 2px 8px rgba(30, 58, 138, 0.1);
+            box-shadow: none;
             width: 100%;
             box-sizing: border-box;
             background: var(--white);
@@ -1410,23 +1663,61 @@
 
         .input-wrapper textarea:focus {
             border-color: var(--primary-blue);
-            box-shadow: 0 4px 12px rgba(30, 58, 138, 0.2);
+            box-shadow: 0 2px 10px rgba(30, 58, 138, 0.12);
         }
 
         .action-btn {
             padding: 0.75rem 1.5rem;
             background: var(--accent-green);
-            color: #78350f;
+            color: #fff;
             border: none;
-            border-radius: 12px;
+            border-radius: 9999px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
             white-space: nowrap;
         }
 
+        .mode-toggle-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        .mode-toggle-pill {
+            display: inline-flex;
+            background: var(--bg-light);
+            border: 1.5px solid var(--border);
+            border-radius: 20px;
+            padding: 3px;
+            gap: 2px;
+        }
+        .mode-pill-btn {
+            padding: 0.35rem 1rem;
+            border: none;
+            border-radius: 16px;
+            font-size: 0.82rem;
+            font-weight: 500;
+            cursor: pointer;
+            background: transparent;
+            color: var(--text-gray);
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .mode-pill-btn:hover {
+            color: var(--text-dark);
+        }
+        .mode-pill-btn.active {
+            background: var(--primary-blue);
+            color: #fff;
+            font-weight: 600;
+            box-shadow: 0 1px 4px rgba(30,58,138,0.25);
+        }
+        #mode-ai-btn.active {
+            background: #059669;
+        }
+
         .action-btn:hover {
-            background: #d97706;
+            background: #1e40af;
             transform: translateY(-1px);
         }
 
@@ -1635,82 +1926,56 @@
 </head>
 <body>
     <div class="app-container">
-        <!-- App Header -->
-        <div class="app-header">
-            <div class="header-left">
-                <img src="assets/ledebe-logo.png" alt="Ledebe Logo" class="logo" onerror="this.style.display='none'">
-                <div>
-                    <h2>Ledebe Protector</h2>
-                    <div class="app-subtitle">Keep your personal info safe when using AI</div>
-                </div>
-            </div>
-            <div class="header-controls">
-                <button class="header-btn" onclick="showHelp()">❓ Help</button>
-                <button class="header-btn" onclick="showTutorial()">📚 Tutorial</button>
-                <button class="header-btn" onclick="showSettings()">⚙️ Settings</button>
-                <div class="dark-mode-toggle">
-                    <label class="toggle" title="Dark Mode">
-                        <input id="darkMode" type="checkbox">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-            </div>
-        </div>
-
-        <!-- App Body -->
-        <div class="app-body">
-        <!-- Left Sidebar -->
+        <!-- Left Sidebar (full height) -->
         <div class="history-sidebar" id="history-sidebar">
-            <div style="padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 0.5rem;">
+            <div style="padding: 0.5rem 0.5rem; display: flex; align-items: center; gap: 0.25rem;">
                 <button class="sidebar-toggle" id="sidebar-toggle-btn" onclick="toggleSidebar()" title="Toggle sidebar">☰</button>
                 <button class="new-chat-btn" onclick="createNewChat()" style="margin-bottom: 0; flex: 1;">
-                    <span style="font-size: 1.2rem;">+</span>
+                    <span style="font-size: 1rem;">✏️</span>
                     <span>New Chat</span>
                 </button>
             </div>
             
             <!-- Multi-AI Selection -->
             <div id="ai-sidebar-section" style="padding: 15px; border-bottom: 1px solid var(--border); background: var(--bg-light);">
-                <button id="ai-models-toggle" onclick="toggleAIModels()" style="width: 100%; padding: 10px; background: var(--white); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-size: 14px; font-weight: 500; color: var(--text-dark);">
+                <button id="ai-models-toggle" onclick="toggleAIModels()" style="width: 100%; padding: 10px; background: var(--white); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-size: 14px; font-weight: 500; color: var(--text-dark);">
                     <span>🤖 AI Integration</span>
                     <span id="ai-toggle-icon">▼</span>
                 </button>
                 <div id="ai-models-list" style="display: none; margin-top: 10px; flex-direction: column; gap: 8px;">
                     <!-- Locked state: shown when no verified API key -->
-                    <div id="ai-locked-panel" style="display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 16px 12px; background: var(--white); border-radius: 8px; border: 1px dashed var(--border); text-align: center;">
+                    <div id="ai-locked-panel" style="display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 16px 12px; background: var(--white); border-radius: 10px; border: 1px dashed var(--border); text-align: center;">
                         <span style="font-size: 2rem;">🔒</span>
                         <div style="font-size: 13px; color: var(--text-gray); line-height: 1.4;">Set up a valid AI API key to unlock AI chat features</div>
-                        <button onclick="showSettings()" style="width: 100%; padding: 8px; background: var(--primary-blue); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">⚙️ Set Up API Key</button>
+                        <button onclick="showSettings()" style="width: 100%; padding: 8px; background: var(--primary-blue); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600;">⚙️ Set Up API Key</button>
                     </div>
                     <!-- Unlocked state: shown when API key is verified -->
                     <div id="ai-unlocked-panel" style="display: none; flex-direction: column; gap: 8px;">
-                        <label style="display: flex; align-items: center; gap: 8px; padding: 8px; background: var(--white); border-radius: 6px; cursor: pointer;">
+                        <label style="display: flex; align-items: center; gap: 8px; padding: 8px; background: var(--white); border-radius: 8px; cursor: pointer;">
                             <input type="checkbox" id="enable-chatgpt" style="width: 18px; height: 18px;">
                             <span style="flex: 1; font-size: 14px; color: var(--text-dark);">ChatGPT</span>
                             <span id="chatgpt-status">⚠️</span>
                         </label>
-                        <label style="display: flex; align-items: center; gap: 8px; padding: 8px; background: var(--white); border-radius: 6px; cursor: pointer;">
+                        <label style="display: flex; align-items: center; gap: 8px; padding: 8px; background: var(--white); border-radius: 8px; cursor: pointer;">
                             <input type="checkbox" id="enable-claude" style="width: 18px; height: 18px;">
                             <span style="flex: 1; font-size: 14px; color: var(--text-dark);">Claude</span>
                             <span id="claude-status">⚠️</span>
                         </label>
-                        <label style="display: flex; align-items: center; gap: 8px; padding: 8px; background: var(--white); border-radius: 6px; cursor: pointer;">
+                        <label style="display: flex; align-items: center; gap: 8px; padding: 8px; background: var(--white); border-radius: 8px; cursor: pointer;">
                             <input type="checkbox" id="enable-gemini" style="width: 18px; height: 18px;">
                             <span style="flex: 1; font-size: 14px; color: var(--text-dark);">Gemini</span>
                             <span id="gemini-status">⚠️</span>
                         </label>
-                        <button onclick="showSettings()" style="width: 100%; margin-top: 5px; padding: 8px; background: var(--white); color: var(--text-dark); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px;">⚙️ Manage API Keys</button>
+                        <button onclick="showSettings()" style="width: 100%; margin-top: 5px; padding: 8px; background: var(--white); color: var(--text-dark); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; font-size: 13px;">⚙️ Manage API Keys</button>
                     </div>
                 </div>
             </div>
             
-            <div class="history-header">
-                <h3>📚 History</h3>
-                <button onclick="exportHistory()" title="Export history" style="background:none;border:none;color:white;cursor:pointer;font-size:1rem;opacity:0.8;" title="Export">⬇️</button>
-            </div>
-            <div class="history-search-wrap">
-                <input class="history-search-input" id="history-search" placeholder="🔍 Search history…" oninput="loadHistory()" />
-            </div>
+            <button class="search-trigger-btn" onclick="openCmdPalette()" title="Search history (⌘K)">
+                <span>🔍</span>
+                <span>Search history</span>
+                <span class="search-trigger-shortcut" id="search-shortcut-hint">⌘K</span>
+            </button>
 
             <div class="history-list" id="history-list">
                 <!-- History items will be loaded here -->
@@ -1733,8 +1998,32 @@
             </div>
         </div>
 
+        <!-- Main Column (header + chat, full height) -->
+        <div class="main-column">
+        <!-- App Header -->
+        <div class="app-header">
+            <div class="header-left">
+                <img src="assets/ledebe-logo.png" alt="Ledebe Logo" class="logo" onerror="this.style.display='none'">
+                <div>
+                    <h2>Ledebe Protector</h2>
+                    <div class="app-subtitle">Keep your personal info safe when using AI</div>
+                </div>
+            </div>
+            <div class="header-controls">
+                <button class="header-btn" onclick="showHelp()">❓ Help</button>
+                <button class="header-btn" onclick="showTutorial()">📚 Tutorial</button>
+                <button class="header-btn" onclick="showSettings()">⚙️ Settings</button>
+                <div class="dark-mode-toggle">
+                    <label class="toggle" title="Dark Mode">
+                        <input id="darkMode" type="checkbox">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
         <!-- Main Content -->
-        <div class="main-content">
+        <div class="main-content empty-state" id="main-content">
             <!-- Chat Messages Area -->
             <div class="chat-area" id="chat-area">
                 <div class="welcome-prompt">
@@ -1747,6 +2036,12 @@
             <div class="input-container">
                 <div id="word-suggestions"></div>
                 <div id="uploaded-files-container"></div>
+                <div class="mode-toggle-row">
+                    <div class="mode-toggle-pill">
+                        <button class="mode-pill-btn active" id="mode-protect-btn" onclick="setMode('protect')">🛡️ Protect</button>
+                        <button class="mode-pill-btn" id="mode-ai-btn" onclick="setMode('ai')">🤖 Ask AI</button>
+                    </div>
+                </div>
                 <div class="input-wrapper">
                     <button class="upload-btn" onclick="toggleUploadMenu()" title="Attach file">+</button>
                     <div class="upload-menu" id="upload-menu">
@@ -1761,7 +2056,25 @@
                 </div>
             </div>
         </div>
-        <!-- End App Body -->
+        </div>
+        <!-- End Main Column -->
+    </div>
+
+    <!-- Command Palette -->
+    <div class="cmd-palette-overlay" id="cmd-palette-overlay" onclick="if(event.target===this)closeCmdPalette()">
+        <div class="cmd-palette" id="cmd-palette">
+            <div class="cmd-palette-input-wrap">
+                <span class="cmd-palette-icon">🔍</span>
+                <input class="cmd-palette-input" id="cmd-palette-input" placeholder="Search chats…" autocomplete="off" oninput="renderCmdResults()" onkeydown="cmdPaletteKeydown(event)">
+                <span class="cmd-palette-esc">esc</span>
+            </div>
+            <div class="cmd-palette-results" id="cmd-palette-results"></div>
+            <div class="cmd-palette-footer">
+                <span><kbd>↵</kbd> open</span>
+                <span><kbd>↑↓</kbd> navigate</span>
+                <span><kbd>esc</kbd> close</span>
+            </div>
+        </div>
     </div>
 
     <!-- Processing Overlay -->
@@ -1884,7 +2197,7 @@
             
             <div style="margin-bottom: 1.5rem;">
                 <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-dark);">🌍 Language</label>
-                <select id="settings-language" style="width: 100%; padding: 0.6rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; background: var(--white); color: var(--text-dark);">
+                <select id="settings-language" style="width: 100%; padding: 0.6rem; border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem; background: var(--white); color: var(--text-dark);">
                     <option value="en">English</option>
                     <option value="es">Español</option>
                     <option value="fr">Français</option>
@@ -1924,15 +2237,15 @@
                 </label>
                 <div id="ai-config" style="display: none; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border);">
                     <label style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--text-gray);">AI Provider</label>
-                    <select id="settings-ai-provider" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; background: var(--white); color: var(--text-dark); margin-bottom: 0.75rem;">
+                    <select id="settings-ai-provider" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 8px; font-size: 0.85rem; background: var(--white); color: var(--text-dark); margin-bottom: 0.75rem;">
                         <option value="openai">OpenAI (ChatGPT)</option>
                         <option value="anthropic">Anthropic (Claude)</option>
                         <option value="google">Google (Gemini)</option>
                     </select>
                     <label style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--text-gray);">API Key</label>
-                    <input type="password" id="settings-ai-key" placeholder="Enter your API key" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; background: var(--white); color: var(--text-dark);">
+                    <input type="password" id="settings-ai-key" placeholder="Enter your API key" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 8px; font-size: 0.85rem; background: var(--white); color: var(--text-dark);">
                     <small style="display: block; margin-top: 0.5rem; color: var(--text-gray); font-size: 0.75rem;">🔒 Your API key is stored locally and never sent to our servers</small>
-                    <button onclick="testAIConnection()" id="test-ai-btn" style="margin-top: 0.75rem; padding: 0.5rem 1rem; background: var(--primary-blue); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem; width: 100%;">
+                    <button onclick="testAIConnection()" id="test-ai-btn" style="margin-top: 0.75rem; padding: 0.5rem 1rem; background: var(--primary-blue); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.85rem; width: 100%;">
                         📡 Test Connection
                     </button>
                     <div id="ai-verification-status" style="margin-top: 0.5rem; font-size: 0.8rem; display: none;"></div>
@@ -1962,7 +2275,8 @@
 
             const shortcuts = [
                 { desc: 'Send message',        keys: [mod, 'Enter'] },
-                { desc: 'New chat',             keys: [mod, 'K'] },
+                { desc: 'Search chats',         keys: [mod, 'K'] },
+                { desc: 'New chat',             keys: [mod, 'Shift', 'N'] },
                 { desc: 'Copy protected text',  keys: [mod, 'Shift', 'X'] },
                 { desc: 'Show shortcuts',       keys: [mod, '/'] },
                 { desc: 'Close modal',          keys: ['Esc'] },
@@ -2044,6 +2358,7 @@
         let uploadedFile = null; // Store uploaded file
         let processedImageData = null; // Store processed image data (original + protected)
         let previewData = null; // Store document preview data
+        let directAIMode = false; // Direct AI Chat mode
 
         // Dark mode toggle
         const darkMode = document.getElementById('darkMode');
@@ -2377,8 +2692,14 @@
                 sendMessage();
             }
 
-            // Ctrl/Cmd + K: New chat
+            // Ctrl/Cmd + K: Open command palette search
             if (ctrlKey && e.key === 'k') {
+                e.preventDefault();
+                openCmdPalette();
+            }
+
+            // Ctrl/Cmd + Shift + N: New chat
+            if (ctrlKey && e.shiftKey && (e.key === 'n' || e.key === 'N')) {
                 e.preventDefault();
                 createNewChat();
                 showToast('✨ New chat started', 'success');
@@ -2401,6 +2722,7 @@
 
             // Esc: Close modals
             if (e.key === 'Escape') {
+                closeCmdPalette();
                 closeShortcutsModal();
                 closeSettingsModal();
                 closeAskAIModal();
@@ -3307,8 +3629,8 @@ ${selectionScript}
                         <span>🖼️ ${processedImageData.fileName}</span>
                     </div>
                     <div class="message-content user">
-                        <div style="margin-bottom: 0.5rem; color: var(--accent-green); font-size: 0.85rem;">
-                            ✅ ${processedImageData.piiCount} sensitive item${processedImageData.piiCount !== 1 ? 's' : ''} detected
+                        <div style="margin-bottom: 0.5rem; color: #f59e0b; font-size: 0.85rem;">
+                            🛡️ ${processedImageData.piiCount} sensitive item${processedImageData.piiCount !== 1 ? 's' : ''} protected
                         </div>
                         <img src="${processedImageData.protectedUrl}" class="image-preview" data-view="protected" alt="Protected image">
                         <div class="message-tabs">
@@ -3495,6 +3817,64 @@ ${selectionScript}
             }
         });
 
+        function setMode(mode) {
+            directAIMode = (mode === 'ai');
+            document.getElementById('mode-protect-btn').classList.toggle('active', !directAIMode);
+            document.getElementById('mode-ai-btn').classList.toggle('active', directAIMode);
+            const sendBtn = document.getElementById('send-btn');
+            const textInput = document.getElementById('text-input');
+            if (directAIMode) {
+                sendBtn.textContent = 'Ask AI';
+                sendBtn.style.background = '#059669';
+                sendBtn.style.color = '#fff';
+                textInput.placeholder = 'Ask AI freely — your privacy is protected';
+            } else {
+                sendBtn.textContent = 'Send';
+                sendBtn.style.background = '';
+                sendBtn.style.color = '';
+                textInput.placeholder = 'Type your message here...';
+            }
+        }
+
+        async function autoSendToAI(messageId) {
+            if (!aiChat || !aiChat.isConfigured()) {
+                showToast('⚠️ Please configure an AI provider in Settings first', 'error');
+                setTimeout(() => showSettings(), 600);
+                return;
+            }
+            const messageDiv = document.getElementById(messageId);
+            if (!messageDiv) return;
+
+            const protectedText = messageDiv.dataset.protectedText || '';
+
+            // Show typing indicator
+            const chatAreaEl = document.getElementById('chat-area');
+            const tpl = document.getElementById('typing-indicator-tpl');
+            if (tpl) chatAreaEl.appendChild(tpl.content.cloneNode(true));
+            chatAreaEl.scrollTop = chatAreaEl.scrollHeight;
+
+            const sendBtn = document.getElementById('send-btn');
+            sendBtn.disabled = true;
+
+            try {
+                const result = await aiChat.sendMessage(protectedText, placeholderMap);
+                const indicator = document.getElementById('ai-typing-indicator');
+                if (indicator) indicator.remove();
+                addAIResponse(result.restored, result.protected);
+            } catch (err) {
+                const indicator = document.getElementById('ai-typing-indicator');
+                if (indicator) indicator.remove();
+                let msg = err.message || 'Unknown error';
+                if (msg.includes('401')) msg = 'Invalid API key — check Settings.';
+                else if (msg.includes('429')) msg = 'Rate limit exceeded. Try again shortly.';
+                else if (msg.includes('network') || msg.includes('fetch')) msg = 'Network error — check your connection.';
+                showToast('❌ ' + msg, 'error');
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.textContent = directAIMode ? 'Send + Ask AI' : 'Send';
+            }
+        }
+
         // Send message function
         function sendMessage() {
             const input = document.getElementById('text-input');
@@ -3517,11 +3897,11 @@ ${selectionScript}
             // Check if text contains placeholders (restore operation)
             const isRestore = /\[LDB_(EMAIL|PHONE|CUSTOM)\d+\]/.test(text);
 
-            // Clear welcome message
+            // Clear welcome message and exit empty state
             const welcomePrompt = document.querySelector('.welcome-prompt');
             if (welcomePrompt) welcomePrompt.remove();
-            
-            // Add has-messages class to chat area
+            document.getElementById('main-content').classList.remove('empty-state');
+
             const chatArea = document.getElementById('chat-area');
 
             if (isRestore) {
@@ -3544,8 +3924,16 @@ ${selectionScript}
                 // Save to history
                 saveToHistory(text, masked, originalText);
                 if (count > 0) sendOSNotification('Text protected', `${count} item${count !== 1 ? 's' : ''} masked successfully.`);
+
+                // Direct AI Chat mode — auto-send to AI after protecting
+                if (directAIMode) {
+                    const lastMsg = document.querySelector('.chat-message:last-of-type');
+                    if (lastMsg && lastMsg.id) {
+                        setTimeout(() => autoSendToAI(lastMsg.id), 150);
+                    }
+                }
             }
-            
+
             // Clear input and re-disable send button
             input.value = '';
             input.style.height = 'auto';
@@ -3621,7 +4009,7 @@ ${selectionScript}
                 const textDiv = messageDiv.querySelector('.message-text');
                 const badge = document.createElement('div');
                 badge.className = 'protection-badge';
-                badge.style.cssText = 'display: inline-block; background: var(--accent-green); color: #78350f; padding: 0.25rem 0.5rem; border-radius: 6px; font-size: 0.75rem; margin-top: 0.5rem;';
+                badge.style.cssText = 'display: inline-block; background: #f59e0b; color: #78350f; padding: 0.25rem 0.5rem; border-radius: 6px; font-size: 0.75rem; margin-top: 0.5rem;';
                 badge.textContent = `🛡️ ${maskedCount} item${maskedCount > 1 ? 's' : ''} protected`;
                 textDiv.appendChild(badge);
             }
@@ -3644,7 +4032,7 @@ ${selectionScript}
                         <span>${(window._t||{}).labelRestored||'🔓 Restored'}</span>
                         <span class="message-time">${time}</span>
                     </div>
-                    <div class="message-content" style="border-color: var(--accent-green);">
+                    <div class="message-content" style="border-color: var(--primary-blue);">
                         <div class="message-text" data-view="restored">${escapeHtml(restoredText)}</div>
                         <div class="message-actions">
                             <button class="message-action-btn" data-label="Copy" onclick="copyMessage('${messageId}')">📋</button>
@@ -3690,7 +4078,7 @@ ${selectionScript}
                 if (count > 0 && !messageDiv.querySelector('.protection-badge')) {
                     const badge = document.createElement('div');
                     badge.className = 'protection-badge';
-                    badge.style.cssText = 'display: inline-block; background: var(--accent-green); color: #78350f; padding: 0.25rem 0.5rem; border-radius: 6px; font-size: 0.75rem; margin-top: 0.5rem;';
+                    badge.style.cssText = 'display: inline-block; background: #f59e0b; color: #78350f; padding: 0.25rem 0.5rem; border-radius: 6px; font-size: 0.75rem; margin-top: 0.5rem;';
                     badge.textContent = `🛡️ ${count} item${count > 1 ? 's' : ''} protected`;
                     textDiv.appendChild(badge);
                 }
@@ -3771,7 +4159,7 @@ ${selectionScript}
             if (newCount > 0) {
                 const badge = document.createElement('div');
                 badge.className = 'protection-badge';
-                badge.style.cssText = 'display:inline-block;background:var(--accent-green);color:#78350f;padding:0.25rem 0.5rem;border-radius:6px;font-size:0.75rem;margin-top:0.5rem;';
+                badge.style.cssText = 'display:inline-block;background:#f59e0b;color:#78350f;padding:0.25rem 0.5rem;border-radius:6px;font-size:0.75rem;margin-top:0.5rem;';
                 badge.textContent = `🛡️ ${newCount} item${newCount > 1 ? 's' : ''} protected`;
                 textDiv.appendChild(badge);
             }
@@ -4002,6 +4390,7 @@ ${selectionScript}
             if (!item) return;
 
             currentHistoryId = id;
+            document.getElementById('main-content').classList.remove('empty-state');
 
             // Clear chat and reload all messages from this conversation
             const chatArea = document.getElementById('chat-area');
@@ -4459,7 +4848,7 @@ ${selectionScript}
 
         // New chat function
         function createNewChat() {
-            // Clear chat area
+            // Clear chat area and return to centered empty state
             const chatArea = document.getElementById('chat-area');
             chatArea.innerHTML = `
                 <div class="welcome-prompt">
@@ -4467,6 +4856,7 @@ ${selectionScript}
                     <p>Type your message below. Your personal info will be automatically protected!</p>
                 </div>
             `;
+            document.getElementById('main-content').classList.add('empty-state');
             
             // Clear input
             document.getElementById('text-input').value = '';
@@ -4602,6 +4992,98 @@ ${selectionScript}
         function closeAskAIModal() {
             document.getElementById('ask-ai-modal').classList.remove('show');
             pendingAIMessageId = null;
+        }
+
+        /* ── Command Palette ── */
+        let cmdSelectedIndex = -1;
+
+        function openCmdPalette() {
+            const overlay = document.getElementById('cmd-palette-overlay');
+            const input = document.getElementById('cmd-palette-input');
+            overlay.classList.add('show');
+            input.value = '';
+            cmdSelectedIndex = -1;
+            renderCmdResults();
+            setTimeout(() => input.focus(), 50);
+
+            // Show correct shortcut hint (Mac vs Windows)
+            const isMac = navigator.platform.toUpperCase().includes('MAC');
+            const hint = document.getElementById('search-shortcut-hint');
+            if (hint) hint.textContent = isMac ? '⌘K' : 'Ctrl+K';
+        }
+
+        function closeCmdPalette() {
+            document.getElementById('cmd-palette-overlay').classList.remove('show');
+        }
+
+        function highlight(text, query) {
+            if (!query) return text;
+            const idx = text.toLowerCase().indexOf(query.toLowerCase());
+            if (idx === -1) return text;
+            return text.slice(0, idx) + '<mark>' + text.slice(idx, idx + query.length) + '</mark>' + text.slice(idx + query.length);
+        }
+
+        function renderCmdResults() {
+            const query = document.getElementById('cmd-palette-input').value.trim().toLowerCase();
+            const container = document.getElementById('cmd-palette-results');
+            cmdSelectedIndex = -1;
+
+            const filtered = query
+                ? historyItems.filter(h => h.text.toLowerCase().includes(query))
+                : historyItems;
+
+            if (historyItems.length === 0) {
+                container.innerHTML = '<div class="cmd-palette-empty">No chats yet — start a conversation first.</div>';
+                return;
+            }
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="cmd-palette-empty">No chats match <strong>"' + query + '"</strong></div>';
+                return;
+            }
+
+            const label = query ? 'Results' : 'Recent chats';
+            container.innerHTML =
+                '<div class="cmd-palette-section-label">' + label + '</div>' +
+                filtered.slice(0, 20).map((item, i) => `
+                    <div class="cmd-palette-item" data-id="${item.id}" onclick="cmdSelectItem('${item.id}')">
+                        <div class="cmd-palette-item-icon">💬</div>
+                        <div class="cmd-palette-item-body">
+                            <div class="cmd-palette-item-title">${highlight(item.text, query)}</div>
+                            <div class="cmd-palette-item-meta">${item.date}</div>
+                        </div>
+                    </div>`).join('');
+        }
+
+        function cmdSelectItem(id) {
+            loadHistoryItem(id);
+            closeCmdPalette();
+        }
+
+        function cmdPaletteKeydown(e) {
+            const items = document.querySelectorAll('.cmd-palette-item');
+            if (!items.length) return;
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                cmdSelectedIndex = Math.min(cmdSelectedIndex + 1, items.length - 1);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                cmdSelectedIndex = Math.max(cmdSelectedIndex - 1, 0);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                const sel = items[cmdSelectedIndex] || items[0];
+                if (sel) cmdSelectItem(sel.dataset.id);
+                return;
+            } else if (e.key === 'Escape') {
+                closeCmdPalette();
+                return;
+            }
+
+            items.forEach((el, i) => el.classList.toggle('selected', i === cmdSelectedIndex));
+            if (items[cmdSelectedIndex]) {
+                items[cmdSelectedIndex].scrollIntoView({ block: 'nearest' });
+            }
         }
 
         function selectAIChip(chipEl, instruction) {

@@ -369,6 +369,157 @@
             font-size: 0.75rem;
         }
 
+        .custom-terms-search-icon {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 0.85rem;
+            padding: 0.2rem 0.35rem;
+            border-radius: 6px;
+            color: var(--text-gray);
+            transition: background 0.15s;
+            line-height: 1;
+            margin-right: 0.25rem;
+        }
+
+        .custom-terms-search-icon:hover {
+            background: rgba(0,0,0,0.07);
+            color: var(--text-dark);
+        }
+
+        /* Terms search palette — reuses cmd-palette pattern */
+        .terms-palette-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 10010;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding-top: 15vh;
+            background: rgba(0,0,0,0.45);
+            backdrop-filter: brightness(0.8);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .terms-palette-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .terms-palette {
+            background: var(--white);
+            border-radius: 14px;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.25), 0 4px 16px rgba(0,0,0,0.12);
+            overflow: hidden;
+            transform: translateY(-12px) scale(0.98);
+            transition: transform 0.2s ease, opacity 0.2s ease;
+            opacity: 0;
+        }
+
+        .terms-palette-overlay.show .terms-palette {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+        }
+
+        [data-theme="dark"] .terms-palette {
+            background: #212121;
+        }
+
+        .terms-palette-input-wrap {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .terms-palette-input {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-size: 1rem;
+            font-family: inherit;
+            background: transparent;
+            color: var(--text-dark);
+        }
+
+        .terms-palette-input::placeholder { color: var(--text-gray); }
+
+        .terms-palette-results {
+            max-height: 320px;
+            overflow-y: auto;
+            padding: 0.4rem;
+        }
+
+        .terms-palette-item {
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            font-size: 0.88rem;
+            color: var(--text-dark);
+            cursor: default;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+        }
+
+        .terms-palette-item:hover {
+            background: rgba(0,0,0,0.05);
+        }
+
+        [data-theme="dark"] .terms-palette-item:hover {
+            background: rgba(255,255,255,0.07);
+        }
+
+        .terms-palette-item mark {
+            background: rgba(245,158,11,0.3);
+            color: inherit;
+            border-radius: 2px;
+            padding: 0 1px;
+        }
+
+        .terms-palette-delete {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-gray);
+            font-size: 0.8rem;
+            padding: 0.15rem 0.35rem;
+            border-radius: 4px;
+            opacity: 0;
+            transition: all 0.15s;
+            flex-shrink: 0;
+        }
+
+        .terms-palette-item:hover .terms-palette-delete {
+            opacity: 1;
+        }
+
+        .terms-palette-delete:hover {
+            background: #fee2e2;
+            color: #ef4444;
+        }
+
+        .terms-palette-empty {
+            padding: 2rem 1rem;
+            text-align: center;
+            color: var(--text-gray);
+            font-size: 0.88rem;
+        }
+
+        .terms-palette-footer {
+            padding: 0.5rem 1rem;
+            border-top: 1px solid var(--border);
+            font-size: 0.72rem;
+            color: var(--text-gray);
+            display: flex;
+            justify-content: space-between;
+        }
+
         .history-item {
             padding: 0.45rem 0.75rem;
             margin-bottom: 1px;
@@ -1985,6 +2136,7 @@
             <div class="custom-terms-section" id="custom-terms-section">
                 <div class="custom-terms-header" onclick="toggleCustomTerms()">
                     <h4>⚙️ Custom Terms</h4>
+                    <button class="custom-terms-search-icon" onclick="event.stopPropagation(); openTermsPalette()" title="Search terms">🔍</button>
                     <span class="custom-terms-arrow">▲</span>
                 </div>
                 <div class="custom-terms-body">
@@ -2058,6 +2210,23 @@
         </div>
         </div>
         <!-- End Main Column -->
+    </div>
+
+    <!-- Terms Search Palette -->
+    <div class="terms-palette-overlay" id="terms-palette-overlay" onclick="if(event.target===this)closeTermsPalette()">
+        <div class="terms-palette">
+            <div class="terms-palette-input-wrap">
+                <span style="font-size:1.1rem;color:var(--text-gray);flex-shrink:0;">🔍</span>
+                <input class="terms-palette-input" id="terms-palette-input" placeholder="Search protected terms…"
+                    autocomplete="off" oninput="renderTermsResults()" onkeydown="if(event.key==='Escape')closeTermsPalette()">
+                <span class="cmd-palette-esc" onclick="closeTermsPalette()" style="cursor:pointer;">esc</span>
+            </div>
+            <div class="terms-palette-results" id="terms-palette-results"></div>
+            <div class="terms-palette-footer">
+                <span id="terms-palette-count"></span>
+                <span>esc to close</span>
+            </div>
+        </div>
     </div>
 
     <!-- Command Palette -->
@@ -2398,6 +2567,21 @@
                 clearTimeout(hideTimer);
                 selBtn.dataset.word = word;
                 selBtn.dataset.messageId = messageDiv ? (messageDiv.id || '') : '';
+
+                const customTerms = (document.getElementById('custom-terms').value || '')
+                    .split('\n').map(t => t.trim()).filter(Boolean);
+                const isProtected = customTerms.some(t => t.toLowerCase() === word.toLowerCase());
+
+                if (isProtected) {
+                    selBtn.dataset.mode = 'unprotect';
+                    selBtn.textContent = '🔓 Unprotect';
+                    selBtn.style.background = '#ef4444';
+                } else {
+                    selBtn.dataset.mode = 'protect';
+                    selBtn.textContent = '🛡️ + Protect';
+                    selBtn.style.background = '';
+                }
+
                 selBtn.style.display = 'flex';
                 selBtn.style.left = Math.max(8, Math.min(x - 50, window.innerWidth - 160)) + 'px';
                 selBtn.style.top  = Math.max(8, y - 46) + 'px';
@@ -2455,14 +2639,57 @@
                 }
             });
 
-            // Add to custom terms + re-protect the source message if from chat
+            // Add/remove custom terms + re-protect the source message if from chat
             selBtn.addEventListener('click', function() {
                 const word = this.dataset.word;
+                const mode = this.dataset.mode;
                 if (!word) return;
 
                 const customTermsEl = document.getElementById('custom-terms');
-                const existing = customTermsEl.value.trim();
-                const terms = existing ? existing.split('\n').map(t => t.trim()).filter(Boolean) : [];
+                const terms = (customTermsEl.value.trim()
+                    ? customTermsEl.value.split('\n').map(t => t.trim()).filter(Boolean)
+                    : []);
+
+                if (mode === 'unprotect') {
+                    const updated = terms.filter(t => t.toLowerCase() !== word.toLowerCase());
+                    customTermsEl.value = updated.join('\n');
+                    localStorage.setItem('customTerms', customTermsEl.value);
+
+                    // Re-process the affected message/document without the removed term
+                    const msgId = this.dataset.messageId;
+                    const previewOpen = document.getElementById('preview-modal').classList.contains('show');
+
+                    if (previewOpen && previewData && (previewData.isDocx || previewData.originalHtml)) {
+                        const newMap = {};
+                        const newProtectedHtml = maskHtmlContent(previewData.originalHtml, newMap);
+                        previewData.protectedHtml = newProtectedHtml;
+                        previewData.protectedCount = Object.keys(newMap).length;
+                        previewData.placeholderMap = newMap;
+                        placeholderMap = newMap;
+                        const activeTab = document.querySelector('.preview-tab.active');
+                        const currentView = activeTab && activeTab.textContent.includes('Protected') ? 'protected' : 'original';
+                        switchPreviewTab(currentView);
+                    } else if (msgId) {
+                        const messageDiv = document.getElementById(msgId);
+                        if (messageDiv && messageDiv.dataset.originalText) {
+                            const freshMap = {};
+                            const { masked: newProtected, count } = applyPIIMasking(messageDiv.dataset.originalText, freshMap);
+                            placeholderMap = freshMap;
+                            messageDiv.dataset.protectedText = newProtected;
+                            messageDiv.dataset.maskedCount = count;
+                            const textDiv = messageDiv.querySelector('.message-text');
+                            if (textDiv && textDiv.dataset.view === 'protected') {
+                                textDiv.innerHTML = renderProtectedText(newProtected);
+                            }
+                            const badge = messageDiv.querySelector('.protection-badge');
+                            if (badge) badge.textContent = `🛡️ ${count} protected`;
+                        }
+                    }
+
+                    selBtn.style.display = 'none';
+                    showToast(`🔓 "${word}" unprotected`, 'success');
+                    return;
+                }
 
                 if (!terms.some(t => t.toLowerCase() === word.toLowerCase())) {
                     terms.push(word);
@@ -4518,6 +4745,60 @@ ${selectionScript}
             link.click();
             URL.revokeObjectURL(url);
             showToast('✅ History exported', 'success');
+        }
+
+        function openTermsPalette() {
+            const overlay = document.getElementById('terms-palette-overlay');
+            overlay.classList.add('show');
+            const input = document.getElementById('terms-palette-input');
+            input.value = '';
+            renderTermsResults();
+            setTimeout(() => input.focus(), 50);
+        }
+
+        function closeTermsPalette() {
+            document.getElementById('terms-palette-overlay').classList.remove('show');
+        }
+
+        function renderTermsResults() {
+            const query = document.getElementById('terms-palette-input').value.trim().toLowerCase();
+            const results = document.getElementById('terms-palette-results');
+            const countEl = document.getElementById('terms-palette-count');
+            const all = (document.getElementById('custom-terms').value || '').split('\n').map(t => t.trim()).filter(Boolean);
+            const matches = query ? all.filter(t => t.toLowerCase().includes(query)) : all;
+
+            countEl.textContent = `${matches.length} of ${all.length} term${all.length !== 1 ? 's' : ''}`;
+
+            if (all.length === 0) {
+                results.innerHTML = `<div class="terms-palette-empty">No custom terms saved yet</div>`;
+                return;
+            }
+
+            if (matches.length === 0) {
+                results.innerHTML = `<div class="terms-palette-empty">No matches for "${query}"</div>`;
+                return;
+            }
+
+            const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            results.innerHTML = matches.map(t => {
+                const highlighted = query
+                    ? t.replace(new RegExp(`(${escaped})`, 'gi'), '<mark>$1</mark>')
+                    : t;
+                const safeT = t.replace(/'/g, "\\'");
+                return `<div class="terms-palette-item">
+                    <span>${highlighted}</span>
+                    <button class="terms-palette-delete" onclick="deleteCustomTerm('${safeT}')" title="Remove">✕</button>
+                </div>`;
+            }).join('');
+        }
+
+        function deleteCustomTerm(term) {
+            const textarea = document.getElementById('custom-terms');
+            const updated = textarea.value.split('\n').map(t => t.trim()).filter(t => t && t !== term);
+            textarea.value = updated.join('\n');
+            localStorage.setItem('customTerms', textarea.value);
+            renderTermsResults();
+            showToast(`🗑️ "${term}" removed`, 'success');
         }
 
         function clearAllCustomTerms() {

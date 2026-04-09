@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy — Ledebe</title>
+    <link rel="stylesheet" href="styles.css?v=2">
+    <style>
+        .policy-hero {
+            background: var(--primary-blue);
+            color: white;
+            padding: 4rem 2rem;
+            text-align: center;
+        }
+        .policy-hero h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+        .policy-hero p { opacity: 0.85; font-size: 1rem; }
+        .policy-body {
+            max-width: 820px;
+            margin: 0 auto;
+            padding: 3rem 2rem 5rem;
+        }
+        .policy-body h2 {
+            font-size: 1.3rem;
+            color: var(--primary-blue);
+            margin: 2.5rem 0 0.75rem;
+            padding-bottom: 0.4rem;
+            border-bottom: 2px solid var(--border);
+        }
+        .policy-body h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            margin: 1.5rem 0 0.5rem;
+            color: var(--text-dark);
+        }
+        .policy-body p { color: var(--text-gray); line-height: 1.8; margin-bottom: 1rem; }
+        .policy-body ul { color: var(--text-gray); padding-left: 1.5rem; margin-bottom: 1rem; line-height: 1.8; }
+        .policy-body ul li { margin-bottom: 0.4rem; }
+        .highlight-box {
+            background: #eff6ff;
+            border-left: 4px solid var(--primary-blue);
+            border-radius: 6px;
+            padding: 1rem 1.25rem;
+            margin: 1.5rem 0;
+            color: var(--text-dark);
+            font-weight: 500;
+        }
+        .last-updated {
+            font-size: 0.85rem;
+            color: var(--text-gray);
+            margin-bottom: 2rem;
+        }
+    </style>
+</head>
+<body>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo"><img src="logo.png" alt="Ledebe" style="height: 40px; vertical-align: middle;"> Ledebe</div>
+        <ul class="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="index.html#features">Features</a></li>
+            <li><a href="docs.html">Docs</a></li>
+            <li><a href="index.html#contact">Contact</a></li>
+        </ul>
+    </nav>
+</header>
+
+<div class="policy-hero">
+    <h1>Privacy Policy</h1>
+    <p>How Ledebe handles your data — and why most of it never leaves your device.</p>
+</div>
+
+<div class="policy-body">
+    <p class="last-updated">Last updated: April 2026</p>
+
+    <div class="highlight-box">
+        🛡️ The short version: Ledebe masks your sensitive data locally on your device. We do not collect, store, or transmit your personal data or the content you protect. Your data stays yours.
+    </div>
+
+    <h2>1. Who We Are</h2>
+    <p>Ledebe is a privacy tool built by Ledebe Technologies. Our product helps individuals and organisations protect personally identifiable information (PII) before sharing content with AI tools, colleagues, or third parties.</p>
+    <p>If you have questions about this policy, contact us at: <strong>privacy@ledebe.com</strong></p>
+
+    <h2>2. What Data We Collect</h2>
+
+    <h3>Data we do NOT collect</h3>
+    <ul>
+        <li>The text you paste into Ledebe</li>
+        <li>The PII detected in your content (names, emails, phone numbers, etc.)</li>
+        <li>Your custom terms list</li>
+        <li>Your chat history</li>
+        <li>Your API keys for OpenAI, Anthropic, Google, or any other provider</li>
+        <li>Your documents or uploaded files</li>
+    </ul>
+
+    <h3>Data we may collect (anonymised)</h3>
+    <ul>
+        <li>Basic usage analytics — page visits, which features are used (no personal data attached)</li>
+        <li>Error reports — if the app crashes, an anonymous report may be generated to help us fix bugs</li>
+        <li>Download counts — how many times the desktop app is downloaded</li>
+    </ul>
+
+    <h2>3. Where Your Data Lives</h2>
+    <p>All PII detection and masking happens <strong>locally on your device</strong> — in your browser or desktop app. No content is sent to Ledebe servers during this process.</p>
+
+    <h3>Local storage</h3>
+    <ul>
+        <li><strong>Custom terms</strong> — stored in your browser's localStorage or the desktop app's local storage. Never uploaded.</li>
+        <li><strong>Chat history</strong> — stored locally on your device only.</li>
+        <li><strong>API keys</strong> — stored in your browser's localStorage or VS Code settings. Never transmitted to Ledebe.</li>
+        <li><strong>Theme / settings preferences</strong> — stored locally.</li>
+    </ul>
+
+    <h3>When you use AI Chat mode</h3>
+    <p>If you use Ledebe's Ask AI feature, your masked text (with placeholders like [LDB_EMAIL1], never your real data) is sent directly from your device to your chosen AI provider (OpenAI, Anthropic, or Google) using your own API key. Ledebe does not see, intercept, or store this communication.</p>
+
+    <h2>4. Third Party Services</h2>
+    <ul>
+        <li><strong>AWS S3</strong> — hosts the Ledebe website and desktop app downloads. AWS's privacy policy applies to hosting infrastructure.</li>
+        <li><strong>Cloudflare</strong> — provides DNS, CDN, and DDoS protection for ledebe.com. Cloudflare may log anonymised traffic data.</li>
+        <li><strong>OpenAI / Anthropic / Google</strong> — if you use AI Chat mode with your own API key, your masked prompts are sent to these providers. Their respective privacy policies apply.</li>
+        <li><strong>VS Code Marketplace</strong> — the VS Code extension is distributed via Microsoft's marketplace. Microsoft's privacy policy applies to the download and install process.</li>
+    </ul>
+    <p>Ledebe does not sell, rent, or share your data with any third party for marketing purposes.</p>
+
+    <h2>5. Cookies</h2>
+    <p>The Ledebe website uses minimal cookies:</p>
+    <ul>
+        <li><strong>Functional cookies</strong> — remember your language preference and theme setting.</li>
+        <li>We do not use advertising cookies or cross-site tracking cookies.</li>
+    </ul>
+
+    <h2>6. Your Rights (GDPR)</h2>
+    <p>If you are in the European Economic Area (EEA) or United Kingdom, you have the following rights:</p>
+    <ul>
+        <li><strong>Right to access</strong> — request a copy of any personal data we hold about you.</li>
+        <li><strong>Right to erasure</strong> — request deletion of your personal data.</li>
+        <li><strong>Right to portability</strong> — receive your data in a machine-readable format.</li>
+        <li><strong>Right to object</strong> — object to processing of your personal data.</li>
+        <li><strong>Right to rectification</strong> — request correction of inaccurate data.</li>
+    </ul>
+    <p>Since Ledebe stores almost no personal data, most of these rights are satisfied automatically. To exercise any right, contact: <strong>privacy@ledebe.com</strong></p>
+
+    <h2>7. Data Security</h2>
+    <p>We take security seriously:</p>
+    <ul>
+        <li>The website is served over HTTPS.</li>
+        <li>No sensitive user content ever reaches our servers.</li>
+        <li>API keys are stored locally and are never transmitted to Ledebe.</li>
+        <li>We regularly review our infrastructure for security vulnerabilities.</li>
+    </ul>
+
+    <h2>8. Children's Privacy</h2>
+    <p>Ledebe is not directed at children under 13. We do not knowingly collect personal information from children. If you believe a child has provided us with personal information, contact us at privacy@ledebe.com and we will delete it.</p>
+
+    <h2>9. Changes to This Policy</h2>
+    <p>We may update this Privacy Policy from time to time. We will notify users of significant changes by updating the "Last updated" date at the top of this page. Continued use of Ledebe after changes constitutes acceptance of the updated policy.</p>
+
+    <h2>10. Contact</h2>
+    <p>For any privacy-related questions or requests:</p>
+    <ul>
+        <li>Email: <strong>privacy@ledebe.com</strong></li>
+        <li>Website: <strong>ledebe.com</strong></li>
+    </ul>
+</div>
+
+<footer class="footer">
+    <div class="container">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>Ledebe</h4>
+                <p>Secure data protection for everyone</p>
+            </div>
+            <div class="footer-section">
+                <h4>Product</h4>
+                <ul>
+                    <li><a href="index.html#features">Features</a></li>
+                    <li><a href="index.html#security">Security</a></li>
+                    <li><a href="index.html#download">Download</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Legal</h4>
+                <ul>
+                    <li><a href="privacy.html">Privacy Policy</a></li>
+                    <li><a href="terms.html">Terms of Service</a></li>
+                    <li><a href="docs.html">Documentation</a></li>
+                    <li><a href="index.html#contact">Contact</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Ledebe Technologies. All rights reserved.</p>
+        </div>
+    </div>
+</footer>
+
+</body>
+</html>

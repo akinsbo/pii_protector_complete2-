@@ -1,57 +1,6 @@
 # LEDEBE PROTECTOR - TODO LIST
 
-## ✅ COMPLETED
-- Update the textarea to use markdown
-- Too many buttons, use icons instead - redo design
-- History noisy, repeated twice
-- When user selects a section, it should highlight
-- History chat being stored and can be fetched
-- Can go back to edit messages
-- Can delete messages
-- Icons tooltips (edit, copy, delete)
-- Text should be white in dark mode
-- Prompt created twice issue
-- "Enter your text" should be expandable
-- Call and response like ChatGPT layout
-- Image upload with OCR and redaction
-- Plain/Protected image tabs with download
-- Quick Actions / Shortcuts:
-  - Quick Copy Protected button
-  - Keyboard shortcuts (Ctrl+Enter, Ctrl+K, Ctrl+Shift+C, Ctrl+/)
-  - Toast notifications
-  - Help button shows shortcuts modal
-- Multi-AI Support:
-  - Support for ChatGPT, Claude, and Gemini
-  - Multiple API keys (one per AI provider)
-  - Checkbox interface to select which AIs to use
-  - Simultaneous responses from multiple AIs
-  - Individual error handling per AI
-- Document Preview Modal:
-  - Preview protected document before download
-  - Scroll through entire document
-  - Toggle between original and protected versions
-  - Highlighted protected items in yellow
-  - Stats display (pages, words, protected items)
-  - Download from preview
-  - PDFs rendered as images to preserve exact formatting (tables, columns, layout)
-  - Text files use monospace font for alignment preservation
-- Document formatting preservation:
-  - Tabular content stays tabular with exact spacing
-  - Bullet points preserved as-is
-  - Original document structure maintained exactly
-  - Monospace font for proper alignment
-
 ## 🚀 HIGH PRIORITY FEATURES
-
-### 1. ✅ Quick Actions / Shortcuts (COMPLETED)
-- ✅ Add "Quick Copy Protected" button after sending message
-- ✅ Keyboard shortcuts:
-  - ✅ Ctrl/Cmd + Enter → Send message
-  - ✅ Ctrl/Cmd + K → New chat
-  - ✅ Ctrl/Cmd + Shift + C → Copy protected text
-  - ✅ Ctrl/Cmd + / → Show shortcuts help
-- ✅ Toast notifications: "✅ Protected text copied!"
-- ✅ Reduce clicks in main workflow
 
 ### 2. Better Onboarding (2 hours)
 - Interactive tutorial on first visit
@@ -132,12 +81,6 @@
 - Compliance reports
 
 
-## 🎯 NEXT SPRINT PRIORITIES
-1. ✅ Quick Copy Button (30 mins) - COMPLETED
-2. Keyboard Shortcuts (1 hour) - IN PROGRESS
-3. Better Onboarding (2 hours)
-4. Dark mode contrast fixes (30 mins)
-5. Export/Import History (3 hours)
 
 ## 📝 NOTES & QUESTIONS
 - Get domain name.com
@@ -186,29 +129,20 @@ current slogan= Ledebe Protector - Keep your personal info safe when using AI
 
 
 Ledebe
-1.✅ When we say ask AI, it doesn't give us a change to say what we want to ask AI, maybe like a short pop or something to customise it better.
-2.✅ when the AI responds, the "with your info and protected version, nothing is different.
-3.✅ we border when the text are starting and ending are too close to the edge
-4. the chat name should be named according to the content.
-5.✅ the user's request or chat should have a different background
-6. upload document and it should be able to customize it
-7.✅ More PII types auto-detected, maybe a line underneet it or something, when someone selects a word, a menu that allows to protect
-8.✅ the rename and delete buttons not showing for thr last chat history it's hiding behind the custom terms box
-9.✅  QA testing for all functionalities
-10.✅ clean up the code 
-11. protected words should look different in the paragraph, maybe a different colour or underline
-12.✅ the keyboard short cuts (help) should show commands based on app
-13.✅ tutorial should link to "documentation" page
-14.✅ the documentation page should have "how to use/tutorial"
-15.✅ changing language on the app, it's not working
 14, have a "how to plan".. 
 15. update documentation on everything ledebe can do
 16- 3 questions popup when it's open to everyone, rate the service, would you recommend . if no, why?
-17- direct chat with ai
-18- monochrome colour like the chatgpt - in an almost monochromatic design
-19- offwhite shade for, then grey for darkmode
-20- there should be a search button to search the custom terms e.g we have 1k items protect, i should be able to earch
-21- when you highlight a protected word, there should be an option to unprotect
+Redirect clients calling www.ledebe.com to ledebe.com
+Update the custom terms icon on the website from the AI looking robot to something else
+the website has two custom terms and tow reversible protection boxes
+??? what is the worse case scenerio reasons that customors can lose trust
+??? what are the loop holes in this app
+17 - pricing page, 
+18 - how to take payment
+19 - 1 minute business pitch 
+
+
+
 
 ==High Priority (Broken/Missing)
 Help button does nothing useful — clicking ❓ Help just shows keyboard shortcuts. Should open actual help content or the docs page.
@@ -235,5 +169,6 @@ Message timestamps visible in chat — small grey timestamp under each bubble.
 Batch file upload — process multiple files at once instead of one at a time.
 Undo for message edits — once you save an edited message, the original is gone.
 Analytics summary — a small "this month you protected 47 emails, 12 phone numbers" stat somewhere in the sidebar.
+
 
 

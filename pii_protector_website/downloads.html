@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Downloads — Ledebe</title>
+    <meta name="description" content="Download Ledebe for Mac, Windows, and Linux. Free to use, no account required.">
+    <link rel="stylesheet" href="styles.css?v=6">
+    <style>
+        .page-hero {
+            background: linear-gradient(160deg, #0f1e4a 0%, #1e3a8a 100%);
+            color: white;
+            padding: 4rem 2rem;
+            text-align: center;
+        }
+        .page-hero h1 { font-size: 2.5rem; font-weight: 800; margin-bottom: 0.75rem; letter-spacing: -0.02em; }
+        .page-hero p { opacity: 0.85; font-size: 1.05rem; max-width: 520px; margin: 0 auto; }
+
+        .downloads-body {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 4rem 2rem 5rem;
+        }
+
+        .platform-section { margin-bottom: 3.5rem; }
+        .platform-section h2 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding-bottom: 0.6rem;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .download-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.25rem;
+        }
+
+        .dl-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 1.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            transition: box-shadow 0.2s, transform 0.2s;
+        }
+        .dl-card:hover { box-shadow: 0 8px 30px rgba(30,58,138,0.1); transform: translateY(-2px); }
+
+        .dl-card-icon { font-size: 2.5rem; }
+        .dl-card h3 { font-size: 1rem; font-weight: 700; color: var(--text-dark); margin: 0; }
+        .dl-card .req { font-size: 0.8rem; color: var(--text-gray); margin-bottom: 0.5rem; }
+
+        .dl-btn {
+            display: block;
+            background: #1e3a8a;
+            color: white;
+            text-align: center;
+            padding: 0.75rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 0.88rem;
+            margin-top: auto;
+            transition: background 0.2s;
+        }
+        .dl-btn:hover { background: #1e40af; }
+        .dl-btn.secondary {
+            background: transparent;
+            color: #1e3a8a;
+            border: 2px solid #1e3a8a;
+            margin-top: 0.5rem;
+        }
+        .dl-btn.secondary:hover { background: #1e3a8a; color: white; }
+
+        .web-app-card {
+            background: linear-gradient(135deg, #eff6ff, #dbeafe);
+            border: 1px solid #bfdbfe;
+            border-radius: 14px;
+            padding: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 2rem;
+            flex-wrap: wrap;
+            margin-bottom: 3.5rem;
+        }
+        .web-app-card h2 { font-size: 1.3rem; font-weight: 800; color: var(--text-dark); margin-bottom: 0.4rem; }
+        .web-app-card p { color: var(--text-gray); font-size: 0.9rem; max-width: 400px; }
+        .btn-try {
+            background: #1e3a8a;
+            color: white;
+            padding: 0.875rem 1.75rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 0.95rem;
+            white-space: nowrap;
+            transition: background 0.2s;
+            display: inline-block;
+        }
+        .btn-try:hover { background: #1e40af; }
+
+        .vscode-card {
+            background: #1e2640;
+            color: white;
+            border-radius: 14px;
+            padding: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 2rem;
+            flex-wrap: wrap;
+            margin-bottom: 3.5rem;
+        }
+        .vscode-card h2 { font-size: 1.3rem; font-weight: 800; margin-bottom: 0.4rem; }
+        .vscode-card p { opacity: 0.75; font-size: 0.9rem; max-width: 400px; }
+        .btn-vscode {
+            background: white;
+            color: #1e2640;
+            padding: 0.875rem 1.75rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 0.95rem;
+            white-space: nowrap;
+            transition: background 0.2s;
+            display: inline-block;
+        }
+        .btn-vscode:hover { background: #f1f5f9; }
+
+        .notice {
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            border-radius: 10px;
+            padding: 1rem 1.25rem;
+            font-size: 0.85rem;
+            color: #92400e;
+            margin-top: 2rem;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 768px) {
+            .page-hero h1 { font-size: 1.9rem; }
+            .web-app-card, .vscode-card { flex-direction: column; }
+            .download-cards { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<header class="header">
+    <nav class="nav">
+        <a href="/" class="logo" style="text-decoration:none;color:white;">
+            <img src="logo.png" alt="Ledebe" style="height:36px;vertical-align:middle;"> Ledebe
+        </a>
+        <ul class="nav-links">
+            <li><a href="/">Home</a></li>
+            <li><a href="/downloads.html" style="font-weight:700;">Downloads</a></li>
+            <li><a href="/docs.html">Docs</a></li>
+            <li><a href="mailto:hello@ledebe.com">Contact</a></li>
+        </ul>
+    </nav>
+</header>
+
+<div class="page-hero">
+    <h1>⬇ Download Ledebe</h1>
+    <p>Free to use. No account required. Available on Mac, Windows, Linux — or use it directly in your browser.</p>
+</div>
+
+<div class="downloads-body">
+
+    <!-- Web App -->
+    <div class="web-app-card">
+        <div>
+            <h2>🌐 Try the Web App — No Install Needed</h2>
+            <p>Use Ledebe instantly in your browser. No download, no setup. Works on any device.</p>
+        </div>
+        <a href="https://app.ledebe.com" class="btn-try" target="_blank">Open Web App →</a>
+    </div>
+
+    <!-- VS Code -->
+    <div class="vscode-card">
+        <div>
+            <h2>🧩 VS Code Extension</h2>
+            <p>Protect code, configs, and logs right in your editor. Search "Ledebe Protector" in the Extensions panel.</p>
+        </div>
+        <a href="https://marketplace.visualstudio.com/items?itemName=ledebe-demo2.ledebe-protector-demo" class="btn-vscode" target="_blank">Install Extension →</a>
+    </div>
+
+    <!-- Mac -->
+    <div class="platform-section">
+        <h2>🍎 macOS</h2>
+        <div class="download-cards">
+            <div class="dl-card">
+                <div class="dl-card-icon">💻</div>
+                <h3>Apple Silicon (M1, M2, M3)</h3>
+                <div class="req">Requires macOS 11 Big Sur or later</div>
+                <a href="https://ledebe.com/downloads/Ledebe%20Protector-1.0.0-arm64.dmg" class="dl-btn">Download .dmg</a>
+                <a href="https://ledebe.com/downloads/Ledebe%20Protector-1.0.0-arm64-mac.zip" class="dl-btn secondary">Download .zip</a>
+            </div>
+            <div class="dl-card">
+                <div class="dl-card-icon">🖥️</div>
+                <h3>Intel Mac</h3>
+                <div class="req">Requires macOS 10.15 Catalina or later</div>
+                <a href="https://ledebe.com/downloads/Ledebe%20Protector-1.0.0-x64.dmg" class="dl-btn">Download .dmg</a>
+                <a href="https://ledebe.com/downloads/Ledebe%20Protector-1.0.0-mac.zip" class="dl-btn secondary">Download .zip</a>
+            </div>
+        </div>
+        <div class="notice">
+            ⚠️ <strong>macOS security warning:</strong> The app is not yet notarised by Apple. When you first open it, right-click the app → <strong>Open</strong> → <strong>Open</strong> to bypass the Gatekeeper warning. You only need to do this once.
+        </div>
+    </div>
+
+    <!-- Windows -->
+    <div class="platform-section">
+        <h2>🪟 Windows</h2>
+        <div class="download-cards">
+            <div class="dl-card">
+                <div class="dl-card-icon">🖥️</div>
+                <h3>Windows Installer</h3>
+                <div class="req">Compatible with Windows 10 and Windows 11</div>
+                <a href="https://ledebe.com/downloads/Ledebe%20Protector%20Setup%201.0.0.exe" class="dl-btn">Download Setup .exe</a>
+            </div>
+        </div>
+        <div class="notice">
+            ⚠️ <strong>Windows SmartScreen warning:</strong> You may see a "Windows protected your PC" message. Click <strong>More info</strong> → <strong>Run anyway</strong> to proceed. This warning appears for newly published apps without a code signing certificate.
+        </div>
+    </div>
+
+    <!-- Linux -->
+    <div class="platform-section">
+        <h2>🐧 Linux</h2>
+        <div class="download-cards">
+            <div class="dl-card">
+                <div class="dl-card-icon">📦</div>
+                <h3>AppImage (Universal)</h3>
+                <div class="req">Works on Ubuntu 18.04+, Fedora, Debian, and most distros</div>
+                <a href="https://ledebe.com/downloads/Ledebe%20Protector-1.0.0.AppImage" class="dl-btn">Download .AppImage</a>
+            </div>
+            <div class="dl-card">
+                <div class="dl-card-icon">📦</div>
+                <h3>Snap Package</h3>
+                <div class="req">For Ubuntu and Snap-enabled distributions</div>
+                <a href="https://ledebe.com/downloads/ledebe-protector_1.0.0_amd64.snap" class="dl-btn">Download .snap</a>
+            </div>
+        </div>
+        <div class="notice">
+            ℹ️ <strong>AppImage setup:</strong> After downloading, make the file executable before running:
+            <br><code style="background:#fef3c7;padding:2px 6px;border-radius:4px;font-size:0.82rem;">chmod +x "Ledebe Protector-1.0.0.AppImage"</code>
+            <br>If it fails to launch, install libfuse2: <code style="background:#fef3c7;padding:2px 6px;border-radius:4px;font-size:0.82rem;">sudo apt install libfuse2</code>
+        </div>
+    </div>
+
+</div>
+
+<footer class="footer">
+    <div class="container">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>Ledebe</h4>
+                <p>Secure data protection for everyone</p>
+            </div>
+            <div class="footer-section">
+                <h4>Product</h4>
+                <ul>
+                    <li><a href="/downloads.html">Downloads</a></li>
+                    <li><a href="/docs.html">Documentation</a></li>
+                    <li><a href="https://marketplace.visualstudio.com/items?itemName=ledebe-demo2.ledebe-protector-demo">VS Code Extension</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Legal</h4>
+                <ul>
+                    <li><a href="/privacy.html">Privacy Policy</a></li>
+                    <li><a href="/terms.html">Terms of Service</a></li>
+                    <li><a href="mailto:hello@ledebe.com">Contact</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Ledebe Technologies. All rights reserved.</p>
+        </div>
+    </div>
+</footer>
+
+</body>
+</html>

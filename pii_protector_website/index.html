@@ -3,203 +3,672 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ledebe - Secure Your Data</title>
-    <link rel="stylesheet" href="styles.css?v=5">
+    <title>Ledebe — Protect Your Data Before It Reaches AI</title>
+    <meta name="description" content="Ledebe masks sensitive data — emails, phone numbers, API keys — before it reaches ChatGPT, Claude, or Copilot. Local, instant, reversible.">
+    <link rel="stylesheet" href="styles.css?v=6">
+    <style>
+        /* ── Homepage-specific styles ── */
+
+        /* Hero */
+        .hero {
+            background: linear-gradient(160deg, #0f1e4a 0%, #1e3a8a 60%, #2563eb 100%);
+            color: white;
+            padding: 6rem 0 5rem;
+        }
+        .hero-inner {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 999px;
+            padding: 0.35rem 0.9rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            letter-spacing: 0.02em;
+        }
+        .hero h1 {
+            font-size: 3.2rem;
+            font-weight: 800;
+            line-height: 1.15;
+            margin-bottom: 1.25rem;
+            letter-spacing: -0.02em;
+        }
+        .hero h1 span { color: #fbbf24; }
+        .hero p {
+            font-size: 1.15rem;
+            opacity: 0.85;
+            line-height: 1.7;
+            margin-bottom: 2.5rem;
+            max-width: 480px;
+        }
+        .hero-ctas {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+        .btn-primary {
+            background: #f59e0b;
+            color: #000;
+            font-weight: 700;
+            padding: 0.875rem 1.75rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: background 0.2s, transform 0.15s;
+            display: inline-block;
+        }
+        .btn-primary:hover { background: #d97706; transform: translateY(-1px); }
+        .btn-outline {
+            background: transparent;
+            color: white;
+            font-weight: 600;
+            padding: 0.875rem 1.75rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.95rem;
+            border: 2px solid rgba(255,255,255,0.4);
+            transition: border-color 0.2s, background 0.2s;
+            display: inline-block;
+        }
+        .btn-outline:hover { border-color: white; background: rgba(255,255,255,0.08); }
+
+        /* Hero mockup */
+        .hero-mockup {
+            display: flex;
+            justify-content: center;
+        }
+        .mockup-window {
+            background: #1e2640;
+            border-radius: 14px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .mockup-bar {
+            background: #141929;
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .mockup-dot { width: 10px; height: 10px; border-radius: 50%; }
+        .mockup-dot.r { background: #ff5f57; }
+        .mockup-dot.y { background: #febc2e; }
+        .mockup-dot.g { background: #28c840; }
+        .mockup-title { color: rgba(255,255,255,0.5); font-size: 0.78rem; margin-left: 0.5rem; }
+        .mockup-body { padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem; }
+        .mockup-msg {
+            padding: 0.7rem 0.9rem;
+            border-radius: 8px;
+            font-size: 0.78rem;
+            line-height: 1.5;
+        }
+        .mockup-msg.user { background: #2a3560; color: #c9d1f5; }
+        .mockup-msg.protected { background: #0f2a1a; color: #6ee7b7; border: 1px solid #1a4a2e; }
+        .mockup-label { font-size: 0.65rem; opacity: 0.5; text-transform: uppercase; letter-spacing: 0.06em; color: white; }
+        .mockup-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            background: #1a4a2e;
+            color: #6ee7b7;
+            border-radius: 999px;
+            padding: 0.2rem 0.6rem;
+            font-size: 0.68rem;
+            font-weight: 700;
+            margin-bottom: 0.3rem;
+        }
+
+        /* Social proof bar */
+        .proof-bar {
+            background: #f8faff;
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 0;
+        }
+        .proof-bar-inner {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            align-items: center;
+            gap: 2.5rem;
+            flex-wrap: wrap;
+        }
+        .proof-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--text-gray);
+            font-weight: 500;
+        }
+        .proof-item span:first-child { font-size: 1.1rem; }
+
+        /* How it works */
+        .how-it-works {
+            padding: 5rem 0;
+            background: white;
+        }
+        .section-label {
+            text-align: center;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: #2563eb;
+            margin-bottom: 0.75rem;
+        }
+        .section-heading {
+            text-align: center;
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--text-dark);
+            margin-bottom: 0.75rem;
+            letter-spacing: -0.02em;
+        }
+        .section-sub {
+            text-align: center;
+            color: var(--text-gray);
+            font-size: 1.05rem;
+            margin-bottom: 3.5rem;
+            max-width: 520px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .steps {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            position: relative;
+        }
+        .steps::before {
+            content: '';
+            position: absolute;
+            top: 2rem;
+            left: calc(16.66% + 1rem);
+            right: calc(16.66% + 1rem);
+            height: 2px;
+            background: linear-gradient(90deg, #e2e8f0, #2563eb, #e2e8f0);
+        }
+        .step {
+            text-align: center;
+            padding: 0 0.5rem;
+        }
+        .step-num {
+            width: 4rem;
+            height: 4rem;
+            background: linear-gradient(135deg, #1e3a8a, #2563eb);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            font-weight: 800;
+            margin: 0 auto 1.25rem;
+            position: relative;
+            z-index: 1;
+            box-shadow: 0 4px 16px rgba(30,58,138,0.3);
+        }
+        .step h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--text-dark);
+        }
+        .step p { font-size: 0.9rem; color: var(--text-gray); line-height: 1.6; }
+
+        /* Features */
+        .features-section {
+            padding: 5rem 0;
+            background: #f8faff;
+        }
+        .features-grid {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+        }
+        .feature-card {
+            background: white;
+            border-radius: 14px;
+            padding: 1.75rem;
+            border: 1px solid var(--border);
+            transition: box-shadow 0.2s, transform 0.2s;
+        }
+        .feature-card:hover {
+            box-shadow: 0 8px 30px rgba(30,58,138,0.1);
+            transform: translateY(-2px);
+        }
+        .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+        .feature-card h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--text-dark);
+        }
+        .feature-card p { font-size: 0.88rem; color: var(--text-gray); line-height: 1.65; }
+
+        /* Trust section */
+        .trust-section {
+            padding: 5rem 0;
+            background: white;
+        }
+        .trust-inner {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5rem;
+            align-items: center;
+        }
+        .trust-text h2 {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            color: var(--text-dark);
+            letter-spacing: -0.02em;
+        }
+        .trust-text p {
+            color: var(--text-gray);
+            line-height: 1.75;
+            margin-bottom: 1.5rem;
+            font-size: 0.95rem;
+        }
+        .trust-list { list-style: none; display: flex; flex-direction: column; gap: 0.75rem; }
+        .trust-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            font-size: 0.95rem;
+            color: var(--text-dark);
+        }
+        .trust-list li span:first-child {
+            font-size: 1.1rem;
+            flex-shrink: 0;
+            margin-top: 0.1rem;
+        }
+        .trust-cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        .trust-card {
+            background: #f8faff;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            text-align: center;
+        }
+        .trust-card .big { font-size: 2rem; font-weight: 800; color: #1e3a8a; display: block; }
+        .trust-card .label { font-size: 0.8rem; color: var(--text-gray); margin-top: 0.25rem; }
+
+        /* VS Code banner */
+        .vscode-section {
+            padding: 4rem 0;
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+            color: white;
+        }
+        .vscode-inner {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+        .vscode-text h2 {
+            font-size: 1.6rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+        .vscode-text p { opacity: 0.8; font-size: 0.95rem; max-width: 440px; }
+        .btn-white {
+            background: white;
+            color: #1e3a8a;
+            font-weight: 700;
+            padding: 0.875rem 1.75rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.95rem;
+            white-space: nowrap;
+            transition: background 0.2s;
+            display: inline-block;
+        }
+        .btn-white:hover { background: #f1f5f9; }
+
+        /* CTA section */
+        .cta-section {
+            padding: 5rem 0;
+            background: #f8faff;
+            text-align: center;
+        }
+        .cta-section h2 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--text-dark);
+            margin-bottom: 1rem;
+            letter-spacing: -0.02em;
+        }
+        .cta-section p {
+            color: var(--text-gray);
+            font-size: 1.05rem;
+            margin-bottom: 2rem;
+        }
+        .cta-btns {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .btn-dark {
+            background: #1e3a8a;
+            color: white;
+            font-weight: 700;
+            padding: 0.875rem 1.75rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: background 0.2s;
+            display: inline-block;
+        }
+        .btn-dark:hover { background: #1e40af; }
+        .btn-border {
+            background: transparent;
+            color: #1e3a8a;
+            font-weight: 600;
+            padding: 0.875rem 1.75rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.95rem;
+            border: 2px solid #1e3a8a;
+            transition: background 0.2s, color 0.2s;
+            display: inline-block;
+        }
+        .btn-border:hover { background: #1e3a8a; color: white; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero-inner { grid-template-columns: 1fr; gap: 2.5rem; }
+            .hero h1 { font-size: 2.1rem; }
+            .hero-mockup { display: none; }
+            .steps { grid-template-columns: 1fr; gap: 2rem; }
+            .steps::before { display: none; }
+            .features-grid { grid-template-columns: 1fr; }
+            .trust-inner { grid-template-columns: 1fr; gap: 2.5rem; }
+            .trust-cards { grid-template-columns: 1fr 1fr; }
+            .vscode-inner { flex-direction: column; text-align: center; }
+            .proof-bar-inner { gap: 1.25rem; }
+            .section-heading { font-size: 1.7rem; }
+        }
+    </style>
 </head>
 <body>
-    <header class="header">
-        <nav class="nav">
-            <div class="logo"><img src="logo.png" alt="Ledebe" style="height: 40px; vertical-align: middle;"> Ledebe</div>
-            <ul class="nav-links">
-                <li><a href="#home">Home</a></li>
-                <li><a href="#features">Features</a></li>
-                <li><a href="#security">Security</a></li>
-                <li><a href="#download">Download</a></li>
-                <li><a href="docs.html">Docs</a></li>
-                <li><a href="#contact">Contact</a></li>
-            </ul>
-            <div class="language-selector">
-                <button onclick="setLanguage('en')" class="lang-btn" id="lang-en">EN</button>
-                <button onclick="setLanguage('es')" class="lang-btn" id="lang-es">ES</button>
-                <button onclick="setLanguage('fr')" class="lang-btn" id="lang-fr">FR</button>
-                <button onclick="setLanguage('ar')" class="lang-btn" id="lang-ar">AR</button>
-                <button onclick="setLanguage('zh')" class="lang-btn" id="lang-zh">中</button>
-            </div>
-        </nav>
-    </header>
 
-    <main>
-        <section id="home" class="hero">
-            <div class="hero-content">
-                <div class="hero-text">
-                    <h1>Secure Your Data with Advanced PII Protection</h1>
-                    <p>Protect sensitive information in your documents and communications with our intelligent anonymization technology. Keep emails, phone numbers, and personal data safe.</p>
-                    <div class="cta-buttons">
-                        <a href="https://ledebe.com/downloads/Ledebe%20Protector-1.0.0-arm64.dmg" class="cta-primary" style="text-decoration: none; display: inline-block;">Download for Mac</a>
-                        <a href="https://ledebe.com/downloads/Ledebe%20Protector%20Setup%201.0.0.exe" class="cta-secondary" style="text-decoration: none; display: inline-block;">Download for Windows</a>
-                    </div>
-                </div>
-                <div class="hero-image">
-                    <div class="app-preview">
-                        <div class="app-window">
-                            <div class="window-header">
-                                <div class="window-controls">
-                                    <span></span><span></span><span></span>
-                                </div>
-                                <div class="window-title">Ledebe</div>
-                            </div>
-                            <div class="window-content">
-                                <div class="demo-text"><img id="protected-status-image" src="images/protected-en.svg" alt="Your data is protected" style="height: 40px;"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
+<!-- ── Header ── -->
+<header class="header">
+    <nav class="nav">
+        <a href="/" class="logo" style="text-decoration:none;color:white;">
+            <img src="logo.png" alt="Ledebe" style="height:36px;vertical-align:middle;"> Ledebe
+        </a>
+        <ul class="nav-links">
+            <li><a href="/">Home</a></li>
+            <li><a href="/downloads.html">Downloads</a></li>
+            <li><a href="/docs.html">Docs</a></li>
+            <li><a href="mailto:hello@ledebe.com">Contact</a></li>
+        </ul>
+        <div class="language-selector">
+            <button onclick="setLanguage('en')" class="lang-btn" id="lang-en">EN</button>
+            <button onclick="setLanguage('es')" class="lang-btn" id="lang-es">ES</button>
+            <button onclick="setLanguage('fr')" class="lang-btn" id="lang-fr">FR</button>
+            <button onclick="setLanguage('ar')" class="lang-btn" id="lang-ar">AR</button>
+            <button onclick="setLanguage('zh')" class="lang-btn" id="lang-zh">中</button>
+        </div>
+    </nav>
+</header>
 
-        <section id="features" class="features">
-            <div class="container">
-                <h2 class="section-title">Powerful Protection Features</h2>
-                <div class="features-grid">
-                    <div class="feature-card">
-                        <div class="feature-icon">🔒</div>
-                        <h3>Automatic PII Detection</h3>
-                        <p>Instantly identifies and masks emails, phone numbers, and other sensitive data as you type — no manual selection needed</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon">🤖</div>
-                        <h3>Multi-AI Support</h3>
-                        <p>Send protected text to ChatGPT, Claude, and Gemini simultaneously. Your real data never reaches any AI provider</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon">📄</div>
-                        <h3>Document Protection</h3>
-                        <p>Upload PDFs, Word docs, images, and text files. PII is masked while preserving exact formatting — tables, columns, and layout intact</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon">🖼️</div>
-                        <h3>Image OCR</h3>
-                        <p>Extract text from images automatically using OCR, detect PII, and download a protected version — all in one step</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon">⚙️</div>
-                        <h3>Custom Terms</h3>
-                        <p>Define your own sensitive words and phrases — project names, client names, internal codes — and they're protected automatically</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon">🏢</div>
-                        <h3>Company Sync</h3>
-                        <p>Teams share a protected terms list that auto-syncs every 5 minutes. One admin update protects everyone instantly</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon">🔄</div>
-                        <h3>Reversible Protection</h3>
-                        <p>Masked text is tokenised with placeholders. AI responses are automatically decoded back to your original data for reading</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section id="security" class="security">
-            <div class="container">
-                <div class="security-content">
-                    <div class="security-text">
-                        <h2>Enterprise-Grade Security</h2>
-                        <p>Built with privacy and security at its core. Your data never leaves your device, ensuring complete confidentiality and compliance with data protection regulations.</p>
-                        <ul class="security-features">
-                            <li>✅ Local processing - no cloud uploads</li>
-                            <li>✅ End-to-end encryption</li>
-                            <li>✅ GDPR & CCPA compliant</li>
-                            <li>✅ Zero data retention</li>
-                        </ul>
-                    </div>
-                    <div class="security-visual">
-                        <div class="shield-icon"><img src="logo.png" alt="Security" style="width: 120px;"></div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section id="download" class="download">
-            <div class="container">
-                <h2 class="section-title">Download Ledebe</h2>
-                <p class="download-subtitle">Choose your platform and start protecting your data today</p>
-                <div class="download-options">
-                    <div class="download-card">
-                        <div class="platform-icon">
-                            <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.54 9.103 1.519 12.09 1.013 1.46 2.208 3.09 3.792 3.029 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/>
-                            </svg>
-                        </div>
-                        <h3>macOS (Apple Silicon)</h3>
-                        <p>For M1, M2, M3 Macs (macOS 11+)</p>
-                        <a href="https://ledebe.com/downloads/Ledebe%20Protector-1.0.0-arm64.dmg" class="download-btn">Download .dmg</a>
-                    </div>
-                    <div class="download-card">
-                        <div class="platform-icon">
-                            <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.54 9.103 1.519 12.09 1.013 1.46 2.208 3.09 3.792 3.029 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/>
-                            </svg>
-                        </div>
-                        <h3>macOS (Intel)</h3>
-                        <p>For Intel-based Macs (macOS 10.15+)</p>
-                        <a href="https://ledebe.com/downloads/Ledebe%20Protector-1.0.0-x64.dmg" class="download-btn">Download .dmg</a>
-                    </div>
-                    <div class="download-card">
-                        <div class="platform-icon">
-                            <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/>
-                            </svg>
-                        </div>
-                        <h3>Windows</h3>
-                        <p>Compatible with Windows 10+</p>
-                        <a href="https://ledebe.com/downloads/Ledebe%20Protector%20Setup%201.0.0.exe" class="download-btn">Download .exe</a>
-                    </div>
-                    <div class="download-card">
-                        <div class="platform-icon">
-                            <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M12.504 0C5.595 0 0 5.595 0 12.504s5.595 12.504 12.504 12.504 12.504-5.595 12.504-12.504S19.413 0 12.504 0zM7.948 15.286c-.15-.896-.207-1.938-.207-2.937 0-.999.057-2.041.207-2.937.896-.15 1.938-.207 2.937-.207s2.041.057 2.937.207c.15.896.207 1.938.207 2.937 0 .999-.057 2.041-.207 2.937-.896.15-1.938.207-2.937.207s-2.041-.057-2.937-.207zm7.41-7.41c-.896.15-1.938.207-2.937.207s-2.041-.057-2.937-.207c-.15-.896-.207-1.938-.207-2.937 0-.999.057-2.041.207-2.937.896-.15 1.938-.207 2.937-.207s2.041.057 2.937.207c.15.896.207 1.938.207 2.937 0 .999-.057 2.041-.207 2.937z"/>
-                            </svg>
-                        </div>
-                        <h3>Linux</h3>
-                        <p>Universal AppImage (Ubuntu 18.04+)</p>
-                        <a href="https://ledebe.com/downloads/Ledebe%20Protector-1.0.0.AppImage" class="download-btn">Download .AppImage</a>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-section">
-                    <h4>Ledebe</h4>
-                    <p>Secure data protection for everyone</p>
-                </div>
-                <div class="footer-section">
-                    <h4>Product</h4>
-                    <ul>
-                        <li><a href="#features">Features</a></li>
-                        <li><a href="#security">Security</a></li>
-                        <li><a href="#download">Download</a></li>
-                    </ul>
-                </div>
-                <div class="footer-section">
-                    <h4>Legal</h4>
-                    <ul>
-                        <li><a href="#contact">Contact</a></li>
-                        <li><a href="docs.html">Documentation</a></li>
-                        <li><a href="privacy.html">Privacy Policy</a></li>
-                        <li><a href="terms.html">Terms of Service</a></li>
-                    </ul>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <p>&copy; 2026 Ledebe Technologies. All rights reserved.</p>
+<!-- ── Hero ── -->
+<section class="hero">
+    <div class="hero-inner">
+        <div class="hero-text">
+            <div class="hero-badge">🛡️ Privacy-first AI protection</div>
+            <h1>Stop Your Sensitive Data <span>Reaching AI</span></h1>
+            <p>Ledebe masks emails, phone numbers, API keys, and personal data before it ever leaves your device — so you can use ChatGPT, Claude, and Copilot safely.</p>
+            <div class="hero-ctas">
+                <a href="/downloads.html" class="btn-primary">⬇ Download Free</a>
+                <a href="https://app.ledebe.com" class="btn-outline">Try Web App →</a>
             </div>
         </div>
-    </footer>
-    <script src="i18n.js"></script>
+        <div class="hero-mockup">
+            <div class="mockup-window">
+                <div class="mockup-bar">
+                    <div class="mockup-dot r"></div>
+                    <div class="mockup-dot y"></div>
+                    <div class="mockup-dot g"></div>
+                    <span class="mockup-title">Ledebe Protector</span>
+                </div>
+                <div class="mockup-body">
+                    <div class="mockup-label">Your input</div>
+                    <div class="mockup-msg user">
+                        Contact sarah.mitchell@technovacorp.com or call +44 7700 900 312. Her API key is sk-a8f3k2m9x1p7...
+                    </div>
+                    <div class="mockup-label" style="margin-top:0.25rem;">Protected output</div>
+                    <div class="mockup-badge">🛡️ 3 items protected</div>
+                    <div class="mockup-msg protected">
+                        Contact [LDB_EMAIL1] or call [LDB_PHONE1]. Her API key is [LDB_APIKEY1]...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── Social proof ── -->
+<div class="proof-bar">
+    <div class="proof-bar-inner">
+        <div class="proof-item"><span>✅</span><span>Works with ChatGPT, Claude & Gemini</span></div>
+        <div class="proof-item"><span>🔒</span><span>100% local — no data sent to servers</span></div>
+        <div class="proof-item"><span>⚡</span><span>Instant masking, fully reversible</span></div>
+        <div class="proof-item"><span>🧩</span><span>VS Code extension available</span></div>
+    </div>
+</div>
+
+<!-- ── How it works ── -->
+<section class="how-it-works">
+    <div class="container">
+        <div class="section-label">How it works</div>
+        <h2 class="section-heading">Three steps to safe AI use</h2>
+        <p class="section-sub">No setup, no configuration. Paste, protect, and share — in seconds.</p>
+    </div>
+    <div class="steps">
+        <div class="step">
+            <div class="step-num">1</div>
+            <h3>Paste your text</h3>
+            <p>Paste any text, document, or code that contains sensitive information into Ledebe.</p>
+        </div>
+        <div class="step">
+            <div class="step-num">2</div>
+            <h3>Ledebe masks it</h3>
+            <p>All PII is replaced with placeholders like [LDB_EMAIL1] locally on your device — nothing leaves.</p>
+        </div>
+        <div class="step">
+            <div class="step-num">3</div>
+            <h3>Share safely</h3>
+            <p>Copy the protected text into any AI tool. Restore the original anytime with one click.</p>
+        </div>
+    </div>
+</section>
+
+<!-- ── Features ── -->
+<section class="features-section">
+    <div class="container">
+        <div class="section-label">Features</div>
+        <h2 class="section-heading">Everything you need to use AI safely</h2>
+        <p class="section-sub">Built for individuals, developers, and teams.</p>
+    </div>
+    <div class="features-grid">
+        <div class="feature-card">
+            <span class="feature-icon">🔒</span>
+            <h3>Automatic PII Detection</h3>
+            <p>Instantly detects and masks emails, phone numbers, NI numbers, credit cards, API keys, and more — no manual selection needed.</p>
+        </div>
+        <div class="feature-card">
+            <span class="feature-icon">⚙️</span>
+            <h3>Custom Terms</h3>
+            <p>Add your own sensitive words — company names, project codes, client names — and they're masked automatically every time.</p>
+        </div>
+        <div class="feature-card">
+            <span class="feature-icon">🔄</span>
+            <h3>Fully Reversible</h3>
+            <p>Placeholders map back to your original data. Restore the full text anytime — nothing is ever lost.</p>
+        </div>
+        <div class="feature-card">
+            <span class="feature-icon">📄</span>
+            <h3>Document Upload</h3>
+            <p>Upload PDFs, Word docs, images, and CSV files. PII is masked across the full document with a side-by-side preview.</p>
+        </div>
+        <div class="feature-card">
+            <span class="feature-icon">🤖</span>
+            <h3>Ask AI Mode</h3>
+            <p>Send your masked text directly to ChatGPT, Claude, or Gemini using your own API key — your real data never reaches the AI.</p>
+        </div>
+        <div class="feature-card">
+            <span class="feature-icon">✋</span>
+            <h3>Highlight to Protect</h3>
+            <p>Highlight any word in a sent message to instantly protect or unprotect it. Changes apply immediately — no re-sending needed.</p>
+        </div>
+        <div class="feature-card">
+            <span class="feature-icon">🏢</span>
+            <h3>Company Sync</h3>
+            <p>Share a protected terms list across your whole team. One admin update protects everyone instantly.</p>
+        </div>
+        <div class="feature-card">
+            <span class="feature-icon">🖼️</span>
+            <h3>Image OCR</h3>
+            <p>Extract and protect text from images automatically. Perfect for scanned documents, screenshots, and photos.</p>
+        </div>
+        <div class="feature-card">
+            <span class="feature-icon">⌨️</span>
+            <h3>Keyboard First</h3>
+            <p>Full keyboard navigation with ⌘K search, ⌘⇧N new chat, and ⌘↵ to send. Built for speed.</p>
+        </div>
+    </div>
+</section>
+
+<!-- ── Trust ── -->
+<section class="trust-section">
+    <div class="trust-inner">
+        <div class="trust-text">
+            <h2>Your data never leaves your device</h2>
+            <p>Every piece of PII detection and masking happens locally — in your browser or desktop app. Ledebe has no server that sees your content.</p>
+            <ul class="trust-list">
+                <li><span>🔒</span><span>Local processing — masking happens on your device, not our servers</span></li>
+                <li><span>🔑</span><span>API keys stored locally only — never uploaded to Ledebe</span></li>
+                <li><span>📋</span><span>Chat history saved in your browser's local storage only</span></li>
+                <li><span>🇪🇺</span><span>GDPR compliant — no personal data processed by Ledebe</span></li>
+                <li><span>🔓</span><span>Fully reversible — your original data is never destroyed</span></li>
+            </ul>
+        </div>
+        <div class="trust-cards">
+            <div class="trust-card">
+                <span class="big">0</span>
+                <div class="label">bytes sent to<br>Ledebe servers</div>
+            </div>
+            <div class="trust-card">
+                <span class="big">100%</span>
+                <div class="label">local PII<br>processing</div>
+            </div>
+            <div class="trust-card">
+                <span class="big">3</span>
+                <div class="label">AI providers<br>supported</div>
+            </div>
+            <div class="trust-card">
+                <span class="big">∞</span>
+                <div class="label">custom terms<br>you can add</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── VS Code banner ── -->
+<section class="vscode-section">
+    <div class="vscode-inner">
+        <div class="vscode-text">
+            <h2>🧩 Also available as a VS Code extension</h2>
+            <p>Protect code, configs, and logs right in your editor. Right-click → Protect on any file. Auto-detects PII in .env, .json, and .log files.</p>
+        </div>
+        <a href="https://marketplace.visualstudio.com/items?itemName=ledebe-demo2.ledebe-protector-demo" class="btn-white" target="_blank">Install Extension →</a>
+    </div>
+</section>
+
+<!-- ── CTA ── -->
+<section class="cta-section">
+    <div class="container">
+        <h2>Start protecting your data today</h2>
+        <p>Free to use. No account required. Works on Mac, Windows, Linux, and in your browser.</p>
+        <div class="cta-btns">
+            <a href="/downloads.html" class="btn-dark">⬇ Download the App</a>
+            <a href="https://app.ledebe.com" class="btn-border">Try Web App Free →</a>
+        </div>
+    </div>
+</section>
+
+<!-- ── Footer ── -->
+<footer class="footer">
+    <div class="container">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>Ledebe</h4>
+                <p>Secure data protection for everyone</p>
+            </div>
+            <div class="footer-section">
+                <h4>Product</h4>
+                <ul>
+                    <li><a href="/downloads.html">Downloads</a></li>
+                    <li><a href="/docs.html">Documentation</a></li>
+                    <li><a href="https://marketplace.visualstudio.com/items?itemName=ledebe-demo2.ledebe-protector-demo">VS Code Extension</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Legal</h4>
+                <ul>
+                    <li><a href="/privacy.html">Privacy Policy</a></li>
+                    <li><a href="/terms.html">Terms of Service</a></li>
+                    <li><a href="mailto:hello@ledebe.com">Contact</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Ledebe Technologies. All rights reserved.</p>
+        </div>
+    </div>
+</footer>
+
+<script src="i18n.js"></script>
 </body>
 </html>

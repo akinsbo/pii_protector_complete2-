@@ -22,7 +22,7 @@
     "dist:mac-universal": "npm run build && electron-builder --mac universal",
     "dist:win": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false npm run build && electron-builder --win nsis",
     "dist:win-portable": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false npm run build && electron-builder --win portable",
-    "dist:win-msix": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false npm run build && electron-builder --win appx",
+    "dist:win-msix": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false npm run build && electron-builder --win appx --x64",
     "dist:all": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false npm run build && electron-builder --mac --win --linux",
     "dist:mas": "npm run build && electron-builder --mac mas",
     "dist:publish": "npm run build && electron-builder --publish always",
@@ -170,9 +170,9 @@
     "appx": {
       "applicationId": "LedebeProtector",
       "displayName": "Ledebe Protector",
-      "publisherDisplayName": "REPLACE_WITH_PARTNER_CENTER_PUBLISHER_DISPLAY_NAME",
-      "publisher": "CN=REPLACE_WITH_PARTNER_CENTER_PUBLISHER_ID",
-      "identityName": "REPLACE_WITH_PARTNER_CENTER_IDENTITY_NAME",
+      "publisherDisplayName": "LEDEBE",
+      "publisher": "CN=551BABE6-E7A9-4667-AAE2-CA3C196A56E9",
+      "identityName": "LEDEBE.LedebeProtector",
       "backgroundColor": "#1e3a8a",
       "languages": [
         "en-US"

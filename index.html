@@ -5574,7 +5574,7 @@ ${selectionScript}
             if (localStorage.getItem('notifications') === 'false') return;
             if (!('Notification' in window)) return;
             if (Notification.permission === 'granted') {
-                new Notification(title, { body, icon: 'src/assets/icon.png' });
+                new Notification(title, { body, icon: 'assets/ledebe-logo.png' });
             }
         }
 

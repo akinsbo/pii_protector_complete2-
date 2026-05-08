@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact — Ledebe</title>
+    <meta name="description" content="Get in touch with the Ledebe team. We typically respond within 24 hours.">
+    <link rel="canonical" href="https://ledebe.com/contact/">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://ledebe.com/contact/">
+    <meta property="og:title" content="Contact — Ledebe">
+    <meta property="og:description" content="Get in touch with the Ledebe team. We typically respond within 24 hours.">
+    <meta property="og:image" content="https://ledebe.com/og-image.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Contact — Ledebe">
+    <meta name="twitter:description" content="Get in touch with the Ledebe team. We typically respond within 24 hours.">
+    <meta name="twitter:image" content="https://ledebe.com/og-image.png">
+    <link rel="stylesheet" href="../styles.css?v=13">
+    <style>
+        .page-hero {
+            background: var(--bg-light);
+            border-bottom: 1px solid var(--border);
+            padding: 4rem 2rem;
+            text-align: center;
+        }
+        .page-hero .page-hero-label {
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 0.75rem;
+        }
+        .page-hero h1 {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: var(--text-dark);
+            margin-bottom: 0.75rem;
+            letter-spacing: -0.02em;
+        }
+        .page-hero p {
+            color: var(--text-gray);
+            font-size: 1.05rem;
+            max-width: 480px;
+            margin: 0 auto;
+        }
+
+        .contact-body {
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 4rem 2rem 6rem;
+        }
+
+        .contact-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 3.5rem;
+        }
+
+        .contact-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 1.75rem;
+            text-align: center;
+            transition: box-shadow 0.2s, transform 0.2s;
+        }
+        .contact-card:hover {
+            box-shadow: 0 8px 30px rgba(30,58,138,0.1);
+            transform: translateY(-2px);
+        }
+        .contact-card .icon {
+            font-size: 2rem;
+            margin-bottom: 0.75rem;
+            display: block;
+        }
+        .contact-card h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 0.4rem;
+        }
+        .contact-card p {
+            font-size: 0.85rem;
+            color: var(--text-gray);
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+        .contact-card a {
+            display: inline-block;
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: var(--primary-blue);
+            text-decoration: none;
+            border-bottom: 2px solid transparent;
+            transition: border-color 0.2s;
+        }
+        .contact-card a:hover {
+            border-color: var(--primary-blue);
+        }
+
+        .response-notice {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 10px;
+            padding: 1.25rem 1.5rem;
+            font-size: 0.9rem;
+            color: var(--text-dark);
+            line-height: 1.7;
+            margin-bottom: 3rem;
+            text-align: center;
+        }
+
+        .faq-prompt {
+            background: var(--bg-light);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 2rem;
+            text-align: center;
+        }
+        .faq-prompt h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+        }
+        .faq-prompt p {
+            font-size: 0.9rem;
+            color: var(--text-gray);
+            margin-bottom: 1.25rem;
+        }
+        .faq-prompt a {
+            display: inline-block;
+            background: var(--primary-blue);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+        .faq-prompt a:hover { background: #1e40af; }
+
+        @media (max-width: 600px) {
+            .page-hero h1 { font-size: 1.9rem; }
+            .contact-cards { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<header class="header">
+    <nav class="nav">
+        <a href="/" class="logo" style="text-decoration:none;color:white;">
+            <img src="../logo.png" alt="Ledebe" style="height:36px;vertical-align:middle;"> Ledebe
+        </a>
+        <button class="nav-toggle" id="navToggle" aria-label="Menu">☰</button>
+        <div class="nav-menu" id="navMenu">
+            <ul class="nav-links">
+                <li><a href="/">Home</a></li>
+                <li><a href="/pricing/">Pricing</a></li>
+                <li><a href="/docs/">Docs</a></li>
+                <li><a href="/demo/">Book a Demo</a></li>
+            </ul>
+            <div class="language-selector">
+                <button onclick="setLanguage('en')" class="lang-btn" id="lang-en">EN</button>
+                <button onclick="setLanguage('es')" class="lang-btn" id="lang-es">ES</button>
+                <button onclick="setLanguage('fr')" class="lang-btn" id="lang-fr">FR</button>
+                <button onclick="setLanguage('ar')" class="lang-btn" id="lang-ar">AR</button>
+                <button onclick="setLanguage('zh')" class="lang-btn" id="lang-zh">中</button>
+            </div>
+        </div>
+    </nav>
+</header>
+
+<div class="page-hero">
+    <div class="page-hero-label">Get in touch</div>
+    <h1>Contact Us</h1>
+    <p>We're a small team and we read every message. We typically respond within 24 hours.</p>
+</div>
+
+<div class="contact-body">
+
+    <div class="response-notice">
+        Email us at <strong>hello@ledebe.com</strong> — we typically respond within 24 hours on business days.
+    </div>
+
+    <div class="contact-cards">
+        <div class="contact-card">
+            <h3>General Enquiries</h3>
+            <p>Questions about Ledebe, the product, or how it works.</p>
+            <a href="mailto:hello@ledebe.com">hello@ledebe.com</a>
+        </div>
+        <div class="contact-card">
+            <h3>Support</h3>
+            <p>Having trouble with the app or need help with your account.</p>
+            <a href="mailto:hello@ledebe.com?subject=Support%20request">hello@ledebe.com</a>
+        </div>
+        <div class="contact-card">
+            <h3>Enterprise</h3>
+            <p>Interested in Team or Enterprise plans for your organisation.</p>
+            <a href="mailto:hello@ledebe.com?subject=Enterprise%20enquiry">hello@ledebe.com</a>
+        </div>
+        <div class="contact-card">
+            <h3>Privacy</h3>
+            <p>Data privacy requests, GDPR rights, or security concerns.</p>
+            <a href="mailto:hello@ledebe.com?subject=Privacy%20request">hello@ledebe.com</a>
+        </div>
+    </div>
+
+    <div class="faq-prompt">
+        <h3>Looking for quick answers?</h3>
+        <p>Check our documentation — most common questions are answered there.</p>
+        <a href="/docs/">Browse Documentation →</a>
+    </div>
+
+</div>
+
+<footer class="footer">
+    <div class="container">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>Ledebe</h4>
+                <p>Privacy-first protection for anyone using AI. Your data stays on your device, always.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Product</h4>
+                <ul>
+                    <li><a href="/downloads/">Downloads</a></li>
+                    <li><a href="/pricing/">Pricing</a></li>
+                    <li><a href="/docs/">Documentation</a></li>
+                    <li><a href="https://marketplace.visualstudio.com/items?itemName=Ledebe.ledebe-protector" target="_blank" rel="noopener noreferrer">VS Code Extension</a></li>
+                    <li><a href="https://app.ledebe.com" target="_blank" rel="noopener noreferrer">Web App</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Company</h4>
+                <ul>
+                    <li><a href="/about/">About</a></li>
+                    <li><a href="/contact/">Contact</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Legal</h4>
+                <ul>
+                    <li><a href="/privacy/">Privacy Policy</a></li>
+                    <li><a href="/terms/">Terms of Service</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Ledebe Technologies. All rights reserved. Built with privacy in mind.</p>
+        </div>
+    </div>
+</footer>
+
+<script src="../i18n.js?v=4"></script>
+</body>
+</html>

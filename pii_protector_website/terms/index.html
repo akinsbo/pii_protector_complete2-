@@ -4,16 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Terms of Service — Ledebe</title>
-    <link rel="stylesheet" href="styles.css?v=2">
+    <meta name="description" content="Ledebe Terms of Service. Plain-language terms covering your use of the Ledebe app, website, and services.">
+    <link rel="canonical" href="https://ledebe.com/terms/">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://ledebe.com/terms/">
+    <meta property="og:title" content="Terms of Service — Ledebe">
+    <meta property="og:description" content="Plain-language terms covering your use of the Ledebe app, website, and services.">
+    <meta property="og:image" content="https://ledebe.com/og-image.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Terms of Service — Ledebe">
+    <meta name="twitter:description" content="Plain-language terms covering your use of Ledebe.">
+    <meta name="twitter:image" content="https://ledebe.com/og-image.png">
+    <link rel="stylesheet" href="../styles.css?v=13">
     <style>
         .policy-hero {
-            background: var(--primary-blue);
-            color: white;
+            background: var(--bg-light);
+            border-bottom: 1px solid var(--border);
+            color: var(--text-dark);
             padding: 4rem 2rem;
             text-align: center;
         }
         .policy-hero h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
-        .policy-hero p { opacity: 0.85; font-size: 1rem; }
+        .policy-hero .policy-hero-label { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 0.75rem; }
+        .policy-hero p { color: var(--text-gray); font-size: 1rem; }
         .policy-body {
             max-width: 820px;
             margin: 0 auto;
@@ -56,13 +69,15 @@
 <header class="header">
     <nav class="nav">
         <a href="/" class="logo" style="text-decoration:none;color:white;">
-            <img src="logo.png" alt="Ledebe" style="height:36px;vertical-align:middle;"> Ledebe
+            <img src="../logo.png" alt="Ledebe" style="height:36px;vertical-align:middle;"> Ledebe
         </a>
+        <button class="nav-toggle" id="navToggle" aria-label="Menu">☰</button>
+        <div class="nav-menu" id="navMenu">
         <ul class="nav-links">
             <li><a href="/">Home</a></li>
-            <li><a href="/downloads.html">Downloads</a></li>
-            <li><a href="/docs.html">Docs</a></li>
-            <li><a href="mailto:hello@ledebe.com">Contact</a></li>
+            <li><a href="/pricing/">Pricing</a></li>
+            <li><a href="/docs/">Docs</a></li>
+            <li><a href="/demo/">Book a Demo</a></li>
         </ul>
         <div class="language-selector">
             <button onclick="setLanguage('en')" class="lang-btn" id="lang-en">EN</button>
@@ -71,10 +86,13 @@
             <button onclick="setLanguage('ar')" class="lang-btn" id="lang-ar">AR</button>
             <button onclick="setLanguage('zh')" class="lang-btn" id="lang-zh">中</button>
         </div>
+        </div>
+
     </nav>
 </header>
 
 <div class="policy-hero">
+    <div class="policy-hero-label">Legal</div>
     <h1>Terms of Service</h1>
     <p>The rules and guidelines for using Ledebe.</p>
 </div>
@@ -117,7 +135,7 @@
     <ul>
         <li>Free tier features may change over time with reasonable notice.</li>
         <li>Paid subscriptions are billed in advance on a monthly or annual basis.</li>
-        <li>Refunds are handled on a case-by-case basis — contact support@ledebe.com within 14 days of a charge if you believe an error has occurred.</li>
+        <li>We offer a 14-day money-back guarantee on all paid plans. Contact hello@ledebe.com within 14 days of payment and we will issue a full refund, no questions asked.</li>
         <li>We reserve the right to change pricing with 30 days notice to existing subscribers.</li>
     </ul>
 
@@ -154,7 +172,7 @@
     <h2>13. Contact</h2>
     <p>For questions about these terms:</p>
     <ul>
-        <li>Email: <strong>legal@ledebe.com</strong></li>
+        <li>Email: <strong>hello@ledebe.com</strong></li>
         <li>Website: <strong>ledebe.com</strong></li>
     </ul>
 </div>
@@ -169,18 +187,25 @@
             <div class="footer-section">
                 <h4>Product</h4>
                 <ul>
-                    <li><a href="index.html#features">Features</a></li>
-                    <li><a href="index.html#security">Security</a></li>
-                    <li><a href="index.html#download">Download</a></li>
+                    <li><a href="/downloads/">Downloads</a></li>
+                    <li><a href="/pricing/">Pricing</a></li>
+                    <li><a href="/docs/">Documentation</a></li>
+                    <li><a href="https://app.ledebe.com" target="_blank" rel="noopener noreferrer">Web App</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Company</h4>
+                <ul>
+                    <li><a href="/about/">About</a></li>
+                    <li><a href="/contact/">Contact</a></li>
+                    <li><a href="/demo/">Book a Demo</a></li>
                 </ul>
             </div>
             <div class="footer-section">
                 <h4>Legal</h4>
                 <ul>
-                    <li><a href="privacy.html">Privacy Policy</a></li>
-                    <li><a href="terms.html">Terms of Service</a></li>
-                    <li><a href="docs.html">Documentation</a></li>
-                    <li><a href="mailto:hello@ledebe.com">Contact</a></li>
+                    <li><a href="/privacy/">Privacy Policy</a></li>
+                    <li><a href="/terms/">Terms of Service</a></li>
                 </ul>
             </div>
         </div>
@@ -190,5 +215,6 @@
     </div>
 </footer>
 
+<script src="../i18n.js?v=4"></script>
 </body>
 </html>

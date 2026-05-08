@@ -129,46 +129,55 @@ current slogan= Ledebe Protector - Keep your personal info safe when using AI
 
 
 Ledebe
-14, have a "how to plan".. 
+14✅, have a "how to plan".. 
 15. update documentation on everything ledebe can do
 16- 3 questions popup when it's open to everyone, rate the service, would you recommend . if no, why?
-Redirect clients calling www.ledebe.com to ledebe.com
+✅Redirect clients calling www.ledebe.com to ledebe.com
 Update the custom terms icon on the website from the AI looking robot to something else
 the website has two custom terms and tow reversible protection boxes
 ??? what is the worse case scenerio reasons that customors can lose trust
 ??? what are the loop holes in this app
-17 - pricing page, 
+17✅ - pricing page, 
 18 - how to take payment
-19 - 1 minute business pitch 
+19 - 1 minute business pitch
+20✅. make the header fixed.  
+21- remove the icons across all the website
+22- customers should say how they want to customize their term e.g instead of ldb email, they want faith swapped to ayo
+23- remove ledebe protector demo on vscode extension and name it propertly. 
+24- improve the admin dashboard to know all our expenses. know how many people went to the page, click on download, finished succesffully
+25- ❓❓❓Encrypt/obfuscate DMG and Exe files with very strong keys/password so they cannot be stolen
+26- Update languages and menu images - Also on the tool itself  
+27 - Website - book a demo and give them form to fill - as oppposed to download
+28 - 
+
+
+Now — License Key Flow
+User visits ledebe.com/pricing/
+Clicks "Start Pro →"
+Goes to Paddle checkout — enters email + card
+Paddle charges them and automatically emails a license key (e.g. LDB-XXXX-XXXX-XXXX)
+User opens the Ledebe desktop app
+Clicks "Enter License Key" in settings
+App validates the key → Pro features unlock
+Done — no account, no password, nothing else
+If they lose the key — they email hello@ledebe.com, you look it up in Paddle dashboard and resend it.
+
+6-12 Months Later — Optional Sync
+User opens the app on a second device
+Sees a banner: "Want to sync your custom terms across devices? Enter your email →"
+They enter their email
+App sends a magic link (no password)
+They click the link — devices are now synced
+License key still works as before — sync is just an optional extra
+They're not creating an "account" in the traditional sense — just linking their email to their existing license.
+
+Team Tier (whenever ready)
+Company admin buys Team plan on Paddle
+Gets an admin login (this is where full accounts begin)
+Invites team members by email
+Each member gets access — no license keys needed at this level
 
 
 
-
-==High Priority (Broken/Missing)
-Help button does nothing useful — clicking ❓ Help just shows keyboard shortcuts. Should open actual help content or the docs page.
-AI provider checkboxes (ChatGPT/Claude/Gemini) in sidebar — the checkboxes exist visually but only one provider can actually be active. Selecting one doesn't properly switch and disable others in real-time.
-Notifications setting does nothing — the "Enable notifications" checkbox in Settings is saved but never actually triggers any OS notifications.
-No loading indicator when AI is thinking — user gets no visual feedback while waiting for an AI response. The send button just says "Sending..." but there's no spinner or progress state.
-PII data logged to browser console — placeholderMap (with real names/emails) is logged to the console on restore. A user could accidentally expose their data if they share a screenshot with DevTools open.
-
-🟡 Medium Priority (UX & Polish)
-No timestamps on chat messages — you can't tell when a message was sent. History items show dates but individual chat bubbles don't.
-No file size warning on upload — uploading a very large PDF or image gives no warning; OCR can hang silently for 30+ seconds.
-Empty history sidebar is too plain — just says "No history yet". Could guide a new user on what to do.
-No confirmation before clearing custom terms — if a "clear all" action ever fires, all terms vanish with no warning.
-Dark mode contrast — a few elements (some form inputs and modal borders) don't have enough contrast in dark mode.
-Max 20 history items — hardcoded limit with no way for the user to increase it or export older items.
-No search/filter for history — as history grows, there's no way to find a past entry without scrolling.
-Language translation only covers some UI strings — header, sidebar, and settings are translated, but AI response labels, toast messages, and error text are still English-only.
-
-🟢 Nice to Have (Future Features)
-Clipboard auto-protect — automatically detect and mask PII when the user pastes from clipboard, without having to click Send first.
-Custom regex PII patterns — let power users define patterns like INV-\d{5} or EMP-\w+ beyond just word-based custom terms.
-Export/import history — download history as JSON or CSV, and re-import it on another device.
-Message timestamps visible in chat — small grey timestamp under each bubble.
-Batch file upload — process multiple files at once instead of one at a time.
-Undo for message edits — once you save an edited message, the original is gone.
-Analytics summary — a small "this month you protected 47 emails, 12 phone numbers" stat somewhere in the sidebar.
-
-
-
+VERSION 2.0
+- review code real time and protect sensitive informations

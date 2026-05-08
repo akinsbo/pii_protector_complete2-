@@ -1,342 +1,406 @@
 const translations = {
   en: {
-    nav: {
-      home: "Home",
-      features: "Features", 
-      security: "Security",
-      download: "Download",
-      contact: "Contact"
-    },
+    nav: { home: "Home", pricing: "Pricing", docs: "Docs", bookDemo: "Book a Demo" },
     hero: {
-      title: "Secure Your Data with Advanced PII Protection",
-      subtitle: "Protect sensitive information in your documents and communications with our intelligent anonymization technology. Keep emails, phone numbers, and personal data safe.",
-      downloadMac: "Download for Mac",
-      downloadWindows: "Download for Windows",
-      dataProtected: "Your data is protected"
+      badge: "Privacy-first AI protection",
+      title: 'Stop Your Sensitive Data <span>Reaching AI</span>',
+      subtitle: "Ledebe masks emails, phone numbers, API keys, and personal data before it ever leaves your device — so you can use ChatGPT, Claude, and Copilot safely.",
+      bookDemoBtn: "Book a Free Demo →",
+      webAppBtn: "Try Web App →"
     },
-    features: {
-      title: "Powerful Protection Features",
-      autoDetection: {
-        title: "Automatic Detection",
-        desc: "Automatically identifies and protects emails, phone numbers, SSNs, and other sensitive data"
-      },
-      customTerms: {
-        title: "Custom Terms", 
-        desc: "Add your own custom terms and patterns to protect organization-specific information"
-      },
-      reversible: {
-        title: "Reversible Protection",
-        desc: "Safely mask data for sharing, then restore original content when needed"
-      },
-      crossPlatform: {
-        title: "Cross-Platform",
-        desc: "Available for macOS and Windows with native performance and security"
-      }
+    mockup: { yourInput: "Your input", protectedOutput: "Protected output", badge: "🛡️ 3 items protected" },
+    proof: {
+      works: "Works with ChatGPT, Claude & Gemini",
+      local: "100% local — no data sent to servers",
+      instant: "Instant masking, fully reversible",
+      vscode: "VS Code extension available"
     },
-    security: {
-      title: "Enterprise-Grade Security",
-      subtitle: "Built with privacy and security at its core. Your data never leaves your device, ensuring complete confidentiality and compliance with data protection regulations.",
-      features: [
-        "Local processing - no cloud uploads",
-        "End-to-end encryption", 
-        "GDPR & CCPA compliant",
-        "Zero data retention"
-      ]
+    hiw: {
+      label: "How it works", title: "Three steps to safe AI use",
+      sub: "No setup, no configuration. Paste, protect, and share — in seconds.",
+      step1: { title: "Paste your text", desc: "Paste any text, document, or code that contains sensitive information into Ledebe." },
+      step2: { title: "Ledebe masks it", desc: "All PII is replaced with placeholders like [LDB_EMAIL1] locally on your device — nothing leaves." },
+      step3: { title: "Share safely", desc: "Copy the protected text into any AI tool. Restore the original anytime with one click." }
     },
-    download: {
-      title: "Download Ledebe",
-      subtitle: "Choose your platform and start protecting your data today",
-      macOSSilicon: "macOS (Apple Silicon)",
-      macSiliconCompat: "For M1, M2, M3 Macs (macOS 11+)",
-      macOSIntel: "macOS (Intel)",
-      macIntelCompat: "For Intel-based Macs (macOS 10.15+)",
-      windows: "Windows",
-      winCompat: "Compatible with Windows 10+",
-      linux: "Linux",
-      linuxCompat: "Universal AppImage (Ubuntu 18.04+)",
-      downloadDmg: "Download .dmg",
-      downloadExe: "Download .exe",
-      downloadAppImage: "Download .AppImage"
+    feat: {
+      label: "Features", title: "Everything you need to use AI safely",
+      sub: "Built for individuals, developers, and teams.",
+      auto:       { title: "Automatic PII Detection",   desc: "Instantly detects and masks emails, phone numbers, NI numbers, credit cards, API keys, and more — no manual selection needed." },
+      custom:     { title: "Custom Terms",              desc: "Add your own sensitive words — company names, project codes, client names — and they're masked automatically every time." },
+      reversible: { title: "Fully Reversible",          desc: "Placeholders map back to your original data. Restore the full text anytime — nothing is ever lost." },
+      doc:        { title: "Document Upload",           desc: "Upload PDFs, Word docs, images, and CSV files. PII is masked across the full document with a side-by-side preview." },
+      ai:         { title: "Ask AI Mode",               desc: "Send your masked text directly to ChatGPT, Claude, or Gemini using your own API key — your real data never reaches the AI." },
+      highlight:  { title: "Highlight to Protect",      desc: "Highlight any word in a sent message to instantly protect or unprotect it. Changes apply immediately — no re-sending needed." },
+      sync:       { title: "Company Sync",              desc: "Share a protected terms list across your whole team. One admin update protects everyone instantly." },
+      ocr:        { title: "Image OCR",                 desc: "Extract and protect text from images automatically. Perfect for scanned documents, screenshots, and photos." },
+      keyboard:   { title: "Keyboard First",            desc: "Full keyboard navigation with ⌘K search, ⌘⇧N new chat, and ⌘↵ to send. Built for speed." }
+    },
+    trust: {
+      title: "Your data never leaves your device",
+      desc: "Every piece of PII detection and masking happens locally — in your browser or desktop app. Ledebe has no server that sees your content.",
+      li1: "Local processing — masking happens on your device, not our servers",
+      li2: "API keys stored locally only — never uploaded to Ledebe",
+      li3: "Chat history saved in your browser's local storage only",
+      li4: "GDPR compliant — no personal data processed by Ledebe",
+      li5: "Fully reversible — your original data is never destroyed",
+      card1: "No server-side processing",
+      card2: "Local AI detection on your device",
+      card3: "Fully reversible masking",
+      card4: "GDPR ready by design"
+    },
+    vscode: {
+      title: "Also available as a VS Code extension",
+      desc: "Protect code, configs, and logs right in your editor. Right-click → Protect on any file. Auto-detects PII in .env, .json, and .log files.",
+      btn: "Install Extension →"
+    },
+    pp: {
+      label: "Pricing", title: "Start free, scale when ready",
+      sub: "No hidden fees. Cancel any time. Core PII protection is always free.",
+      popular: "Most popular",
+      personal: { name: "Personal", price: "Free", per: "forever", f1: "Unlimited text protection", f2: "Up to 20 custom terms", f3: "3 file uploads/day", f4: "VS Code extension", btn: "Get started →" },
+      pro:      { name: "Professional", per: "per month", f1: "Unlimited custom terms", f2: "Unlimited file uploads", f3: "AI chat (own API key)", f4: "Priority support", btn: "Get Pro →" },
+      team:     { name: "Business", per: "per user / month", f1: "Company-wide term sync", f2: "Admin dashboard", f3: "Audit log", f4: "Invoice billing", btn: "Get Team →" },
+      ent:      { name: "Enterprise", price: "Custom", per: "annual contract", f1: "On-premise deployment", f2: "GDPR / HIPAA reports", f3: "99.9% uptime SLA", f4: "Dedicated onboarding", btn: "Talk to us →" },
+      seeAll: "See full pricing & feature comparison →"
+    },
+    cta: {
+      title: "Start protecting your data today",
+      sub: "Free to use. No account required. Works on Mac, Windows, Linux, and in your browser.",
+      bookDemoBtn: "Book a Free Demo →",
+      webAppBtn: "Try Web App Free →"
     },
     footer: {
-      tagline: "Secure data protection for everyone",
-      product: "Product",
-      support: "Support",
-      documentation: "Documentation",
-      privacy: "Privacy Policy",
-      copyright: "© 2024 Ledebe. All rights reserved."
+      tagline: "Privacy-first protection for anyone using AI. Your data stays on your device, always.",
+      product: "Product", company: "Company", legal: "Legal",
+      downloads: "Downloads", pricing: "Pricing", documentation: "Documentation",
+      vscodeExt: "VS Code Extension", webApp: "Web App",
+      about: "About", contact: "Contact", bookDemo: "Book a Demo",
+      privacy: "Privacy Policy", terms: "Terms of Service",
+      copyright: "© 2026 Ledebe Technologies. All rights reserved. Built with privacy in mind."
     }
   },
+
   es: {
-    nav: {
-      home: "Inicio",
-      features: "Características",
-      security: "Seguridad", 
-      download: "Descargar",
-      contact: "Contacto"
-    },
+    nav: { home: "Inicio", pricing: "Precios", docs: "Docs", bookDemo: "Reservar Demo" },
     hero: {
-      title: "Protege Tus Datos con Protección Avanzada de PII",
-      subtitle: "Protege información sensible en tus documentos y comunicaciones con nuestra tecnología de anonimización inteligente. Mantén seguros correos, números de teléfono y datos personales.",
-      downloadMac: "Descargar para Mac",
-      downloadWindows: "Descargar para Windows",
-      dataProtected: "Tus datos están protegidos"
+      badge: "Protección de IA con privacidad primero",
+      title: 'Protege Tus Datos <span>Antes de la IA</span>',
+      subtitle: "Ledebe enmascara correos, teléfonos, claves API y datos personales antes de que salgan de tu dispositivo — para usar ChatGPT, Claude y Copilot con seguridad.",
+      bookDemoBtn: "Reservar Demo Gratis →",
+      webAppBtn: "Probar Web App →"
     },
-    features: {
-      title: "Características de Protección Potentes",
-      autoDetection: {
-        title: "Detección Automática",
-        desc: "Identifica y protege automáticamente correos, números de teléfono, SSN y otros datos sensibles"
-      },
-      customTerms: {
-        title: "Términos Personalizados",
-        desc: "Agrega tus propios términos y patrones personalizados para proteger información específica de la organización"
-      },
-      reversible: {
-        title: "Protección Reversible", 
-        desc: "Enmascara datos de forma segura para compartir, luego restaura el contenido original cuando sea necesario"
-      },
-      crossPlatform: {
-        title: "Multiplataforma",
-        desc: "Disponible para macOS y Windows con rendimiento y seguridad nativos"
-      }
+    mockup: { yourInput: "Tu entrada", protectedOutput: "Salida protegida", badge: "🛡️ 3 elementos protegidos" },
+    proof: {
+      works: "Compatible con ChatGPT, Claude y Gemini",
+      local: "100% local — sin envío de datos a servidores",
+      instant: "Enmascaramiento instantáneo, completamente reversible",
+      vscode: "Extensión para VS Code disponible"
     },
-    security: {
-      title: "Seguridad de Nivel Empresarial",
-      subtitle: "Construido con privacidad y seguridad en su núcleo. Tus datos nunca salen de tu dispositivo, asegurando completa confidencialidad y cumplimiento con regulaciones de protección de datos.",
-      features: [
-        "Procesamiento local - sin subidas a la nube",
-        "Cifrado de extremo a extremo",
-        "Cumple con GDPR y CCPA", 
-        "Cero retención de datos"
-      ]
+    hiw: {
+      label: "Cómo funciona", title: "Tres pasos para usar la IA de forma segura",
+      sub: "Sin configuración previa. Pega, protege y comparte — en segundos.",
+      step1: { title: "Pega tu texto", desc: "Pega cualquier texto, documento o código con información sensible en Ledebe." },
+      step2: { title: "Ledebe lo enmascara", desc: "Todo el PII es reemplazado con marcadores como [LDB_EMAIL1] localmente — nada sale de tu dispositivo." },
+      step3: { title: "Comparte con seguridad", desc: "Copia el texto protegido a cualquier herramienta de IA. Restaura el original en cualquier momento con un clic." }
     },
-    download: {
-      title: "Descargar Ledebe",
-      subtitle: "Elige tu plataforma y comienza a proteger tus datos hoy",
-      macOSSilicon: "macOS (Apple Silicon)",
-      macSiliconCompat: "Para Macs M1, M2, M3 (macOS 11+)",
-      macOSIntel: "macOS (Intel)",
-      macIntelCompat: "Para Macs con Intel (macOS 10.15+)",
-      windows: "Windows",
-      winCompat: "Compatible con Windows 10+",
-      linux: "Linux",
-      linuxCompat: "AppImage universal (Ubuntu 18.04+)",
-      downloadDmg: "Descargar .dmg",
-      downloadExe: "Descargar .exe",
-      downloadAppImage: "Descargar .AppImage"
+    feat: {
+      label: "Funciones", title: "Todo lo que necesitas para usar la IA con seguridad",
+      sub: "Para individuos, desarrolladores y equipos.",
+      auto:       { title: "Detección Automática de PII",  desc: "Detecta y enmascara al instante correos, teléfonos, números NI, tarjetas de crédito, claves API y más." },
+      custom:     { title: "Términos Personalizados",       desc: "Agrega tus propias palabras sensibles — nombres de empresas, códigos de proyecto, nombres de clientes." },
+      reversible: { title: "Totalmente Reversible",         desc: "Los marcadores apuntan de vuelta a tus datos originales. Restaura el texto completo cuando quieras." },
+      doc:        { title: "Carga de Documentos",           desc: "Sube PDFs, documentos Word, imágenes y archivos CSV. El PII se enmascara con vista previa lado a lado." },
+      ai:         { title: "Modo Preguntar a la IA",        desc: "Envía tu texto enmascarado directamente a ChatGPT, Claude o Gemini con tu propia clave API." },
+      highlight:  { title: "Seleccionar para Proteger",     desc: "Selecciona cualquier palabra en un mensaje para protegerla o desprotegerla instantáneamente." },
+      sync:       { title: "Sincronización de Empresa",     desc: "Comparte una lista de términos protegidos en todo tu equipo. Una actualización del admin protege a todos." },
+      ocr:        { title: "OCR de Imágenes",               desc: "Extrae y protege texto de imágenes automáticamente. Ideal para documentos escaneados y capturas." },
+      keyboard:   { title: "Primero el Teclado",            desc: "Navegación completa por teclado con búsqueda ⌘K, nuevo chat ⌘⇧N y enviar ⌘↵." }
+    },
+    trust: {
+      title: "Tus datos nunca salen de tu dispositivo",
+      desc: "Toda la detección y enmascaramiento de PII ocurre localmente — en tu navegador o app de escritorio. Ledebe no tiene ningún servidor que vea tu contenido.",
+      li1: "Procesamiento local — el enmascaramiento ocurre en tu dispositivo, no en nuestros servidores",
+      li2: "Claves API almacenadas solo localmente — nunca subidas a Ledebe",
+      li3: "Historial de chats guardado solo en el almacenamiento local de tu navegador",
+      li4: "Compatible con GDPR — Ledebe no procesa datos personales",
+      li5: "Totalmente reversible — tus datos originales nunca se destruyen",
+      card1: "Sin procesamiento en servidor",
+      card2: "Detección de IA local en tu dispositivo",
+      card3: "Enmascaramiento totalmente reversible",
+      card4: "Diseñado para cumplir con GDPR"
+    },
+    vscode: {
+      title: "🧩 También disponible como extensión de VS Code",
+      desc: "Protege código, configs y logs directamente en tu editor. Clic derecho → Proteger en cualquier archivo.",
+      btn: "Instalar Extensión →"
+    },
+    pp: {
+      label: "Precios", title: "Empieza gratis, escala cuando estés listo",
+      sub: "Sin tarifas ocultas. Cancela en cualquier momento. La protección PII principal es siempre gratuita.",
+      popular: "Más popular",
+      personal: { name: "Personal", price: "Gratis", per: "siempre", f1: "Protección de texto ilimitada", f2: "Hasta 20 términos personalizados", f3: "3 cargas de archivos/día", f4: "Extensión VS Code", btn: "Comenzar →" },
+      pro:      { name: "Profesional", per: "por mes", f1: "Términos personalizados ilimitados", f2: "Cargas de archivos ilimitadas", f3: "Chat IA (tu propia clave API)", f4: "Soporte prioritario", btn: "Obtener Pro →" },
+      team:     { name: "Empresarial", per: "por usuario / mes", f1: "Sincronización de términos corporativos", f2: "Panel de administración", f3: "Registro de auditoría", f4: "Facturación por invoice", btn: "Obtener Equipo →" },
+      ent:      { name: "Empresa", price: "Personalizado", per: "contrato anual", f1: "Despliegue en local", f2: "Informes GDPR / HIPAA", f3: "SLA de 99.9% de disponibilidad", f4: "Incorporación dedicada", btn: "Contáctanos →" },
+      seeAll: "Ver comparación completa de precios y funciones →"
+    },
+    cta: {
+      title: "Empieza a proteger tus datos hoy",
+      sub: "Gratis. Sin cuenta requerida. Funciona en Mac, Windows, Linux y en tu navegador.",
+      bookDemoBtn: "Reservar Demo Gratis →",
+      webAppBtn: "Probar Web App Gratis →"
     },
     footer: {
-      tagline: "Protección segura de datos para todos",
-      product: "Producto",
-      support: "Soporte",
-      documentation: "Documentación",
-      privacy: "Política de Privacidad",
-      copyright: "© 2024 Ledebe. Todos los derechos reservados."
+      tagline: "Protección de privacidad para todos los que usan IA. Tus datos se quedan en tu dispositivo, siempre.",
+      product: "Producto", company: "Empresa", legal: "Legal",
+      downloads: "Descargas", pricing: "Precios", documentation: "Documentación",
+      vscodeExt: "Extensión VS Code", webApp: "App Web",
+      about: "Acerca de", contact: "Contacto", bookDemo: "Reservar Demo",
+      privacy: "Política de Privacidad", terms: "Términos de Servicio",
+      copyright: "© 2026 Ledebe Technologies. Todos los derechos reservados."
     }
   },
+
   fr: {
-    nav: {
-      home: "Accueil",
-      features: "Fonctionnalités",
-      security: "Sécurité",
-      download: "Télécharger",
-      contact: "Contact"
-    },
+    nav: { home: "Accueil", pricing: "Tarifs", docs: "Docs", bookDemo: "Réserver une Démo" },
     hero: {
-      title: "Sécurisez Vos Données avec une Protection PII Avancée",
-      subtitle: "Protégez les informations sensibles dans vos documents et communications avec notre technologie d'anonymisation intelligente. Gardez les emails, numéros de téléphone et données personnelles en sécurité.",
-      downloadMac: "Télécharger pour Mac",
-      downloadWindows: "Télécharger pour Windows",
-      dataProtected: "Vos données sont protégées"
+      badge: "Protection IA axée sur la vie privée",
+      title: 'Protégez Vos Données <span>Avant l\'IA</span>',
+      subtitle: "Ledebe masque les emails, numéros de téléphone, clés API et données personnelles avant qu'ils quittent votre appareil — pour utiliser ChatGPT, Claude et Copilot en toute sécurité.",
+      bookDemoBtn: "Réserver une Démo Gratuite →",
+      webAppBtn: "Essayer l'App Web →"
     },
-    features: {
-      title: "Fonctionnalités de Protection Puissantes",
-      autoDetection: {
-        title: "Détection Automatique",
-        desc: "Identifie et protège automatiquement les emails, numéros de téléphone, SSN et autres données sensibles"
-      },
-      customTerms: {
-        title: "Termes Personnalisés",
-        desc: "Ajoutez vos propres termes et modèles personnalisés pour protéger les informations spécifiques à l'organisation"
-      },
-      reversible: {
-        title: "Protection Réversible",
-        desc: "Masquez les données en toute sécurité pour le partage, puis restaurez le contenu original si nécessaire"
-      },
-      crossPlatform: {
-        title: "Multi-plateforme",
-        desc: "Disponible pour macOS et Windows avec des performances et une sécurité natives"
-      }
+    mockup: { yourInput: "Votre saisie", protectedOutput: "Sortie protégée", badge: "🛡️ 3 éléments protégés" },
+    proof: {
+      works: "Compatible avec ChatGPT, Claude et Gemini",
+      local: "100% local — aucune donnée envoyée aux serveurs",
+      instant: "Masquage instantané, entièrement réversible",
+      vscode: "Extension VS Code disponible"
     },
-    security: {
-      title: "Sécurité de Niveau Entreprise",
-      subtitle: "Conçu avec la confidentialité et la sécurité au cœur. Vos données ne quittent jamais votre appareil, garantissant une confidentialité complète et la conformité aux réglementations de protection des données.",
-      features: [
-        "Traitement local - aucun téléchargement cloud",
-        "Chiffrement de bout en bout",
-        "Conforme RGPD et CCPA",
-        "Zéro rétention de données"
-      ]
+    hiw: {
+      label: "Comment ça marche", title: "Trois étapes pour utiliser l'IA en sécurité",
+      sub: "Sans configuration. Collez, protégez et partagez — en quelques secondes.",
+      step1: { title: "Collez votre texte", desc: "Collez n'importe quel texte, document ou code contenant des informations sensibles dans Ledebe." },
+      step2: { title: "Ledebe le masque", desc: "Toutes les données PII sont remplacées par des marqueurs comme [LDB_EMAIL1] localement — rien ne quitte l'appareil." },
+      step3: { title: "Partagez en sécurité", desc: "Copiez le texte protégé dans n'importe quel outil IA. Restaurez l'original à tout moment en un clic." }
     },
-    download: {
-      title: "Télécharger Ledebe",
-      subtitle: "Choisissez votre plateforme et commencez à protéger vos données aujourd'hui",
-      macOSSilicon: "macOS (Apple Silicon)",
-      macSiliconCompat: "Pour Macs M1, M2, M3 (macOS 11+)",
-      macOSIntel: "macOS (Intel)",
-      macIntelCompat: "Pour Macs Intel (macOS 10.15+)",
-      windows: "Windows",
-      winCompat: "Compatible avec Windows 10+",
-      linux: "Linux",
-      linuxCompat: "AppImage universel (Ubuntu 18.04+)",
-      downloadDmg: "Télécharger .dmg",
-      downloadExe: "Télécharger .exe",
-      downloadAppImage: "Télécharger .AppImage"
+    feat: {
+      label: "Fonctionnalités", title: "Tout ce qu'il faut pour utiliser l'IA en toute sécurité",
+      sub: "Pour les particuliers, les développeurs et les équipes.",
+      auto:       { title: "Détection Automatique des PII",  desc: "Détecte et masque instantanément les emails, numéros de téléphone, numéros NI, cartes de crédit, clés API et plus." },
+      custom:     { title: "Termes Personnalisés",            desc: "Ajoutez vos propres mots sensibles — noms d'entreprises, codes de projet, noms de clients." },
+      reversible: { title: "Entièrement Réversible",          desc: "Les marqueurs pointent vers vos données d'origine. Restaurez le texte complet à tout moment." },
+      doc:        { title: "Téléchargement de Documents",     desc: "Téléchargez des PDFs, docs Word, images et fichiers CSV. Les PII sont masquées avec un aperçu côte à côte." },
+      ai:         { title: "Mode Interroger l'IA",            desc: "Envoyez votre texte masqué directement à ChatGPT, Claude ou Gemini avec votre propre clé API." },
+      highlight:  { title: "Surligner pour Protéger",         desc: "Surlignez n'importe quel mot dans un message pour le protéger ou le déprotéger instantanément." },
+      sync:       { title: "Synchronisation d'Entreprise",    desc: "Partagez une liste de termes protégés dans toute votre équipe. Une mise à jour admin protège tout le monde." },
+      ocr:        { title: "OCR d'Images",                    desc: "Extrayez et protégez automatiquement le texte des images. Idéal pour les documents scannés et captures d'écran." },
+      keyboard:   { title: "Navigation au Clavier",           desc: "Navigation complète au clavier avec recherche ⌘K, nouveau chat ⌘⇧N et envoyer ⌘↵." }
+    },
+    trust: {
+      title: "Vos données ne quittent jamais votre appareil",
+      desc: "Toute la détection et le masquage des PII s'effectuent localement — dans votre navigateur ou application de bureau. Ledebe n'a aucun serveur qui voit votre contenu.",
+      li1: "Traitement local — le masquage se fait sur votre appareil, pas sur nos serveurs",
+      li2: "Clés API stockées localement uniquement — jamais téléchargées vers Ledebe",
+      li3: "Historique des chats enregistré uniquement dans le stockage local de votre navigateur",
+      li4: "Conforme RGPD — aucune donnée personnelle traitée par Ledebe",
+      li5: "Entièrement réversible — vos données originales ne sont jamais détruites",
+      card1: "Aucun traitement côté serveur",
+      card2: "Détection IA locale sur votre appareil",
+      card3: "Masquage entièrement réversible",
+      card4: "Conçu pour le RGPD"
+    },
+    vscode: {
+      title: "🧩 Aussi disponible comme extension VS Code",
+      desc: "Protégez le code, les configs et les logs directement dans votre éditeur. Clic droit → Protéger sur n'importe quel fichier.",
+      btn: "Installer l'Extension →"
+    },
+    pp: {
+      label: "Tarifs", title: "Commencez gratuitement, évoluez à votre rythme",
+      sub: "Pas de frais cachés. Annulez à tout moment. La protection PII de base est toujours gratuite.",
+      popular: "Le plus populaire",
+      personal: { name: "Personnel", price: "Gratuit", per: "pour toujours", f1: "Protection de texte illimitée", f2: "Jusqu'à 20 termes personnalisés", f3: "3 téléchargements de fichiers/jour", f4: "Extension VS Code", btn: "Commencer →" },
+      pro:      { name: "Professionnel", per: "par mois", f1: "Termes personnalisés illimités", f2: "Téléchargements illimités", f3: "Chat IA (votre propre clé API)", f4: "Support prioritaire", btn: "Obtenir Pro →" },
+      team:     { name: "Business", per: "par utilisateur / mois", f1: "Synchronisation des termes d'entreprise", f2: "Tableau de bord admin", f3: "Journal d'audit", f4: "Facturation sur facture", btn: "Obtenir l'Équipe →" },
+      ent:      { name: "Entreprise", price: "Sur mesure", per: "contrat annuel", f1: "Déploiement sur site", f2: "Rapports RGPD / HIPAA", f3: "SLA de disponibilité 99,9%", f4: "Onboarding dédié", btn: "Nous contacter →" },
+      seeAll: "Voir la comparaison complète des tarifs et fonctionnalités →"
+    },
+    cta: {
+      title: "Commencez à protéger vos données aujourd'hui",
+      sub: "Gratuit. Aucun compte requis. Fonctionne sur Mac, Windows, Linux et dans votre navigateur.",
+      bookDemoBtn: "Réserver une Démo Gratuite →",
+      webAppBtn: "Essayer l'App Web Gratuitement →"
     },
     footer: {
-      tagline: "Protection sécurisée des données pour tous",
-      product: "Produit",
-      support: "Support",
-      documentation: "Documentation",
-      privacy: "Politique de Confidentialité",
-      copyright: "© 2024 Ledebe. Tous droits réservés."
+      tagline: "Protection axée sur la vie privée pour tous ceux qui utilisent l'IA. Vos données restent sur votre appareil, toujours.",
+      product: "Produit", company: "Entreprise", legal: "Légal",
+      downloads: "Téléchargements", pricing: "Tarifs", documentation: "Documentation",
+      vscodeExt: "Extension VS Code", webApp: "App Web",
+      about: "À propos", contact: "Contact", bookDemo: "Réserver une Démo",
+      privacy: "Politique de Confidentialité", terms: "Conditions d'Utilisation",
+      copyright: "© 2026 Ledebe Technologies. Tous droits réservés."
     }
   },
+
   ar: {
-    nav: {
-      home: "الرئيسية",
-      features: "المميزات",
-      security: "الأمان",
-      download: "تحميل",
-      contact: "اتصل بنا"
-    },
+    nav: { home: "الرئيسية", pricing: "الأسعار", docs: "المستندات", bookDemo: "احجز عرضاً" },
     hero: {
-      title: "أمّن بياناتك بحماية متقدمة للمعلومات الشخصية",
-      subtitle: "احمِ المعلومات الحساسة في مستنداتك واتصالاتك بتقنية الإخفاء الذكية. حافظ على أمان الإيميلات وأرقام الهواتف والبيانات الشخصية.",
-      downloadMac: "تحميل لنظام Mac",
-      downloadWindows: "تحميل لنظام Windows",
-      dataProtected: "بياناتك محمية"
+      badge: "حماية الذكاء الاصطناعي مع الخصوصية أولاً",
+      title: 'احمِ بياناتك <span>قبل الذكاء الاصطناعي</span>',
+      subtitle: "Ledebe يخفي الإيميلات وأرقام الهواتف ومفاتيح API والبيانات الشخصية قبل مغادرة جهازك — لاستخدام ChatGPT وClaude وCopilot بأمان.",
+      bookDemoBtn: "احجز عرضاً مجانياً ←",
+      webAppBtn: "جرّب تطبيق الويب ←"
     },
-    features: {
-      title: "مميزات حماية قوية",
-      autoDetection: {
-        title: "الكشف التلقائي",
-        desc: "يحدد ويحمي تلقائياً الإيميلات وأرقام الهواتف وأرقام الهوية والبيانات الحساسة الأخرى"
-      },
-      customTerms: {
-        title: "مصطلحات مخصصة",
-        desc: "أضف مصطلحاتك وأنماطك المخصصة لحماية المعلومات الخاصة بمؤسستك"
-      },
-      reversible: {
-        title: "حماية قابلة للعكس",
-        desc: "اخفِ البيانات بأمان للمشاركة، ثم استعد المحتوى الأصلي عند الحاجة"
-      },
-      crossPlatform: {
-        title: "متعدد المنصات",
-        desc: "متوفر لأنظمة macOS و Windows بأداء وأمان أصليين"
-      }
+    mockup: { yourInput: "نصك", protectedOutput: "الناتج المحمي", badge: "🛡️ تمت حماية 3 عناصر" },
+    proof: {
+      works: "يعمل مع ChatGPT وClaude وGemini",
+      local: "100% محلي — لا يُرسل أي بيانات للخوادم",
+      instant: "إخفاء فوري وقابل للعكس تماماً",
+      vscode: "امتداد VS Code متاح"
     },
-    security: {
-      title: "أمان على مستوى المؤسسات",
-      subtitle: "مبني بالخصوصية والأمان في جوهره. بياناتك لا تغادر جهازك أبداً، مما يضمن السرية التامة والامتثال لقوانين حماية البيانات.",
-      features: [
-        "معالجة محلية - لا رفع للسحابة",
-        "تشفير من طرف إلى طرف",
-        "متوافق مع GDPR و CCPA",
-        "عدم الاحتفاظ بالبيانات"
-      ]
+    hiw: {
+      label: "كيف يعمل", title: "ثلاث خطوات لاستخدام الذكاء الاصطناعي بأمان",
+      sub: "بدون إعداد أو تهيئة. الصق، احمِ، وشارك — في ثوانٍ.",
+      step1: { title: "الصق نصك", desc: "الصق أي نص أو مستند أو كود يحتوي على معلومات حساسة في Ledebe." },
+      step2: { title: "Ledebe يخفيه", desc: "يتم استبدال كل بيانات PII بعلامات مثل [LDB_EMAIL1] محلياً على جهازك — لا شيء يغادر." },
+      step3: { title: "شارك بأمان", desc: "انسخ النص المحمي إلى أي أداة ذكاء اصطناعي. استعد الأصل في أي وقت بنقرة واحدة." }
     },
-    download: {
-      title: "تحميل Ledebe",
-      subtitle: "اختر منصتك وابدأ في حماية بياناتك اليوم",
-      macOSSilicon: "macOS (Apple Silicon)",
-      macSiliconCompat: "لأجهزة Mac M1، M2، M3 (macOS 11+)",
-      macOSIntel: "macOS (Intel)",
-      macIntelCompat: "لأجهزة Mac ذات معالج Intel (macOS 10.15+)",
-      windows: "Windows",
-      winCompat: "متوافق مع Windows 10+",
-      linux: "Linux",
-      linuxCompat: "AppImage عالمي (Ubuntu 18.04+)",
-      downloadDmg: "تحميل .dmg",
-      downloadExe: "تحميل .exe",
-      downloadAppImage: "تحميل .AppImage"
+    feat: {
+      label: "المميزات", title: "كل ما تحتاجه لاستخدام الذكاء الاصطناعي بأمان",
+      sub: "مصمم للأفراد والمطورين والفرق.",
+      auto:       { title: "الكشف التلقائي عن PII",    desc: "يكشف ويخفي فوراً الإيميلات وأرقام الهواتف وأرقام الهوية وبطاقات الائتمان ومفاتيح API والمزيد." },
+      custom:     { title: "مصطلحات مخصصة",             desc: "أضف كلماتك الحساسة — أسماء الشركات وأكواد المشاريع وأسماء العملاء — وتُخفى تلقائياً في كل مرة." },
+      reversible: { title: "قابل للعكس تماماً",          desc: "تشير العلامات إلى بياناتك الأصلية. استعد النص الكامل في أي وقت — لا شيء يُفقد أبداً." },
+      doc:        { title: "رفع المستندات",               desc: "ارفع ملفات PDF ومستندات Word والصور وملفات CSV. يُخفى PII عبر المستند كاملاً مع معاينة جانبية." },
+      ai:         { title: "وضع سؤال الذكاء الاصطناعي", desc: "أرسل نصك المخفي مباشرةً إلى ChatGPT أو Claude أو Gemini باستخدام مفتاح API الخاص بك." },
+      highlight:  { title: "تحديد للحماية",               desc: "حدد أي كلمة في رسالة مرسلة لحمايتها أو إلغاء حمايتها فوراً. التغييرات تُطبَّق في الحال." },
+      sync:       { title: "مزامنة الشركة",               desc: "شارك قائمة المصطلحات المحمية مع فريقك بالكامل. تحديث واحد من المسؤول يحمي الجميع فوراً." },
+      ocr:        { title: "التعرف الضوئي على الصور",     desc: "استخرج النص من الصور وامنحه الحماية تلقائياً. مثالي للمستندات الممسوحة ضوئياً والصور." },
+      keyboard:   { title: "التنقل بلوحة المفاتيح",       desc: "تنقل كامل بلوحة المفاتيح مع بحث ⌘K ومحادثة جديدة ⌘⇧N وإرسال ⌘↵." }
+    },
+    trust: {
+      title: "بياناتك لا تغادر جهازك أبداً",
+      desc: "كل عمليات الكشف والإخفاء تحدث محلياً — في متصفحك أو تطبيق سطح المكتب. لا يوجد خادم لـ Ledebe يرى محتواك.",
+      li1: "المعالجة المحلية — يحدث الإخفاء على جهازك وليس على خوادمنا",
+      li2: "مفاتيح API تُخزّن محلياً فقط — لا تُرفع إلى Ledebe أبداً",
+      li3: "سجل المحادثات محفوظ في التخزين المحلي لمتصفحك فقط",
+      li4: "متوافق مع GDPR — لا تعالج Ledebe أي بيانات شخصية",
+      li5: "قابل للعكس تماماً — بياناتك الأصلية لا تُمحى أبداً",
+      card1: "لا معالجة على الخادم",
+      card2: "الكشف الذكي محلياً على جهازك",
+      card3: "إخفاء قابل للعكس تماماً",
+      card4: "مصمم للامتثال لـ GDPR"
+    },
+    vscode: {
+      title: "🧩 متاح أيضاً كامتداد VS Code",
+      desc: "احمِ الكود والإعدادات والسجلات مباشرةً في محررك. انقر بالزر الأيمن ← حماية على أي ملف.",
+      btn: "تثبيت الامتداد ←"
+    },
+    pp: {
+      label: "الأسعار", title: "ابدأ مجاناً، توسّع عند الاستعداد",
+      sub: "بدون رسوم خفية. ألغِ في أي وقت. حماية PII الأساسية مجانية دائماً.",
+      popular: "الأكثر شعبية",
+      personal: { name: "شخصي", price: "مجاناً", per: "للأبد", f1: "حماية نص غير محدودة", f2: "حتى 20 مصطلحاً مخصصاً", f3: "3 رفعات ملفات/يوم", f4: "امتداد VS Code", btn: "ابدأ الآن ←" },
+      pro:      { name: "احترافي", per: "شهرياً", f1: "مصطلحات مخصصة غير محدودة", f2: "رفع ملفات غير محدود", f3: "دردشة ذكاء اصطناعي (مفتاح API الخاص)", f4: "دعم ذو أولوية", btn: "احصل على Pro ←" },
+      team:     { name: "الأعمال", per: "لكل مستخدم / شهرياً", f1: "مزامنة المصطلحات على مستوى الشركة", f2: "لوحة تحكم المسؤول", f3: "سجل التدقيق", f4: "فوترة بالفاتورة", btn: "احصل على الفريق ←" },
+      ent:      { name: "المؤسسات", price: "مخصص", per: "عقد سنوي", f1: "نشر محلي", f2: "تقارير GDPR / HIPAA", f3: "اتفاقية مستوى خدمة 99.9%", f4: "تأهيل مخصص", btn: "تحدث معنا ←" },
+      seeAll: "عرض مقارنة الأسعار والميزات الكاملة ←"
+    },
+    cta: {
+      title: "ابدأ حماية بياناتك اليوم",
+      sub: "مجاناً. لا حساب مطلوب. يعمل على Mac وWindows وLinux وفي متصفحك.",
+      bookDemoBtn: "احجز عرضاً مجانياً ←",
+      webAppBtn: "جرّب تطبيق الويب مجاناً ←"
     },
     footer: {
-      tagline: "حماية آمنة للبيانات للجميع",
-      product: "المنتج",
-      support: "الدعم",
-      documentation: "التوثيق",
-      privacy: "سياسة الخصوصية",
-      copyright: "© 2024 Ledebe. جميع الحقوق محفوظة."
+      tagline: "حماية مع الخصوصية أولاً لكل من يستخدم الذكاء الاصطناعي. بياناتك تبقى على جهازك دائماً.",
+      product: "المنتج", company: "الشركة", legal: "قانوني",
+      downloads: "التنزيلات", pricing: "الأسعار", documentation: "التوثيق",
+      vscodeExt: "امتداد VS Code", webApp: "تطبيق الويب",
+      about: "عن الشركة", contact: "تواصل معنا", bookDemo: "احجز عرضاً",
+      privacy: "سياسة الخصوصية", terms: "شروط الخدمة",
+      copyright: "© 2026 Ledebe Technologies. جميع الحقوق محفوظة."
     }
   },
+
   zh: {
-    nav: {
-      home: "首页",
-      features: "功能",
-      security: "安全",
-      download: "下载",
-      contact: "联系我们"
-    },
+    nav: { home: "首页", pricing: "价格", docs: "文档", bookDemo: "预约演示" },
     hero: {
-      title: "使用先进的个人信息保护技术保护您的数据",
-      subtitle: "使用我们的智能匿名化技术保护您文档和通信中的敏感信息。确保电子邮件、电话号码和个人数据的安全。",
-      downloadMac: "下载 Mac 版",
-      downloadWindows: "下载 Windows 版",
-      dataProtected: "您的数据受到保护"
+      badge: "以隐私为先的AI保护",
+      title: '保护您的数据 <span>远离AI风险</span>',
+      subtitle: "Ledebe 在数据离开您的设备之前屏蔽电子邮件、电话号码、API密钥和个人数据 — 安全使用 ChatGPT、Claude 和 Copilot。",
+      bookDemoBtn: "预约免费演示 →",
+      webAppBtn: "试用网页版 →"
     },
-    features: {
-      title: "强大的保护功能",
-      autoDetection: {
-        title: "自动检测",
-        desc: "自动识别和保护电子邮件、电话号码、社会安全号码和其他敏感数据"
-      },
-      customTerms: {
-        title: "自定义术语",
-        desc: "添加您自己的自定义术语和模式来保护组织特定信息"
-      },
-      reversible: {
-        title: "可逆保护",
-        desc: "安全地掩盖数据以便共享，然后在需要时恢复原始内容"
-      },
-      crossPlatform: {
-        title: "跨平台",
-        desc: "适用于 macOS 和 Windows，具有原生性能和安全性"
-      }
+    mockup: { yourInput: "您的输入", protectedOutput: "受保护的输出", badge: "🛡️ 已保护3个项目" },
+    proof: {
+      works: "支持 ChatGPT、Claude 和 Gemini",
+      local: "100% 本地处理 — 不向服务器发送数据",
+      instant: "即时屏蔽，完全可逆",
+      vscode: "VS Code 扩展可用"
     },
-    security: {
-      title: "企业级安全",
-      subtitle: "以隐私和安全为核心构建。您的数据永远不会离开您的设备，确保完全保密并符合数据保护法规。",
-      features: [
-        "本地处理 - 无云上传",
-        "端到端加密",
-        "符合 GDPR 和 CCPA",
-        "零数据保留"
-      ]
+    hiw: {
+      label: "工作原理", title: "三步实现安全AI使用",
+      sub: "无需配置。粘贴、保护、分享 — 几秒钟完成。",
+      step1: { title: "粘贴您的文本", desc: "将任何包含敏感信息的文本、文档或代码粘贴到 Ledebe 中。" },
+      step2: { title: "Ledebe 进行屏蔽", desc: "所有PII在您的设备上本地替换为 [LDB_EMAIL1] 等占位符 — 什么都不会离开您的设备。" },
+      step3: { title: "安全分享", desc: "将受保护的文本复制到任何AI工具。随时一键恢复原始内容。" }
     },
-    download: {
-      title: "下载 Ledebe",
-      subtitle: "选择您的平台，今天就开始保护您的数据",
-      macOSSilicon: "macOS（Apple Silicon）",
-      macSiliconCompat: "适用于 M1、M2、M3 Mac（macOS 11+）",
-      macOSIntel: "macOS（Intel）",
-      macIntelCompat: "适用于 Intel Mac（macOS 10.15+）",
-      windows: "Windows",
-      winCompat: "兼容 Windows 10+",
-      linux: "Linux",
-      linuxCompat: "通用 AppImage（Ubuntu 18.04+）",
-      downloadDmg: "下载 .dmg",
-      downloadExe: "下载 .exe",
-      downloadAppImage: "下载 .AppImage"
+    feat: {
+      label: "功能", title: "安全使用AI所需的一切",
+      sub: "为个人、开发者和团队打造。",
+      auto:       { title: "自动PII检测",     desc: "即时检测并屏蔽电子邮件、电话号码、身份证号、信用卡、API密钥等 — 无需手动选择。" },
+      custom:     { title: "自定义词语",       desc: "添加您自己的敏感词 — 公司名称、项目代码、客户名称 — 每次自动屏蔽。" },
+      reversible: { title: "完全可逆",         desc: "占位符映射回原始数据。随时恢复完整文本 — 永不丢失。" },
+      doc:        { title: "文档上传",         desc: "上传PDF、Word文档、图片和CSV文件。整个文档的PII均被屏蔽，并提供并排预览。" },
+      ai:         { title: "AI问答模式",       desc: "使用您自己的API密钥直接将屏蔽后的文本发送给ChatGPT、Claude或Gemini。" },
+      highlight:  { title: "高亮保护",         desc: "高亮已发送消息中的任意单词，即时保护或取消保护。更改立即生效。" },
+      sync:       { title: "企业同步",         desc: "在整个团队中共享受保护的词语列表。管理员一次更新，立即保护所有人。" },
+      ocr:        { title: "图片文字识别",     desc: "自动从图片中提取并保护文字。非常适合扫描文档、截图和照片。" },
+      keyboard:   { title: "键盘优先",         desc: "完整键盘导航，⌘K 搜索，⌘⇧N 新建对话，⌘↵ 发送。专为速度设计。" }
+    },
+    trust: {
+      title: "您的数据永远不会离开您的设备",
+      desc: "所有PII检测和屏蔽都在本地进行 — 在您的浏览器或桌面应用中。Ledebe没有任何服务器会看到您的内容。",
+      li1: "本地处理 — 屏蔽在您的设备上进行，不在我们的服务器上",
+      li2: "API密钥仅在本地存储 — 永不上传至Ledebe",
+      li3: "聊天历史仅保存在您浏览器的本地存储中",
+      li4: "符合GDPR — Ledebe不处理任何个人数据",
+      li5: "完全可逆 — 您的原始数据永不被销毁",
+      card1: "无服务器端处理",
+      card2: "设备上的本地AI检测",
+      card3: "完全可逆的屏蔽",
+      card4: "符合GDPR设计"
+    },
+    vscode: {
+      title: "🧩 也可作为 VS Code 扩展使用",
+      desc: "直接在编辑器中保护代码、配置和日志。右键单击 → 对任何文件进行保护。自动检测 .env、.json 和 .log 文件中的PII。",
+      btn: "安装扩展 →"
+    },
+    pp: {
+      label: "价格", title: "免费开始，按需扩展",
+      sub: "无隐藏费用。随时取消。核心PII保护永远免费。",
+      popular: "最受欢迎",
+      personal: { name: "个人版", price: "免费", per: "永久", f1: "无限文本保护", f2: "最多20个自定义词语", f3: "每天3个文件上传", f4: "VS Code 扩展", btn: "立即开始 →" },
+      pro:      { name: "专业版", per: "每月", f1: "无限自定义词语", f2: "无限文件上传", f3: "AI对话（自带API密钥）", f4: "优先支持", btn: "获取专业版 →" },
+      team:     { name: "商业版", per: "每用户/每月", f1: "全公司词语同步", f2: "管理员控制台", f3: "审计日志", f4: "发票计费", btn: "获取团队版 →" },
+      ent:      { name: "企业版", price: "定制", per: "年度合同", f1: "本地部署", f2: "GDPR / HIPAA报告", f3: "99.9%正常运行时间SLA", f4: "专属入职培训", btn: "联系我们 →" },
+      seeAll: "查看完整价格和功能对比 →"
+    },
+    cta: {
+      title: "今天开始保护您的数据",
+      sub: "免费使用。无需账户。支持 Mac、Windows、Linux 及浏览器。",
+      bookDemoBtn: "预约免费演示 →",
+      webAppBtn: "免费试用网页版 →"
     },
     footer: {
-      tagline: "为每个人提供安全的数据保护",
-      product: "产品",
-      support: "支持",
-      documentation: "文档",
-      privacy: "隐私政策",
-      copyright: "© 2024 Ledebe. 保留所有权利。"
+      tagline: "为所有使用AI的人提供以隐私为先的保护。您的数据始终保留在您的设备上。",
+      product: "产品", company: "公司", legal: "法律",
+      downloads: "下载", pricing: "价格", documentation: "文档",
+      vscodeExt: "VS Code 扩展", webApp: "网页应用",
+      about: "关于我们", contact: "联系我们", bookDemo: "预约演示",
+      privacy: "隐私政策", terms: "服务条款",
+      copyright: "© 2026 Ledebe Technologies. 保留所有权利。"
     }
   }
 };
@@ -344,12 +408,8 @@ const translations = {
 function detectUserLanguage() {
   const saved = localStorage.getItem('language');
   if (saved) return saved;
-  
-  const browserLang = navigator.language || navigator.languages?.[0] || 'en';
-  const langCode = browserLang.split('-')[0].toLowerCase();
-  
-  const supportedLangs = ['en', 'es', 'fr', 'ar', 'zh'];
-  return supportedLangs.includes(langCode) ? langCode : 'en';
+  const browserLang = (navigator.language || navigator.languages?.[0] || 'en').split('-')[0].toLowerCase();
+  return ['en', 'es', 'fr', 'ar', 'zh'].includes(browserLang) ? browserLang : 'en';
 }
 
 let currentLang = detectUserLanguage();
@@ -357,10 +417,8 @@ let currentLang = detectUserLanguage();
 function t(key) {
   const keys = key.split('.');
   let value = translations[currentLang];
-  for (const k of keys) {
-    value = value?.[k];
-  }
-  return value || key;
+  for (const k of keys) value = value?.[k];
+  return value !== undefined ? value : key;
 }
 
 function setLanguage(lang) {
@@ -378,81 +436,45 @@ function updateActiveButton() {
 }
 
 function updateContent() {
-  // Navigation
-  document.querySelector('a[href="#home"]').textContent = t('nav.home');
-  document.querySelector('a[href="#features"]').textContent = t('nav.features');
-  document.querySelector('a[href="#security"]').textContent = t('nav.security');
-  document.querySelector('a[href="#download"]').textContent = t('nav.download');
-  document.querySelector('a[href="#contact"]').textContent = t('nav.contact');
+  // Nav links: Home, Pricing, Docs, Book a Demo
+  const navLinks = document.querySelectorAll('.nav-links a');
+  if (navLinks[0]) navLinks[0].textContent = t('nav.home');
+  if (navLinks[1]) navLinks[1].textContent = t('nav.pricing');
+  if (navLinks[2]) navLinks[2].textContent = t('nav.docs');
+  if (navLinks[3]) navLinks[3].textContent = t('nav.bookDemo');
 
-  // Hero section
-  document.querySelector('.hero h1').textContent = t('hero.title');
-  document.querySelector('.hero p').textContent = t('hero.subtitle');
-  document.querySelector('.cta-primary').textContent = t('hero.downloadMac');
-  document.querySelector('.cta-secondary').textContent = t('hero.downloadWindows');
-  const protectedImage = document.querySelector('#protected-status-image');
-  if (protectedImage) {
-    protectedImage.src = `images/protected-${currentLang}.svg`;
-    protectedImage.alt = t('hero.dataProtected');
-  }
-
-  // Features section
-  document.querySelector('#features .section-title').textContent = t('features.title');
-  const featureCards = document.querySelectorAll('.feature-card');
-  featureCards[0].querySelector('h3').textContent = t('features.autoDetection.title');
-  featureCards[0].querySelector('p').textContent = t('features.autoDetection.desc');
-  featureCards[1].querySelector('h3').textContent = t('features.customTerms.title');
-  featureCards[1].querySelector('p').textContent = t('features.customTerms.desc');
-  featureCards[2].querySelector('h3').textContent = t('features.reversible.title');
-  featureCards[2].querySelector('p').textContent = t('features.reversible.desc');
-  featureCards[3].querySelector('h3').textContent = t('features.crossPlatform.title');
-  featureCards[3].querySelector('p').textContent = t('features.crossPlatform.desc');
-
-  // Security section
-  document.querySelector('.security h2').textContent = t('security.title');
-  document.querySelector('.security p').textContent = t('security.subtitle');
-  const securityFeatures = document.querySelectorAll('.security-features li');
-  t('security.features').forEach((feature, i) => {
-    if (securityFeatures[i]) securityFeatures[i].textContent = `✅ ${feature}`;
+  // All data-i18n elements
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const val = t(el.dataset.i18n);
+    if (val !== el.dataset.i18n) el.textContent = val;
   });
 
-  // Download section
-  document.querySelector('#download .section-title').textContent = t('download.title');
-  document.querySelector('.download-subtitle').textContent = t('download.subtitle');
-  const downloadCards = document.querySelectorAll('.download-card');
-  downloadCards[0].querySelector('h3').textContent = t('download.macOSSilicon');
-  downloadCards[0].querySelector('p').textContent = t('download.macSiliconCompat');
-  downloadCards[0].querySelector('.download-btn').textContent = t('download.downloadDmg');
-  downloadCards[1].querySelector('h3').textContent = t('download.macOSIntel');
-  downloadCards[1].querySelector('p').textContent = t('download.macIntelCompat');
-  downloadCards[1].querySelector('.download-btn').textContent = t('download.downloadDmg');
-  downloadCards[2].querySelector('h3').textContent = t('download.windows');
-  downloadCards[2].querySelector('p').textContent = t('download.winCompat');
-  downloadCards[2].querySelector('.download-btn').textContent = t('download.downloadExe');
-  downloadCards[3].querySelector('h3').textContent = t('download.linux');
-  downloadCards[3].querySelector('p').textContent = t('download.linuxCompat');
-  downloadCards[3].querySelector('.download-btn').textContent = t('download.downloadAppImage');
-
-  // Footer
-  document.querySelector('.footer-section p').textContent = t('footer.tagline');
-  const footerSections = document.querySelectorAll('.footer-section h4');
-  footerSections[1].textContent = t('footer.product');
-  footerSections[2].textContent = t('footer.support');
-  document.querySelector('.footer-bottom p').textContent = t('footer.copyright');
+  // All data-i18n-html elements (allow HTML like <span> in headings)
+  document.querySelectorAll('[data-i18n-html]').forEach(el => {
+    const val = t(el.dataset.i18nHtml);
+    if (val !== el.dataset.i18nHtml) el.innerHTML = val;
+  });
 }
 
-// Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
-  // Set initial language and direction
   document.documentElement.lang = currentLang;
   document.documentElement.dir = currentLang === 'ar' ? 'rtl' : 'ltr';
-  
-  // Set initial image
-  const protectedImage = document.querySelector('#protected-status-image');
-  if (protectedImage) {
-    protectedImage.src = `images/protected-${currentLang}.svg`;
-  }
-  
   updateContent();
   updateActiveButton();
+
+  // Nav toggle — aria-aware, replaces inline onclick
+  const navToggle = document.getElementById('navToggle');
+  const navMenu = document.getElementById('navMenu');
+  if (navToggle && navMenu) {
+    navToggle.setAttribute('aria-expanded', 'false');
+    navToggle.setAttribute('aria-controls', 'navMenu');
+    navMenu.setAttribute('aria-label', 'Site navigation');
+    navToggle.addEventListener('click', () => {
+      const open = navMenu.classList.toggle('open');
+      navToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      navToggle.textContent = open ? '✕' : '☰';
+    });
+    // Remove the old inline onclick
+    navToggle.removeAttribute('onclick');
+  }
 });

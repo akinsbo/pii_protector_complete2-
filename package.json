@@ -2,7 +2,11 @@
   "name": "ledebe-protector",
   "version": "1.0.0",
   "description": "Ledebe Protector - Let there be secure data protection",
-  "author": "Ledebe",
+  "author": {
+    "name": "Ledebe Technologies",
+    "email": "hello@ledebe.com",
+    "url": "https://ledebe.com"
+  },
   "main": "dist/main.js",
   "files": [
     "dist/",
@@ -19,6 +23,7 @@
     "dist:win": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false npm run build && electron-builder --win nsis",
     "dist:win-portable": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false npm run build && electron-builder --win portable",
     "dist:all": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false npm run build && electron-builder --mac --win --linux",
+    "dist:mas": "npm run build && electron-builder --mac mas",
     "dist:publish": "npm run build && electron-builder --publish always",
     "package": "electron-forge package",
     "make": "electron-forge make",
@@ -76,7 +81,7 @@
   "build": {
     "appId": "com.ledebe.protector",
     "productName": "Ledebe Protector",
-    "copyright": "Copyright © 2025 Ledebe. All rights reserved.",
+    "copyright": "Copyright © 2026 Ledebe. All rights reserved.",
     "files": [
       "dist/**/*",
       "*.html",
@@ -116,6 +121,11 @@
           ]
         }
       ]
+    },
+    "mas": {
+      "entitlements": "build/entitlements.mas.plist",
+      "entitlementsInherit": "build/entitlements.mas.inherit.plist",
+      "hardenedRuntime": false
     },
     "dmg": {
       "title": "Install Ledebe Protector",

@@ -3,145 +3,176 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Join Your Company - Ledebe</title>
+    <title>Join Your Company — Ledebe</title>
+    <meta name="robots" content="noindex, nofollow">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 2rem;
+        :root {
+            --blue: #1e3a8a; --blue-light: #2d52b8; --accent: #f59e0b;
+            --text: #1f2937; --text-muted: #6b7280; --bg: #f5f4f0;
+            --border: #e3e0d8; --green: #16a34a; --red: #dc2626; --red-bg: #fee2e2;
         }
-        
-        .card { 
-            background: white; 
-            border-radius: 16px; 
-            padding: 3rem; 
-            max-width: 500px; 
-            width: 100%;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--blue); min-height: 100vh; display: flex;
+            align-items: center; justify-content: center; padding: 2rem;
         }
-        
-        h1 { color: #2c3e50; margin-bottom: 0.5rem; }
-        p { color: #7f8c8d; margin-bottom: 2rem; }
-        
-        .form-group { margin-bottom: 1.5rem; }
-        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: #2c3e50; }
-        .form-group input { 
-            width: 100%; 
-            padding: 0.75rem; 
-            border: 2px solid #ecf0f1; 
-            border-radius: 8px; 
-            font-size: 1rem;
-            transition: border 0.3s;
+        .card {
+            background: white; border-radius: 16px; padding: 2.5rem;
+            max-width: 460px; width: 100%; box-shadow: 0 24px 60px rgba(0,0,0,0.35);
         }
-        .form-group input:focus { 
-            outline: none; 
-            border-color: #667eea; 
+        .brand { font-size: 1.2rem; font-weight: 900; color: var(--blue); margin-bottom: 1.5rem; }
+        h1 { font-size: 1.6rem; font-weight: 800; color: var(--text); margin-bottom: 0.4rem; }
+        .subtitle { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 2rem; line-height: 1.5; }
+        .e2e-badge {
+            display: inline-flex; align-items: center; gap: 0.35rem;
+            font-size: 0.72rem; font-weight: 600; color: var(--green);
+            background: #dcfce7; padding: 0.25rem 0.65rem; border-radius: 20px; margin-bottom: 1.5rem;
         }
-        
-        .btn { 
-            width: 100%; 
-            padding: 1rem; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white; 
-            border: none; 
-            border-radius: 8px; 
-            font-size: 1rem; 
-            font-weight: 600; 
-            cursor: pointer;
-            transition: transform 0.2s;
+        .field { margin-bottom: 1.25rem; }
+        label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--text); margin-bottom: 0.4rem; }
+        input {
+            width: 100%; padding: 0.75rem 1rem; border: 1.5px solid var(--border);
+            border-radius: 8px; font-size: 0.95rem; color: var(--text); transition: border-color 0.15s;
         }
-        .btn:hover { transform: translateY(-2px); }
-        .btn:active { transform: translateY(0); }
-        
-        .success {
-            background: #d4edda;
-            color: #155724;
-            padding: 1rem;
-            border-radius: 8px;
-            margin-top: 1rem;
-            display: none;
+        input:focus { outline: none; border-color: var(--blue); }
+        .hint { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.3rem; }
+        .btn {
+            width: 100%; padding: 0.875rem; background: var(--blue); color: white; border: none;
+            border-radius: 8px; font-size: 0.95rem; font-weight: 700; cursor: pointer; transition: background 0.15s;
         }
-        .error-msg {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 1rem;
-            border-radius: 8px;
-            margin-top: 1rem;
-            display: none;
+        .btn:hover { background: var(--blue-light); }
+        .btn:disabled { background: var(--text-muted); cursor: not-allowed; }
+        .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+        .success-box {
+            background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 10px;
+            padding: 1.25rem; display: none; margin-top: 1.25rem;
+        }
+        .success-box strong { display: block; color: var(--green); font-size: 0.95rem; margin-bottom: 0.35rem; }
+        .success-box p { font-size: 0.85rem; color: #15803d; line-height: 1.5; }
+        .error-box {
+            background: var(--red-bg); border: 1.5px solid #fca5a5; border-radius: 10px;
+            padding: 1rem 1.25rem; display: none; margin-top: 1rem;
+            font-size: 0.875rem; color: var(--red); line-height: 1.5;
         }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h1>🛡️ Join Your Company</h1>
-        <p>Link your Ledebe app to your company's protected terms</p>
-        
-        <div class="form-group">
-            <label>Company Code</label>
-            <input type="text" id="company-code" placeholder="e.g., acme" required>
-            <small style="color: #7f8c8d;">Ask your admin for your company code</small>
-        </div>
-        
-        <div class="form-group">
-            <label>Your Work Email</label>
-            <input type="email" id="employee-email" placeholder="you@company.com" required>
-        </div>
-        
-        <button class="btn" onclick="joinCompany()">Join Company</button>
-        
-        <div class="success" id="success-message">
-            ✅ Success! Your app is now linked to your company.<br>
-            Company terms will sync automatically every 5 minutes.
-        </div>
-        <div class="error-msg" id="error-message"></div>
+
+<div class="card">
+    <div class="brand">Ledebe</div>
+    <h1>Join Your Company</h1>
+    <p class="subtitle">Enter the join code from your admin to link your Ledebe app to your company's protected terms.</p>
+    <span class="e2e-badge">
+        <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        End-to-end encrypted
+    </span>
+
+    <div class="field">
+        <label for="join-code">Company Join Code</label>
+        <input type="text" id="join-code" placeholder="e.g. XK7P-2M9Q" autocomplete="off" spellcheck="false" style="font-family:monospace;font-size:1.1rem;letter-spacing:0.15em;text-transform:uppercase;">
+        <div class="hint">Ask your Ledebe admin for this code</div>
     </div>
 
-    <script>
-        async function joinCompany() {
-            const companyCode = document.getElementById('company-code').value.trim().toLowerCase();
-            const email = document.getElementById('employee-email').value.trim();
-            const errorEl = document.getElementById('error-message');
-            const successEl = document.getElementById('success-message');
+    <div class="field">
+        <label for="employee-email">Your Work Email</label>
+        <input type="email" id="employee-email" placeholder="you@company.com" autocomplete="email">
+    </div>
 
-            errorEl.style.display = 'none';
-            successEl.style.display = 'none';
+    <button class="btn" id="join-btn">Join Company</button>
 
-            if (!companyCode || !email) {
-                alert('Please fill in all fields');
-                return;
-            }
+    <div class="success-box" id="success-box">
+        <strong>You're in!</strong>
+        <p>Your app is linked to <strong id="company-name-display"></strong>. Protected terms will sync automatically every 5 minutes. All terms are decrypted locally on your device.</p>
+    </div>
 
-            // Verify the company exists before saving
-            try {
-                const response = await fetch(`https://ledebe.s3.us-east-2.amazonaws.com/${companyCode}/data.json`);
-                if (!response.ok) {
-                    errorEl.textContent = 'Company not found. Please check your company code.';
-                    errorEl.style.display = 'block';
-                    return;
-                }
-            } catch (err) {
-                errorEl.textContent = 'Company not found. Please check your company code.';
-                errorEl.style.display = 'block';
-                return;
-            }
+    <div class="error-box" id="error-box"></div>
+</div>
 
-            // Save to localStorage
-            localStorage.setItem('ledebe-company-id', companyCode);
-            localStorage.setItem('ledebe-employee-email', email);
+<script type="module">
+import { decryptTeamKeyWithCode } from './crypto.js';
 
-            // Show success
-            successEl.style.display = 'block';
+const API = 'https://m9ur273451.execute-api.us-east-2.amazonaws.com';
 
-            // Redirect to app after 2 seconds
-            setTimeout(() => {
-                window.location.href = '/';
-            }, 2000);
+const joinBtn = document.getElementById('join-btn');
+joinBtn.addEventListener('click', joinCompany);
+document.getElementById('employee-email').addEventListener('keydown', e => { if (e.key === 'Enter') joinCompany(); });
+
+async function joinCompany() {
+    const code = document.getElementById('join-code').value.trim().toUpperCase();
+    const email = document.getElementById('employee-email').value.trim().toLowerCase();
+    const errorBox = document.getElementById('error-box');
+    const successBox = document.getElementById('success-box');
+
+    errorBox.style.display = 'none';
+    successBox.style.display = 'none';
+
+    if (!code) { showError('Please enter the join code.'); return; }
+    if (!email || !email.includes('@')) { showError('Please enter a valid email address.'); return; }
+
+    joinBtn.disabled = true;
+    joinBtn.textContent = 'Connecting...';
+
+    try {
+        const res = await fetch(`${API}/join`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ joinCode: code, email, deviceId: getDeviceId() })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            showError(data.error === 'Invalid join code'
+                ? 'Invalid join code. Please check with your admin and try again.'
+                : data.error || 'Something went wrong.');
+            return;
         }
-    </script>
+
+        // Decrypt team key locally using the join code
+        joinBtn.textContent = 'Decrypting...';
+        let teamKey;
+        try {
+            teamKey = await decryptTeamKeyWithCode(
+                data.encryptedTeamKey, data.teamKeySalt, data.teamKeyIv, code
+            );
+        } catch {
+            showError('Could not decrypt team key. The join code may have been regenerated. Ask your admin for the latest code.');
+            return;
+        }
+
+        // Store everything locally
+        localStorage.setItem('ledebe-company-id', data.companyId);
+        localStorage.setItem('ledebe-company-name', data.companyName);
+        localStorage.setItem('ledebe-employee-email', email);
+        localStorage.setItem(`ledebe-teamkey-${data.companyId}`, teamKey);
+        localStorage.setItem('ledebe-device-id', data.deviceId || getDeviceId());
+
+        // Show success
+        document.getElementById('company-name-display').textContent = data.companyName;
+        successBox.style.display = 'block';
+        joinBtn.style.display = 'none';
+
+    } catch (err) {
+        showError('Network error. Please check your connection and try again.');
+    }
+}
+
+function showError(msg) {
+    document.getElementById('error-box').textContent = msg;
+    document.getElementById('error-box').style.display = 'block';
+    joinBtn.disabled = false;
+    joinBtn.textContent = 'Join Company';
+}
+
+function getDeviceId() {
+    let id = localStorage.getItem('ledebe-device-id');
+    if (!id) {
+        id = 'dev-' + Array.from(crypto.getRandomValues(new Uint8Array(8))).map(b => b.toString(16).padStart(2,'0')).join('');
+        localStorage.setItem('ledebe-device-id', id);
+    }
+    return id;
+}
+</script>
 </body>
 </html>

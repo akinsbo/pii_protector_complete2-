@@ -3,8 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Documentation - Ledebe Protector</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Documentation — Ledebe</title>
+    <meta name="description" content="Ledebe documentation. Learn how to mask PII, use custom terms, upload documents, and integrate with AI tools.">
+    <link rel="canonical" href="https://ledebe.com/docs/">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://ledebe.com/docs/">
+    <meta property="og:title" content="Documentation — Ledebe">
+    <meta property="og:description" content="Learn how to mask PII, use custom terms, upload documents, and integrate with AI tools.">
+    <meta property="og:image" content="https://ledebe.com/og-image.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Documentation — Ledebe">
+    <meta name="twitter:description" content="Learn how to mask PII, use custom terms, upload documents, and integrate with AI tools.">
+    <meta name="twitter:image" content="https://ledebe.com/og-image.png">
+    <link rel="stylesheet" href="../styles.css?v=13">
     <style>
         .docs-layout {
             display: grid;
@@ -303,21 +314,25 @@
     <header class="header">
         <nav class="nav">
             <a href="/" class="logo" style="text-decoration:none;color:white;">
-                <img src="logo.png" alt="Ledebe" style="height:36px;vertical-align:middle;"> Ledebe
+                <img src="../logo.png" alt="Ledebe" style="height:36px;vertical-align:middle;"> Ledebe
             </a>
+        <button class="nav-toggle" id="navToggle" aria-label="Menu">☰</button>
+        <div class="nav-menu" id="navMenu">
             <ul class="nav-links">
                 <li><a href="/">Home</a></li>
-                <li><a href="/downloads.html">Downloads</a></li>
-                <li><a href="/docs.html">Docs</a></li>
-                <li><a href="mailto:hello@ledebe.com">Contact</a></li>
+                <li><a href="/pricing/">Pricing</a></li>
+                <li><a href="/docs/">Docs</a></li>
+                <li><a href="/demo/">Book a Demo</a></li>
             </ul>
-            <div class="language-selector">
+        <div class="language-selector">
                 <button onclick="setLanguage('en')" class="lang-btn" id="lang-en">EN</button>
                 <button onclick="setLanguage('es')" class="lang-btn" id="lang-es">ES</button>
                 <button onclick="setLanguage('fr')" class="lang-btn" id="lang-fr">FR</button>
                 <button onclick="setLanguage('ar')" class="lang-btn" id="lang-ar">AR</button>
                 <button onclick="setLanguage('zh')" class="lang-btn" id="lang-zh">中</button>
             </div>
+        </div>
+
         </nav>
     </header>
 
@@ -464,7 +479,7 @@
 
                 <h3>Installation steps</h3>
                 <ol class="steps">
-                    <li>Download <strong>Ledebe Protector-1.0.0-arm64.dmg</strong> from the <a href="index.html#download">Downloads</a> page.</li>
+                    <li>Download <strong>Ledebe Protector-1.0.0-arm64.dmg</strong> from the <a href="/downloads/">Downloads</a> page.</li>
                     <li>Open the downloaded <code>.dmg</code> file from your Downloads folder.</li>
                     <li>Drag the <strong>Ledebe Protector</strong> app into your <strong>Applications</strong> folder.</li>
                     <li>Eject the disk image and open the app from Applications or Spotlight.</li>
@@ -488,7 +503,7 @@
 
                 <h3>Installation steps</h3>
                 <ol class="steps">
-                    <li>Download <strong>Ledebe Protector-1.0.0-x64.dmg</strong> from the <a href="index.html#download">Downloads</a> page.</li>
+                    <li>Download <strong>Ledebe Protector-1.0.0-x64.dmg</strong> from the <a href="/downloads/">Downloads</a> page.</li>
                     <li>Open the <code>.dmg</code> file and drag the app to <strong>Applications</strong>.</li>
                     <li>Launch from Applications or Spotlight.</li>
                 </ol>
@@ -506,7 +521,7 @@
 
                 <h3>Installation steps</h3>
                 <ol class="steps">
-                    <li>Download <strong>Ledebe Protector Setup 1.0.0.exe</strong> from the <a href="index.html#download">Downloads</a> page.</li>
+                    <li>Download <strong>Ledebe Protector Setup 1.0.0.exe</strong> from the <a href="/downloads/">Downloads</a> page.</li>
                     <li>Run the installer — you may see a <strong>Windows SmartScreen</strong> warning ("Windows protected your PC"). Click <strong>More info</strong> then <strong>Run anyway</strong>.</li>
                     <li>Follow the setup wizard (Next → Install → Finish).</li>
                     <li>Launch Ledebe Protector from the Start Menu or desktop shortcut.</li>
@@ -530,7 +545,7 @@
 
                 <h3>Installation steps</h3>
                 <ol class="steps">
-                    <li>Download <strong>Ledebe Protector-1.0.0.AppImage</strong> from the <a href="index.html#download">Downloads</a> page.</li>
+                    <li>Download <strong>Ledebe Protector-1.0.0.AppImage</strong> from the <a href="/downloads/">Downloads</a> page.</li>
                     <li>Open a terminal and navigate to your Downloads folder:
                         <div class="code-block">cd ~/Downloads</div>
                     </li>
@@ -905,7 +920,7 @@
 
                 <div class="callout callout-info">
                     <span class="callout-icon">ℹ️</span>
-                    <div>Need more help? Open an issue on our <a href="https://github.com/anthropics/claude-code/issues" style="color: var(--primary-blue);">GitHub page</a> or reach out via the contact form on the <a href="index.html#contact" style="color: var(--primary-blue);">main site</a>.</div>
+                    <div>Need more help? Email us at <a href="mailto:hello@ledebe.com" style="color: var(--primary-blue);">hello@ledebe.com</a> or visit the <a href="/contact/" style="color: var(--primary-blue);">contact page</a>.</div>
                 </div>
             </div>
 
@@ -922,22 +937,31 @@
                 <div class="footer-section">
                     <h4>Product</h4>
                     <ul>
-                        <li><a href="index.html#features">Features</a></li>
-                        <li><a href="index.html#security">Security</a></li>
-                        <li><a href="index.html#download">Download</a></li>
+                        <li><a href="/downloads/">Downloads</a></li>
+                        <li><a href="/pricing/">Pricing</a></li>
+                        <li><a href="/docs/">Documentation</a></li>
+                        <li><a href="https://marketplace.visualstudio.com/items?itemName=Ledebe.ledebe-protector" target="_blank" rel="noopener noreferrer">VS Code Extension</a></li>
+                        <li><a href="https://app.ledebe.com" target="_blank" rel="noopener noreferrer">Web App</a></li>
                     </ul>
                 </div>
                 <div class="footer-section">
-                    <h4>Support</h4>
+                    <h4>Company</h4>
                     <ul>
-                        <li><a href="index.html#contact">Contact</a></li>
-                        <li><a href="docs.html">Documentation</a></li>
-                        <li><a href="#">Privacy Policy</a></li>
+                        <li><a href="/about/">About</a></li>
+                        <li><a href="/contact/">Contact</a></li>
+                        <li><a href="/demo/">Book a Demo</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Legal</h4>
+                    <ul>
+                        <li><a href="/privacy/">Privacy Policy</a></li>
+                        <li><a href="/terms/">Terms of Service</a></li>
                     </ul>
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; 2024 Ledebe. All rights reserved.</p>
+                <p>&copy; 2026 Ledebe Technologies. All rights reserved.</p>
             </div>
         </div>
     </footer>
@@ -951,5 +975,6 @@
         }
     </script>
 
+<script src="../i18n.js?v=4"></script>
 </body>
 </html>

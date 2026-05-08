@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1000" height="1000" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LeDeBe shield logo">
+  <defs>
+    <style type="text/css"><![CDATA[
+      .shield { fill: #073b66; } /* deep blue */
+      .rays  { fill: #f4c100; } /* golden yellow */
+      .banner { fill: #ffffff; stroke: #073b66; stroke-width: 18; }
+      .text  { fill: #073b66; font-family: "Helvetica Neue", Arial, sans-serif; font-weight: 700; font-size: 120px; letter-spacing: 2px; }
+    ]]></style>
+  </defs>
+
+  <!-- Transparent background intentionally omitted -->
+
+  <!-- Shield shape -->
+  <path class="shield" d="
+    M200,180
+    C310,100 690,100 800,180
+    L800,430
+    C800,640 620,760 500,840
+    C380,760 200,640 200,430
+    Z" />
+
+  <!-- Rays (7) centered above shield -->
+  <g transform="translate(500,240)">
+    <rect class="rays" x="-8"  y="-120" width="16" height="140" rx="8" transform="rotate(-24)" />
+    <rect class="rays" x="-8"  y="-120" width="16" height="140" rx="8" transform="rotate(-14)" />
+    <rect class="rays" x="-8"  y="-120" width="16" height="160" rx="8" transform="rotate(-6)" />
+    <rect class="rays" x="-8"  y="-140" width="16" height="180" rx="8" transform="rotate(0)" />
+    <rect class="rays" x="-8"  y="-120" width="16" height="160" rx="8" transform="rotate(6)" />
+    <rect class="rays" x="-8"  y="-120" width="16" height="140" rx="8" transform="rotate(14)" />
+    <rect class="rays" x="-8"  y="-120" width="16" height="120" rx="8" transform="rotate(24)" />
+  </g>
+
+  <!-- Banner across the shield -->
+  <g transform="translate(500,520)">
+    <rect class="banner" x="-360" y="-70" width="720" height="140" rx="28" />
+    <!-- Optional subtle inner shadow line -->
+    <path d="M-340,-20 h680" stroke="#dcdcdc" stroke-width="0.8" opacity="0.2" />
+    <text class="text" x="0" y="40" text-anchor="middle">LeDeBe</text>
+  </g>
+</svg>

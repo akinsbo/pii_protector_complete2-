@@ -18,7 +18,7 @@
 
 set -e
 
-BUCKET="ledebe"
+BUCKET="ledebe.com"
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 SOURCE="$SCRIPT_DIR/../pii_protector_website/"
 cd "$SCRIPT_DIR/.."

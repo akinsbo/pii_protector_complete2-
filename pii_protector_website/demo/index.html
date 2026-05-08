@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book a Demo — Ledebe</title>
+    <meta name="description" content="Book a free 30-minute demo of Ledebe. See how to protect sensitive data before sharing with AI tools.">
+    <link rel="canonical" href="https://ledebe.com/demo/">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://ledebe.com/demo/">
+    <meta property="og:title" content="Book a Demo — Ledebe">
+    <meta property="og:description" content="Book a free 30-minute demo of Ledebe. See how to protect sensitive data before sharing with AI tools.">
+    <meta property="og:image" content="https://ledebe.com/og-image.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Book a Demo — Ledebe">
+    <meta name="twitter:description" content="Book a free 30-minute demo. See Ledebe protect your data live.">
+    <meta name="twitter:image" content="https://ledebe.com/og-image.png">
+    <link rel="stylesheet" href="../styles.css?v=13">
+    <link href="https://assets.calendly.com/assets/external/widget.css" rel="stylesheet">
+    <style>
+        .page-hero {
+            background: var(--bg-light);
+            border-bottom: 1px solid var(--border);
+            padding: 4rem 2rem;
+            text-align: center;
+        }
+        .page-hero .page-hero-label {
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 0.75rem;
+        }
+        .page-hero h1 {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: var(--text-dark);
+            margin-bottom: 0.75rem;
+            letter-spacing: -0.02em;
+        }
+        .page-hero p {
+            color: var(--text-gray);
+            font-size: 1.05rem;
+            max-width: 520px;
+            margin: 0 auto;
+        }
+
+        .demo-body {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 3rem 2rem 5rem;
+        }
+
+        .demo-layout {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 3rem;
+            align-items: start;
+        }
+
+        .demo-info h2 {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--text-dark);
+            margin-bottom: 1rem;
+            letter-spacing: -0.01em;
+        }
+
+        .demo-points {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .demo-points li {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            font-size: 0.92rem;
+            color: var(--text-dark);
+            line-height: 1.5;
+        }
+        .demo-points li .icon {
+            font-size: 1.1rem;
+            flex-shrink: 0;
+            margin-top: 0.05rem;
+        }
+        .demo-points li strong {
+            display: block;
+            font-weight: 700;
+            margin-bottom: 0.15rem;
+        }
+        .demo-points li span {
+            color: var(--text-gray);
+            font-size: 0.85rem;
+        }
+
+        .demo-meta {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            font-size: 0.88rem;
+            color: var(--text-gray);
+            line-height: 1.7;
+        }
+        .demo-meta strong {
+            color: var(--text-dark);
+        }
+
+        .calendly-wrapper {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            min-height: 660px;
+        }
+
+        .calendly-inline-widget {
+            min-width: 100%;
+            height: 660px;
+        }
+
+        @media (max-width: 768px) {
+            .demo-layout {
+                grid-template-columns: 1fr;
+            }
+            .page-hero h1 { font-size: 1.9rem; }
+            .calendly-inline-widget { height: 580px; }
+        }
+    </style>
+</head>
+<body>
+
+<header class="header">
+    <nav class="nav">
+        <a href="/" class="logo" style="text-decoration:none;color:white;">
+            <img src="../logo.png" alt="Ledebe" style="height:36px;vertical-align:middle;"> Ledebe
+        </a>
+        <button class="nav-toggle" id="navToggle" aria-label="Menu">☰</button>
+        <div class="nav-menu" id="navMenu">
+            <ul class="nav-links">
+                <li><a href="/">Home</a></li>
+                <li><a href="/pricing/">Pricing</a></li>
+                <li><a href="/docs/">Docs</a></li>
+                <li><a href="/demo/">Book a Demo</a></li>
+            </ul>
+            <div class="language-selector">
+                <button onclick="setLanguage('en')" class="lang-btn" id="lang-en">EN</button>
+                <button onclick="setLanguage('es')" class="lang-btn" id="lang-es">ES</button>
+                <button onclick="setLanguage('fr')" class="lang-btn" id="lang-fr">FR</button>
+                <button onclick="setLanguage('ar')" class="lang-btn" id="lang-ar">AR</button>
+                <button onclick="setLanguage('zh')" class="lang-btn" id="lang-zh">中</button>
+            </div>
+        </div>
+    </nav>
+</header>
+
+<div class="page-hero">
+    <div class="page-hero-label">See it in action</div>
+    <h1>Book a Free Demo</h1>
+    <p>30 minutes. No obligation. See exactly how Ledebe protects your sensitive data before it reaches AI.</p>
+</div>
+
+<div class="demo-body">
+    <div class="demo-layout">
+
+        <!-- Left: Info -->
+        <div class="demo-info">
+            <h2>What we'll cover</h2>
+            <ul class="demo-points">
+                <li>
+                    <span class="icon">🔒</span>
+                    <div>
+                        <strong>Live masking demo</strong>
+                        <span>See PII detection and masking in real time on your type of content.</span>
+                    </div>
+                </li>
+                <li>
+                    <span class="icon">🤖</span>
+                    <div>
+                        <strong>AI workflow walkthrough</strong>
+                        <span>How to use Ledebe safely with ChatGPT, Claude, or Gemini.</span>
+                    </div>
+                </li>
+                <li>
+                    <span class="icon">📄</span>
+                    <div>
+                        <strong>Document protection</strong>
+                        <span>Upload and scan PDFs, Word docs, and spreadsheets for PII.</span>
+                    </div>
+                </li>
+                <li>
+                    <span class="icon">🏢</span>
+                    <div>
+                        <strong>Team & enterprise options</strong>
+                        <span>How shared term libraries and admin dashboards work for teams.</span>
+                    </div>
+                </li>
+                <li>
+                    <span class="icon">💬</span>
+                    <div>
+                        <strong>Your questions answered</strong>
+                        <span>Bring your specific use case — we'll show you how Ledebe handles it.</span>
+                    </div>
+                </li>
+            </ul>
+
+            <div class="demo-meta">
+                <strong>Duration:</strong> 30 minutes<br>
+                <strong>Format:</strong> Video call (link sent on confirmation)<br>
+                <strong>Cost:</strong> Free, no obligation<br>
+                <strong>Who:</strong> Founders, IT leads, compliance officers, developers
+            </div>
+        </div>
+
+        <!-- Right: Calendly embed -->
+        <div class="calendly-wrapper">
+            <div
+                class="calendly-inline-widget"
+                data-url="https://calendly.com/hello-ledebe/30min?hide_event_type_details=1&hide_gdpr_banner=1"
+            ></div>
+        </div>
+
+    </div>
+</div>
+
+<footer class="footer">
+    <div class="container">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>Ledebe</h4>
+                <p>Privacy-first protection for anyone using AI. Your data stays on your device, always.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Product</h4>
+                <ul>
+                    <li><a href="/downloads/">Downloads</a></li>
+                    <li><a href="/pricing/">Pricing</a></li>
+                    <li><a href="/docs/">Documentation</a></li>
+                    <li><a href="https://marketplace.visualstudio.com/items?itemName=Ledebe.ledebe-protector" target="_blank" rel="noopener noreferrer">VS Code Extension</a></li>
+                    <li><a href="https://app.ledebe.com" target="_blank" rel="noopener noreferrer">Web App</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Company</h4>
+                <ul>
+                    <li><a href="/about/">About</a></li>
+                    <li><a href="/contact/">Contact</a></li>
+                    <li><a href="/demo/">Book a Demo</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Legal</h4>
+                <ul>
+                    <li><a href="/privacy/">Privacy Policy</a></li>
+                    <li><a href="/terms/">Terms of Service</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Ledebe Technologies. All rights reserved. Built with privacy in mind.</p>
+        </div>
+    </div>
+</footer>
+
+<script src="https://assets.calendly.com/assets/external/widget.js" type="text/javascript" async></script>
+<script src="../i18n.js?v=4"></script>
+</body>
+</html>

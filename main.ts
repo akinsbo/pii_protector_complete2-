@@ -58,10 +58,6 @@ function createMenu() {
     {
       label: 'View',
       submenu: [
-        { role: 'reload' },
-        { role: 'forceReload' },
-        { role: 'toggleDevTools' },
-        { type: 'separator' },
         { role: 'resetZoom' },
         { role: 'zoomIn' },
         { role: 'zoomOut' },
@@ -117,7 +113,6 @@ app.whenReady().then(() => {
   }
   
   createWindow();
-  sendInstallationEvent();
 });
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
@@ -320,8 +315,7 @@ ipcMain.handle('safeStorage:decrypt', (_evt: any, value: string): string => {
  */
 function getTemplates() {
   const fs = require('fs');
-  const os = require('os');
-  const templatesPath = path.join(os.homedir(), '.ledebe-templates.json');
+  const templatesPath = path.join(app.getPath('userData'), 'templates.json');
   
   try {
     if (fs.existsSync(templatesPath)) {
@@ -338,8 +332,7 @@ function getTemplates() {
  */
 function saveTemplates(templates: any) {
   const fs = require('fs');
-  const os = require('os');
-  const templatesPath = path.join(os.homedir(), '.ledebe-templates.json');
+  const templatesPath = path.join(app.getPath('userData'), 'templates.json');
   
   fs.writeFileSync(templatesPath, JSON.stringify(templates, null, 2));
 }
@@ -349,8 +342,7 @@ function saveTemplates(templates: any) {
  */
 function getSettings() {
   const fs = require('fs');
-  const os = require('os');
-  const settingsPath = path.join(os.homedir(), '.ledebe-settings.json');
+  const settingsPath = path.join(app.getPath('userData'), 'settings.json');
   
   try {
     if (fs.existsSync(settingsPath)) {
@@ -374,8 +366,7 @@ function getSettings() {
  */
 function saveSettings(settings: any) {
   const fs = require('fs');
-  const os = require('os');
-  const settingsPath = path.join(os.homedir(), '.ledebe-settings.json');
+  const settingsPath = path.join(app.getPath('userData'), 'settings.json');
   
   fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
 }
@@ -395,60 +386,6 @@ if (process.env.NODE_ENV === 'development') {
   }
 }
 
-
-
-
-
-/**
- * Sends installation/startup event.
- */
-function sendInstallationEvent() {
-  const installData = {
-    event: 'app_start',
-    platform: os.platform(),
-    arch: os.arch(),
-    version: app.getVersion(),
-    timestamp: new Date().toISOString(),
-    userId: getUserId(),
-    isFirstRun: isFirstRun()
-  };
-
-  fetch('https://formspree.io/f/xdkogqpv', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      subject: 'Ledebe Analytics - App Start',
-      analytics: installData
-    })
-  }).catch(console.error);
-}
-
-/**
- * Gets or creates a unique user ID.
- */
-function getUserId(): string {
-  const fs = require('fs');
-  const userIdPath = path.join(os.homedir(), '.ledebe-user-id');
-  
-  try {
-    if (fs.existsSync(userIdPath)) {
-      return fs.readFileSync(userIdPath, 'utf8').trim();
-    }
-  } catch (error) {
-    console.error('Error reading user ID:', error);
-  }
-  
-  // Generate UUID without external dependency
-  const newUserId = generateUUID();
-  try {
-    fs.writeFileSync(userIdPath, newUserId);
-  } catch (error) {
-    console.error('Error saving user ID:', error);
-  }
-  
-  return newUserId;
-}
-
 /**
  * Generates a simple UUID v4 without external dependencies.
  */
@@ -458,24 +395,4 @@ function generateUUID(): string {
     const v = c === 'x' ? r : (r & 0x3 | 0x8);
     return v.toString(16);
   });
-}
-
-/**
- * Checks if this is the first run of the application.
- */
-function isFirstRun(): boolean {
-  const fs = require('fs');
-  const firstRunPath = path.join(os.homedir(), '.ledebe-first-run');
-  
-  if (fs.existsSync(firstRunPath)) {
-    return false;
-  }
-  
-  try {
-    fs.writeFileSync(firstRunPath, new Date().toISOString());
-    return true;
-  } catch (error) {
-    console.error('Error marking first run:', error);
-    return false;
-  }
 }

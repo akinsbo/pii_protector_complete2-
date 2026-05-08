@@ -5,16 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Downloads — Ledebe</title>
     <meta name="description" content="Download Ledebe for Mac, Windows, and Linux. Free to use, no account required.">
-    <link rel="stylesheet" href="styles.css?v=6">
+    <link rel="canonical" href="https://ledebe.com/downloads/">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://ledebe.com/downloads/">
+    <meta property="og:title" content="Downloads — Ledebe">
+    <meta property="og:description" content="Download Ledebe for Mac, Windows, and Linux. Free to use, no account required.">
+    <meta property="og:image" content="https://ledebe.com/og-image.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Downloads — Ledebe">
+    <meta name="twitter:description" content="Download Ledebe for Mac, Windows, and Linux. Free to use, no account required.">
+    <meta name="twitter:image" content="https://ledebe.com/og-image.png">
+    <link rel="stylesheet" href="../styles.css?v=13">
     <style>
         .page-hero {
-            background: linear-gradient(160deg, #0f1e4a 0%, #1e3a8a 100%);
-            color: white;
+            background: var(--bg-light);
+            border-bottom: 1px solid var(--border);
+            color: var(--text-dark);
             padding: 4rem 2rem;
             text-align: center;
         }
         .page-hero h1 { font-size: 2.5rem; font-weight: 800; margin-bottom: 0.75rem; letter-spacing: -0.02em; }
-        .page-hero p { opacity: 0.85; font-size: 1.05rem; max-width: 520px; margin: 0 auto; }
+        .page-hero .page-hero-label { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 0.75rem; }
+        .page-hero p { color: var(--text-gray); font-size: 1.05rem; max-width: 520px; margin: 0 auto; }
 
         .downloads-body {
             max-width: 960px;
@@ -158,13 +170,15 @@
 <header class="header">
     <nav class="nav">
         <a href="/" class="logo" style="text-decoration:none;color:white;">
-            <img src="logo.png" alt="Ledebe" style="height:36px;vertical-align:middle;"> Ledebe
+            <img src="../logo.png" alt="Ledebe" style="height:36px;vertical-align:middle;"> Ledebe
         </a>
+        <button class="nav-toggle" id="navToggle" aria-label="Menu">☰</button>
+        <div class="nav-menu" id="navMenu">
         <ul class="nav-links">
             <li><a href="/">Home</a></li>
-            <li><a href="/downloads.html">Downloads</a></li>
-            <li><a href="/docs.html">Docs</a></li>
-            <li><a href="mailto:hello@ledebe.com">Contact</a></li>
+            <li><a href="/pricing/">Pricing</a></li>
+            <li><a href="/docs/">Docs</a></li>
+            <li><a href="/demo/">Book a Demo</a></li>
         </ul>
         <div class="language-selector">
             <button onclick="setLanguage('en')" class="lang-btn" id="lang-en">EN</button>
@@ -173,11 +187,14 @@
             <button onclick="setLanguage('ar')" class="lang-btn" id="lang-ar">AR</button>
             <button onclick="setLanguage('zh')" class="lang-btn" id="lang-zh">中</button>
         </div>
+        </div>
+
     </nav>
 </header>
 
 <div class="page-hero">
-    <h1>⬇ Download Ledebe</h1>
+    <div class="page-hero-label">Get the app</div>
+    <h1>Download Ledebe</h1>
     <p>Free to use. No account required. Available on Mac, Windows, Linux — or use it directly in your browser.</p>
 </div>
 
@@ -186,19 +203,19 @@
     <!-- Web App -->
     <div class="web-app-card">
         <div>
-            <h2>🌐 Try the Web App — No Install Needed</h2>
+            <h2>Try the Web App — No Install Needed</h2>
             <p>Use Ledebe instantly in your browser. No download, no setup. Works on any device.</p>
         </div>
-        <a href="https://app.ledebe.com" class="btn-try" target="_blank">Open Web App →</a>
+        <a href="https://app.ledebe.com" class="btn-try" target="_blank" rel="noopener noreferrer">Open Web App →</a>
     </div>
 
     <!-- VS Code -->
     <div class="vscode-card">
         <div>
-            <h2>🧩 VS Code Extension</h2>
+            <h2>VS Code Extension</h2>
             <p>Protect code, configs, and logs right in your editor. Search "Ledebe Protector" in the Extensions panel.</p>
         </div>
-        <a href="https://marketplace.visualstudio.com/items?itemName=Ledebe.ledebe-protector" class="btn-vscode" target="_blank">Install Extension →</a>
+        <a href="https://marketplace.visualstudio.com/items?itemName=Ledebe.ledebe-protector" class="btn-vscode" target="_blank" rel="noopener noreferrer">Install Extension →</a>
     </div>
 
     <!-- Mac -->
@@ -221,7 +238,7 @@
             </div>
         </div>
         <div class="notice">
-            ⚠️ <strong>macOS security warning:</strong> The app is not yet notarised by Apple. When you first open it, right-click the app → <strong>Open</strong> → <strong>Open</strong> to bypass the Gatekeeper warning. You only need to do this once.
+            🍎 <strong>One-time setup on macOS:</strong> While we complete Apple notarisation, macOS will show a security prompt on first launch. Simply right-click the app icon → <strong>Open</strong> → <strong>Open</strong>. This only happens once — it's a standard step for new apps distributed outside the App Store.
         </div>
     </div>
 
@@ -277,17 +294,26 @@
             <div class="footer-section">
                 <h4>Product</h4>
                 <ul>
-                    <li><a href="/downloads.html">Downloads</a></li>
-                    <li><a href="/docs.html">Documentation</a></li>
-                    <li><a href="https://marketplace.visualstudio.com/items?itemName=Ledebe.ledebe-protector">VS Code Extension</a></li>
+                    <li><a href="/downloads/">Downloads</a></li>
+                    <li><a href="/pricing/">Pricing</a></li>
+                    <li><a href="/docs/">Documentation</a></li>
+                    <li><a href="https://marketplace.visualstudio.com/items?itemName=Ledebe.ledebe-protector" target="_blank" rel="noopener noreferrer">VS Code Extension</a></li>
+                    <li><a href="https://app.ledebe.com" target="_blank" rel="noopener noreferrer">Web App</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Company</h4>
+                <ul>
+                    <li><a href="/about/">About</a></li>
+                    <li><a href="/contact/">Contact</a></li>
+                    <li><a href="/demo/">Book a Demo</a></li>
                 </ul>
             </div>
             <div class="footer-section">
                 <h4>Legal</h4>
                 <ul>
-                    <li><a href="/privacy.html">Privacy Policy</a></li>
-                    <li><a href="/terms.html">Terms of Service</a></li>
-                    <li><a href="mailto:hello@ledebe.com">Contact</a></li>
+                    <li><a href="/privacy/">Privacy Policy</a></li>
+                    <li><a href="/terms/">Terms of Service</a></li>
                 </ul>
             </div>
         </div>
@@ -297,5 +323,6 @@
     </div>
 </footer>
 
+<script src="../i18n.js?v=4"></script>
 </body>
 </html>

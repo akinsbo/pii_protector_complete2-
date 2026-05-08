@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pricing — Ledebe</title>
+    <meta name="description" content="Simple, transparent pricing. Start free. Upgrade when you need more. No hidden fees.">
+    <link rel="canonical" href="https://ledebe.com/pricing/">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://ledebe.com/pricing/">
+    <meta property="og:title" content="Pricing — Ledebe">
+    <meta property="og:description" content="Simple, transparent pricing. Start free. Upgrade when you need more. No hidden fees.">
+    <meta property="og:image" content="https://ledebe.com/og-image.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Pricing — Ledebe">
+    <meta name="twitter:description" content="Simple, transparent pricing. Start free. Upgrade when you need more. No hidden fees.">
+    <meta name="twitter:image" content="https://ledebe.com/og-image.png">
+    <link rel="stylesheet" href="../styles.css?v=13">
+    <style>
+        /* ── Page hero ── */
+        .page-hero {
+            background: var(--bg-light);
+            border-bottom: 1px solid var(--border);
+            color: var(--text-dark);
+            padding: 4rem 2rem 3rem;
+            text-align: center;
+        }
+        .page-hero .page-hero-label {
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 0.75rem;
+        }
+        .page-hero h1 {
+            font-size: 2.8rem;
+            font-weight: 900;
+            margin-bottom: 0.75rem;
+            letter-spacing: -0.03em;
+            line-height: 1.1;
+        }
+        .page-hero p {
+            color: var(--text-gray);
+            font-size: 1.1rem;
+            max-width: 520px;
+            margin: 0 auto 2rem;
+            line-height: 1.7;
+        }
+
+        /* ── Billing toggle ── */
+        .billing-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            padding: 0.35rem 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .toggle-label {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--text-gray);
+            padding: 0.3rem 0.75rem;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+            white-space: nowrap;
+            background: none;
+            border: none;
+        }
+        .toggle-label.active {
+            background: var(--primary-blue);
+            color: white;
+        }
+        .save-badge {
+            background: #dcfce7;
+            color: #166534;
+            font-size: 0.72rem;
+            font-weight: 700;
+            border-radius: 999px;
+            padding: 0.15rem 0.55rem;
+            margin-left: 0.25rem;
+        }
+
+        /* ── Pricing grid ── */
+        .pricing-section {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 3.5rem 2rem 5rem;
+        }
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.25rem;
+            align-items: start;
+        }
+        .pricing-card {
+            background: white;
+            border: 1.5px solid var(--border);
+            border-radius: 16px;
+            padding: 1.75rem;
+            position: relative;
+            transition: box-shadow 0.2s, transform 0.2s;
+        }
+        .pricing-card:hover {
+            box-shadow: 0 12px 40px rgba(30,58,138,0.12);
+            transform: translateY(-2px);
+        }
+        .pricing-card.featured {
+            border-color: var(--primary-blue);
+            box-shadow: 0 8px 32px rgba(30,58,138,0.15);
+        }
+        .featured-badge {
+            position: absolute;
+            top: -13px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--primary-blue);
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            border-radius: 999px;
+            padding: 0.25rem 0.9rem;
+            white-space: nowrap;
+        }
+        .tier-name {
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--text-gray);
+            margin-bottom: 0.4rem;
+        }
+        .tier-title {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+        }
+        .tier-desc {
+            font-size: 0.85rem;
+            color: var(--text-gray);
+            line-height: 1.55;
+            margin-bottom: 1.25rem;
+            min-height: 2.8rem;
+        }
+        .tier-price {
+            margin-bottom: 1.5rem;
+        }
+        .price-amount {
+            font-size: 2.4rem;
+            font-weight: 900;
+            color: var(--text-dark);
+            letter-spacing: -0.03em;
+            line-height: 1;
+        }
+        .price-amount .currency {
+            font-size: 1.3rem;
+            font-weight: 700;
+            vertical-align: top;
+            margin-top: 0.35rem;
+            display: inline-block;
+        }
+        .price-per {
+            font-size: 0.82rem;
+            color: var(--text-gray);
+            margin-top: 0.3rem;
+        }
+        .price-annual-note {
+            font-size: 0.78rem;
+            color: #166534;
+            font-weight: 600;
+            margin-top: 0.2rem;
+            min-height: 1.2rem;
+        }
+        .tier-cta {
+            display: block;
+            text-align: center;
+            padding: 0.8rem 1rem;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.92rem;
+            text-decoration: none;
+            transition: background 0.2s, color 0.2s, transform 0.15s;
+            margin-bottom: 1.5rem;
+        }
+        .tier-cta:hover { transform: translateY(-1px); }
+        .cta-free {
+            background: var(--bg-light);
+            color: var(--text-dark);
+            border: 2px solid var(--border);
+        }
+        .cta-free:hover { background: var(--border); }
+        .cta-pro {
+            background: var(--accent);
+            color: white;
+        }
+        .cta-pro:hover { background: var(--accent-dark); }
+        .cta-team {
+            background: var(--primary-blue);
+            color: white;
+        }
+        .cta-team:hover { opacity: 0.9; }
+        .cta-enterprise {
+            background: var(--text-dark);
+            color: white;
+        }
+        .cta-enterprise:hover { opacity: 0.85; }
+
+        /* ── Feature list ── */
+        .tier-features {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+        .tier-features li {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.55rem;
+            font-size: 0.84rem;
+            color: var(--text-dark);
+            line-height: 1.4;
+        }
+        .tier-features li .check {
+            color: #16a34a;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+            margin-top: 0.05rem;
+        }
+        .tier-features li .cross {
+            color: #d1d5db;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+            margin-top: 0.05rem;
+        }
+        .tier-features li.dimmed { color: var(--text-gray); }
+        .features-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 1rem 0 0.75rem;
+        }
+        .features-heading {
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-gray);
+            margin-bottom: 0.6rem;
+        }
+
+        /* ── FAQ / trust strip ── */
+        .trust-strip {
+            background: white;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            padding: 2.5rem 2rem;
+        }
+        .trust-strip-inner {
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        .trust-item {
+            flex: 1;
+            min-width: 160px;
+            max-width: 200px;
+        }
+        .trust-item .icon { font-size: 1.6rem; display: block; margin-bottom: 0.4rem; }
+        .trust-item .title { font-size: 0.88rem; font-weight: 700; color: var(--text-dark); }
+        .trust-item .sub { font-size: 0.78rem; color: var(--text-gray); margin-top: 0.2rem; }
+
+        /* ── FAQ ── */
+        .faq-section {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 4rem 2rem 5rem;
+        }
+        .faq-section h2 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--text-dark);
+            margin-bottom: 2rem;
+            letter-spacing: -0.02em;
+            text-align: center;
+        }
+        .faq-item {
+            border-bottom: 1px solid var(--border);
+        }
+        .faq-q {
+            width: 100%;
+            background: none;
+            border: none;
+            text-align: left;
+            padding: 1.1rem 0;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+        }
+        .faq-q .arrow {
+            color: var(--text-gray);
+            font-size: 0.8rem;
+            flex-shrink: 0;
+            transition: transform 0.2s;
+        }
+        .faq-q.open .arrow { transform: rotate(180deg); }
+        .faq-a {
+            display: none;
+            font-size: 0.9rem;
+            color: var(--text-gray);
+            line-height: 1.75;
+            padding-bottom: 1rem;
+        }
+        .faq-a.open { display: block; }
+
+        /* ── Responsive ── */
+        @media (max-width: 900px) {
+            .pricing-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 580px) {
+            .pricing-grid { grid-template-columns: 1fr; }
+            .page-hero h1 { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<header class="header">
+    <nav class="nav">
+        <a href="/" class="logo" style="text-decoration:none;color:white;">
+            <img src="../logo.png" alt="Ledebe" style="height:36px;vertical-align:middle;"> Ledebe
+        </a>
+        <button class="nav-toggle" id="navToggle" aria-label="Menu">☰</button>
+        <div class="nav-menu" id="navMenu">
+        <ul class="nav-links">
+            <li><a href="/">Home</a></li>
+            <li><a href="/pricing/" class="nav-active">Pricing</a></li>
+            <li><a href="/docs/">Docs</a></li>
+            <li><a href="/demo/">Book a Demo</a></li>
+        </ul>
+        <div class="language-selector">
+            <button onclick="setLanguage('en')" class="lang-btn" id="lang-en">EN</button>
+            <button onclick="setLanguage('es')" class="lang-btn" id="lang-es">ES</button>
+            <button onclick="setLanguage('fr')" class="lang-btn" id="lang-fr">FR</button>
+            <button onclick="setLanguage('ar')" class="lang-btn" id="lang-ar">AR</button>
+            <button onclick="setLanguage('zh')" class="lang-btn" id="lang-zh">中</button>
+        </div>
+        </div>
+    </nav>
+</header>
+
+<!-- ── Hero ── -->
+<section class="page-hero">
+    <div class="page-hero-label">Pricing</div>
+    <h1>Simple, honest pricing</h1>
+    <p>Start free — no card required. Upgrade when you need more. Cancel any time. All paid plans include a <strong>14-day money-back guarantee</strong>.</p>
+
+    <!-- Billing toggle -->
+    <div class="billing-toggle" id="billingToggle">
+        <button class="toggle-label active" id="toggleMonthly" onclick="setBilling('monthly')">Monthly</button>
+        <button class="toggle-label" id="toggleAnnual" onclick="setBilling('annual')">Annual <span class="save-badge">Save 20%</span></button>
+    </div>
+</section>
+
+<!-- ── Pricing cards ── -->
+<div class="pricing-section">
+    <div class="pricing-grid">
+
+        <!-- Free -->
+        <div class="pricing-card">
+            <div class="tier-name">Personal</div>
+            <div class="tier-title">Free</div>
+            <div class="tier-desc">For individuals trying it out or light daily use.</div>
+            <div class="tier-price">
+                <div class="price-amount"><span class="currency">£</span>0</div>
+                <div class="price-per">forever</div>
+                <div class="price-annual-note">&nbsp;</div>
+            </div>
+            <a href="https://app.ledebe.com" class="tier-cta cta-free">Get started free</a>
+            <div class="features-heading">What's included</div>
+            <ul class="tier-features">
+                <li><span class="check">✓</span> Unlimited text protection</li>
+                <li><span class="check">✓</span> Up to 20 custom terms</li>
+                <li><span class="check">✓</span> 3 file uploads per day</li>
+                <li><span class="check">✓</span> Last 30 conversations</li>
+                <li><span class="check">✓</span> VS Code extension</li>
+                <li><span class="check">✓</span> Dark / light mode</li>
+                <li class="dimmed"><span class="cross">✕</span> AI chat (bring your own key)</li>
+                <li class="dimmed"><span class="cross">✕</span> Unlimited file uploads</li>
+                <li class="dimmed"><span class="cross">✕</span> Company sync</li>
+                <li class="dimmed"><span class="cross">✕</span> Priority support</li>
+            </ul>
+        </div>
+
+        <!-- Pro -->
+        <div class="pricing-card featured">
+            <div class="featured-badge">Most popular</div>
+            <div class="tier-name">Professional</div>
+            <div class="tier-title">Pro</div>
+            <div class="tier-desc">For power users, freelancers, and professionals who want more.</div>
+            <div class="tier-price">
+                <div class="price-amount" id="proPrice"><span class="currency">£</span>8</div>
+                <div class="price-per" id="proPer">per month</div>
+                <div class="price-annual-note" id="proAnnualNote">&nbsp;</div>
+            </div>
+            <a href="mailto:hello@ledebe.com?subject=Pro%20plan%20enquiry" class="tier-cta cta-pro" id="proCtaLink">Get Started →</a>
+            <div class="features-heading">Everything in Free, plus</div>
+            <ul class="tier-features">
+                <li><span class="check">✓</span> Unlimited custom terms</li>
+                <li><span class="check">✓</span> Unlimited file uploads (50 MB/file)</li>
+                <li><span class="check">✓</span> AI chat with your own API key</li>
+                <li><span class="check">✓</span> Full chat history (unlimited)</li>
+                <li><span class="check">✓</span> Export protected documents</li>
+                <li><span class="check">✓</span> Priority email support</li>
+                <li><span class="check">✓</span> Early access to new features</li>
+                <li class="dimmed"><span class="cross">✕</span> Company sync</li>
+                <li class="dimmed"><span class="cross">✕</span> Admin dashboard</li>
+            </ul>
+        </div>
+
+        <!-- Team -->
+        <div class="pricing-card">
+            <div class="tier-name">Business</div>
+            <div class="tier-title">Team</div>
+            <div class="tier-desc">For SMBs and departments that need shared control and visibility.</div>
+            <div class="tier-price">
+                <div class="price-amount" id="teamPrice"><span class="currency">£</span>18</div>
+                <div class="price-per" id="teamPer">per user / month</div>
+                <div class="price-annual-note" id="teamAnnualNote">&nbsp;</div>
+            </div>
+            <a href="mailto:hello@ledebe.com?subject=Team%20plan%20enquiry" class="tier-cta cta-team" id="teamCtaLink">Get Started →</a>
+            <div class="features-heading">Everything in Pro, plus</div>
+            <ul class="tier-features">
+                <li><span class="check">✓</span> Company sync — shared terms</li>
+                <li><span class="check">✓</span> Admin dashboard & team management</li>
+                <li><span class="check">✓</span> Centrally managed protected terms</li>
+                <li><span class="check">✓</span> Audit log</li>
+                <li><span class="check">✓</span> Dedicated account manager (10+ users)</li>
+                <li><span class="check">✓</span> Invoice billing available</li>
+                <li><span class="check">✓</span> SSO — coming soon</li>
+            </ul>
+            <p style="font-size:0.78rem;color:var(--text-gray);margin-top:1rem;">Minimum 3 users</p>
+        </div>
+
+        <!-- Enterprise -->
+        <div class="pricing-card">
+            <div class="tier-name">Enterprise</div>
+            <div class="tier-title">Custom</div>
+            <div class="tier-desc">For large organisations and regulated industries.</div>
+            <div class="tier-price">
+                <div class="price-amount" style="font-size:1.8rem;">Custom</div>
+                <div class="price-per">annual contract</div>
+                <div class="price-annual-note">&nbsp;</div>
+            </div>
+            <a href="mailto:hello@ledebe.com?subject=Enterprise%20enquiry" class="tier-cta cta-enterprise">Talk to us →</a>
+            <div class="features-heading">Everything in Team, plus</div>
+            <ul class="tier-features">
+                <li><span class="check">✓</span> On-premise deployment option</li>
+                <li><span class="check">✓</span> Custom integrations</li>
+                <li><span class="check">✓</span> Uptime SLA (terms in contract)</li>
+                <li><span class="check">✓</span> Compliance documentation on request</li>
+                <li><span class="check">✓</span> Custom term library</li>
+                <li><span class="check">✓</span> Dedicated onboarding</li>
+                <li><span class="check">✓</span> Volume discounts</li>
+            </ul>
+        </div>
+
+    </div>
+</div>
+
+<!-- ── Trust strip ── -->
+<div class="trust-strip">
+    <div class="trust-strip-inner">
+        <div class="trust-item">
+            <div class="title">No card needed</div>
+            <div class="sub">Start free, upgrade later</div>
+        </div>
+        <div class="trust-item">
+            <div class="title">Cancel any time</div>
+            <div class="sub">No lock-ins or penalties</div>
+        </div>
+        <div class="trust-item">
+            <div class="title">Switch plans freely</div>
+            <div class="sub">Upgrade or downgrade instantly</div>
+        </div>
+        <div class="trust-item">
+            <div class="title">Invoices included</div>
+            <div class="sub">Automatic receipts for every payment</div>
+        </div>
+        <div class="trust-item">
+            <div class="title">Payments via Paddle</div>
+            <div class="sub">PCI-compliant, secure checkout</div>
+        </div>
+    </div>
+</div>
+
+<!-- ── FAQ ── -->
+<div class="faq-section">
+    <h2>Frequently asked questions</h2>
+
+    <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+            Is the free plan really free forever? <span class="arrow">▼</span>
+        </button>
+        <div class="faq-a">Yes. The Personal plan is free indefinitely — no trial period, no credit card required. Core PII masking will always be free.</div>
+    </div>
+
+    <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+            What counts as a "file upload"? <span class="arrow">▼</span>
+        </button>
+        <div class="faq-a">Any PDF, Word document, image (JPEG/PNG), or CSV you upload for PII scanning. Free users get 3 uploads per day. Pro and above have unlimited uploads up to 50 MB per file.</div>
+    </div>
+
+    <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+            Do I need to provide my own AI API key? <span class="arrow">▼</span>
+        </button>
+        <div class="faq-a">Yes — for AI chat ("Ask AI" mode), you supply your own OpenAI, Anthropic, or Gemini API key. This keeps your protected data completely out of our systems. Your key is stored locally and never uploaded to Ledebe.</div>
+    </div>
+
+    <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+            How does billing work for the Team plan? <span class="arrow">▼</span>
+        </button>
+        <div class="faq-a">Team plans are billed per active user per month (minimum 3 users). You can add or remove seats at any time — billing adjusts automatically at the next cycle. Invoice billing is available on request.</div>
+    </div>
+
+    <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+            Can I switch plans at any time? <span class="arrow">▼</span>
+        </button>
+        <div class="faq-a">Yes. Upgrades apply immediately. Downgrades take effect at the end of your current billing period, and you keep access to paid features until then.</div>
+    </div>
+
+    <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+            What payment methods do you accept? <span class="arrow">▼</span>
+        </button>
+        <div class="faq-a">We accept all major credit and debit cards (Visa, Mastercard, Amex) via Paddle, our payments provider. Enterprise clients can pay by bank transfer or invoice.</div>
+    </div>
+
+    <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+            Is there a refund policy? <span class="arrow">▼</span>
+        </button>
+        <div class="faq-a">We offer a 14-day refund on all paid plans if you're not satisfied. Contact hello@ledebe.com and we'll sort it, no questions asked.</div>
+    </div>
+
+</div>
+
+<!-- ── Footer ── -->
+<footer class="footer">
+    <div class="container">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>Ledebe</h4>
+                <p>Privacy-first protection for anyone using AI. Your data stays on your device, always.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Product</h4>
+                <ul>
+                    <li><a href="/downloads/">Downloads</a></li>
+                    <li><a href="/pricing/">Pricing</a></li>
+                    <li><a href="/docs/">Documentation</a></li>
+                    <li><a href="https://marketplace.visualstudio.com/items?itemName=Ledebe.ledebe-protector">VS Code Extension</a></li>
+                    <li><a href="https://app.ledebe.com">Web App</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Company</h4>
+                <ul>
+                    <li><a href="/about/">About</a></li>
+                    <li><a href="/contact/">Contact</a></li>
+                    <li><a href="/demo/">Book a Demo</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Legal</h4>
+                <ul>
+                    <li><a href="/privacy/">Privacy Policy</a></li>
+                    <li><a href="/terms/">Terms of Service</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Ledebe Technologies. All rights reserved. Built with privacy in mind.</p>
+        </div>
+    </div>
+</footer>
+
+<script>
+    // ── Billing toggle ──
+    const prices = {
+        pro:  { monthly: { amount: '£8',  per: 'per month',          note: '' },
+                annual:  { amount: '£75', per: 'per year',           note: 'Save £21 vs monthly' } },
+        team: { monthly: { amount: '£18', per: 'per user / month',   note: '' },
+                annual:  { amount: '£160',per: 'per user / year',    note: 'Save £56 per user vs monthly' } }
+    };
+    const ctaLinks = {
+        pro:  'mailto:hello@ledebe.com?subject=Pro%20plan%20enquiry',
+        team: 'mailto:hello@ledebe.com?subject=Team%20plan%20enquiry'
+    };
+
+    let billing = 'monthly';
+
+    function setBilling(mode) {
+        billing = mode;
+        document.getElementById('toggleMonthly').classList.toggle('active', mode === 'monthly');
+        document.getElementById('toggleAnnual').classList.toggle('active', mode === 'annual');
+
+        ['pro', 'team'].forEach(tier => {
+            const p = prices[tier][mode];
+            document.getElementById(tier + 'Price').innerHTML = p.amount.startsWith('£')
+                ? '<span class="currency">£</span>' + p.amount.slice(1)
+                : p.amount;
+            document.getElementById(tier + 'Per').textContent = p.per;
+            document.getElementById(tier + 'AnnualNote').textContent = p.note || '\u00a0';
+            document.getElementById(tier + 'CtaLink').href = ctaLinks[tier];
+        });
+    }
+
+    // ── FAQ accordion ──
+    function toggleFaq(btn) {
+        const answer = btn.nextElementSibling;
+        const isOpen = answer.classList.contains('open');
+        // Close all
+        document.querySelectorAll('.faq-a').forEach(a => a.classList.remove('open'));
+        document.querySelectorAll('.faq-q').forEach(b => b.classList.remove('open'));
+        if (!isOpen) {
+            answer.classList.add('open');
+            btn.classList.add('open');
+        }
+    }
+</script>
+<script src="../i18n.js?v=4"></script>
+</body>
+</html>

@@ -65,12 +65,12 @@ class CrashReporter {
   private reportingEndpoint = 'https://api.github.com/gists';
   private githubToken = process.env.GITHUB_TOKEN || '';
   private gistId = process.env.CRASH_GIST_ID || '';
-  private webhookUrl = process.env.CRASH_WEBHOOK_URL || 'https://hooks.slack.com/services/YOUR/WEBHOOK/URL';
+  private webhookUrl = process.env.CRASH_WEBHOOK_URL || '';
 
   constructor() {
     this.sessionId = this.generateId();
     this.userId = this.getUserId();
-    this.crashDir = path.join(os.homedir(), '.ledebe-crashes');
+    this.crashDir = path.join(app.getPath('userData'), 'crashes');
     this.ensureCrashDir();
     this.setupCrashHandlers();
   }
@@ -84,7 +84,7 @@ class CrashReporter {
   }
 
   private getUserId(): string {
-    const userIdPath = path.join(os.homedir(), '.ledebe-user-id');
+    const userIdPath = path.join(app.getPath('userData'), 'user-id');
     try {
       if (fs.existsSync(userIdPath)) {
         return fs.readFileSync(userIdPath, 'utf8').trim();
@@ -378,56 +378,8 @@ class CrashReporter {
   }
 
   private async getDiskSpace(): Promise<{ total: number; free: number; used: number }> {
-    try {
-      const { execSync } = require('child_process');
-      let command: string;
-      
-      if (os.platform() === 'win32') {
-        command = 'wmic logicaldisk get size,freespace,caption';
-      } else {
-        command = 'df -h /';
-      }
-      
-      const output = execSync(command, { encoding: 'utf8' });
-      if (os.platform() === 'win32') {
-        // Windows: wmic logicaldisk get size,freespace,caption
-        const lines = output.trim().split('\n').filter((l: string) => l.trim() && !l.includes('Caption'));
-        let totalBytes = 0, freeBytes = 0;
-        for (const line of lines) {
-          const parts = line.trim().split(/\s+/);
-          if (parts.length >= 3) {
-            freeBytes += parseInt(parts[1]) || 0;
-            totalBytes += parseInt(parts[2]) || 0;
-          }
-        }
-        const total = totalBytes / (1024 ** 3);
-        const free = freeBytes / (1024 ** 3);
-        return { total: parseFloat(total.toFixed(2)), free: parseFloat(free.toFixed(2)), used: parseFloat((total - free).toFixed(2)) };
-      } else {
-        // Unix: df -h /
-        // Filesystem  Size  Used  Avail  Use%  Mounted
-        const lines = output.trim().split('\n');
-        if (lines.length >= 2) {
-          const parts = lines[1].trim().split(/\s+/);
-          const parseSize = (s: string): number => {
-            if (!s) return 0;
-            const unit = s.slice(-1).toUpperCase();
-            const num = parseFloat(s);
-            if (unit === 'T') return num * 1024;
-            if (unit === 'G') return num;
-            if (unit === 'M') return num / 1024;
-            return num / (1024 ** 3);
-          };
-          const total = parseSize(parts[1]);
-          const used = parseSize(parts[2]);
-          const available = parseSize(parts[3]);
-          return { total: parseFloat(total.toFixed(2)), free: parseFloat(available.toFixed(2)), used: parseFloat(used.toFixed(2)) };
-        }
-      }
-      return { total: 0, free: 0, used: 0 };
-    } catch (error) {
-      return { total: 0, free: 0, used: 0 };
-    }
+    // Shell commands (df, wmic) are blocked by MAS sandbox — not available in sandboxed context
+    return { total: 0, free: 0, used: 0 };
   }
 
   private getGPUInfo(): string {

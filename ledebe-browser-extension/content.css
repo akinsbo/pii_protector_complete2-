@@ -1,0 +1,382 @@
+.ledebe-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  z-index: 2147483647;
+  background: #122033;
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 999px;
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  font-size: 13px;
+  box-shadow: 0 10px 28px rgba(18, 32, 51, 0.35);
+}
+
+::highlight(ledebe-sensitive-highlight) {
+  text-decoration: underline dotted #f59e0b;
+  text-underline-offset: 3px;
+  background: rgba(245, 158, 11, 0.12);
+}
+
+::highlight(ledebe-protected-highlight) {
+  text-decoration: underline dotted #94a3b8;
+  text-underline-offset: 3px;
+  background: rgba(148, 163, 184, 0.1);
+}
+
+.ledebe-selection-btn {
+  display: none;
+  position: fixed;
+  background: #1e3a8a;
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.8rem;
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  font-weight: 700;
+  cursor: pointer;
+  z-index: 2147483647;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+  align-items: center;
+  gap: 0.3rem;
+  white-space: nowrap;
+  transition: background 0.15s, transform 0.1s;
+  user-select: none;
+}
+
+.ledebe-selection-btn:hover {
+  background: #0f9f6e;
+  transform: scale(1.05);
+}
+
+.ledebe-selection-btn::before {
+  content: "";
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 4px solid #1e3a8a;
+}
+
+.ledebe-selection-btn:hover::before {
+  border-top-color: #0f9f6e;
+}
+
+.ledebe-launcher {
+  position: fixed;
+  z-index: 2147483645;
+  width: 42px;
+  height: 42px;
+}
+
+.ledebe-launcher.is-paused .ledebe-launcher-main {
+  background: #f8fafc;
+  opacity: 0.88;
+}
+
+.ledebe-launcher.is-paused .ledebe-launcher-core img {
+  filter: grayscale(1);
+  opacity: 0.75;
+}
+
+.ledebe-launcher.is-paused .ledebe-launcher-count {
+  display: none;
+}
+
+.ledebe-launcher-rail {
+  position: absolute;
+  top: -18px;
+  left: 100%;
+  width: 8px;
+  height: calc(100% + 18px);
+  pointer-events: auto;
+}
+
+.ledebe-fan-actions {
+  position: absolute;
+  inset: 0;
+}
+
+.ledebe-launcher-main,
+.ledebe-fan-btn,
+.ledebe-chat-action,
+.ledebe-term-pill,
+.ledebe-chat-close {
+  border: 0;
+  cursor: pointer;
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+
+.ledebe-launcher-main {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.24);
+}
+
+.ledebe-launcher-core {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.ledebe-launcher-core img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  display: block;
+}
+
+.ledebe-launcher-count {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: #f59e0b;
+  color: #122033;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 16px;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+.ledebe-fan-btn {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: #fff;
+  color: #313f36;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 10px 20px rgba(18, 32, 51, 0.16);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(0, 0) scale(0.72);
+  transition: transform 0.18s ease, opacity 0.18s ease;
+}
+
+.ledebe-fan-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.ledebe-fan-label {
+  position: absolute;
+  right: 42px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(15, 23, 42, 0.92);
+  color: #fff;
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+
+.ledebe-fan-btn:hover .ledebe-fan-label,
+.ledebe-launcher.is-expanded .ledebe-fan-label {
+  opacity: 1;
+}
+
+.ledebe-launcher.is-expanded .ledebe-fan-btn {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.ledebe-launcher.is-expanded .ledebe-fan-btn-chat {
+  transform: translate(-56px, -48px) scale(1);
+}
+
+.ledebe-launcher.is-expanded .ledebe-fan-btn-protect {
+  transform: translate(-68px, -4px) scale(1);
+}
+
+.ledebe-launcher.is-expanded .ledebe-fan-btn-pause {
+  transform: translate(-4px, -68px) scale(1);
+}
+
+.ledebe-chat-panel {
+  position: fixed;
+  z-index: 2147483646;
+  width: min(340px, calc(100vw - 24px));
+  max-height: calc(100vh - 24px);
+  background: rgba(255, 255, 255, 0.99);
+  border: 1px solid rgba(30, 58, 138, 0.12);
+  border-radius: 18px;
+  box-shadow: 0 26px 60px rgba(18, 32, 51, 0.2);
+  overflow: auto;
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  color: #122033;
+  pointer-events: auto;
+}
+
+.ledebe-chat-panel[hidden] {
+  display: none;
+}
+
+.ledebe-chat-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px 12px;
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+  border-bottom: 1px solid rgba(30, 58, 138, 0.08);
+  cursor: move;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.ledebe-chat-kicker {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #1e3a8a;
+}
+
+.ledebe-chat-header h3 {
+  margin: 6px 0 0;
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.ledebe-chat-close {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #475569;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.ledebe-chat-body {
+  padding: 14px;
+  display: grid;
+  gap: 12px;
+}
+
+.ledebe-chat-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 12px;
+  background: #fff;
+}
+
+.ledebe-chat-card strong {
+  display: block;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.ledebe-chat-card p {
+  margin: 0;
+  color: #526174;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.ledebe-chat-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.ledebe-chat-action {
+  border-radius: 12px;
+  padding: 11px 12px;
+  background: #edf2ff;
+  color: #1e3a8a;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.ledebe-chat-action.primary {
+  background: #1e3a8a;
+  color: #fff;
+}
+
+.ledebe-chat-action.compact {
+  padding: 10px 12px;
+}
+
+.ledebe-chat-action:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.ledebe-finding-pills,
+.ledebe-term-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.ledebe-pill,
+.ledebe-term-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ledebe-pill {
+  background: #eef2ff;
+  color: #1e3a8a;
+}
+
+.ledebe-pill.muted {
+  background: #f8fafc;
+  color: #64748b;
+}
+
+.ledebe-term-pill {
+  background: #fff7ed;
+  color: #9a3412;
+  border: 1px solid #fdba74;
+}
+
+.ledebe-term-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.ledebe-term-input {
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  font-size: 13px;
+}

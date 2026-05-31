@@ -3,6 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
     <title>Downloads — Ledebe</title>
     <meta name="description" content="Download Ledebe for Mac, Windows, and Linux. Free to use, no account required.">
     <link rel="canonical" href="https://ledebe.com/downloads/">
@@ -147,6 +151,51 @@
         }
         .btn-vscode:hover { background: #f1f5f9; }
 
+        .extension-card {
+            background: linear-gradient(135deg, #fff7ed, #ffedd5);
+            border: 1px solid #fdba74;
+            border-radius: 14px;
+            padding: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 2rem;
+        }
+        .extension-card h2 { font-size: 1.3rem; font-weight: 800; color: var(--text-dark); margin-bottom: 0.45rem; }
+        .extension-card p { color: var(--text-gray); font-size: 0.92rem; max-width: 540px; }
+        .extension-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.85rem;
+        }
+        .extension-pill {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            padding: 0.4rem 0.75rem;
+            background: rgba(255,255,255,0.75);
+            border: 1px solid rgba(251,146,60,0.35);
+            color: #9a3412;
+            font-size: 0.78rem;
+            font-weight: 700;
+        }
+        .btn-extension {
+            background: #c2410c;
+            color: white;
+            padding: 0.875rem 1.35rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 0.92rem;
+            white-space: nowrap;
+            transition: background 0.2s;
+            display: inline-block;
+        }
+        .btn-extension:hover { background: #9a3412; }
+
         .notice {
             background: #fffbeb;
             border: 1px solid #fde68a;
@@ -193,92 +242,102 @@
 </header>
 
 <div class="page-hero">
-    <div class="page-hero-label">Get the app</div>
-    <h1>Download Ledebe</h1>
-    <p>Free to use. No account required. Available on Mac, Windows, Linux — or use it directly in your browser.</p>
+    <div class="page-hero-label" data-i18n="downloads.hero.label">Get the app</div>
+    <h1 data-i18n="downloads.hero.title">Download Ledebe</h1>
+    <p data-i18n="downloads.hero.desc">Free to use. No account required. Available on Mac, Windows, Linux — or use it directly in your browser.</p>
 </div>
 
 <div class="downloads-body">
 
-    <!-- Web App -->
-    <div class="web-app-card">
+    <div class="extension-card">
         <div>
-            <h2>Try the Web App — No Install Needed</h2>
-            <p>Use Ledebe instantly in your browser. No download, no setup. Works on any device.</p>
+            <h2>Browser Extension Preview</h2>
+            <p>Try Ledebe directly inside ChatGPT, Gmail, forms, and other browser tools. The current preview detects sensitive text while you type, protects the active field, and warns before submit when risky data is still present.</p>
+            <div class="extension-meta">
+                <span class="extension-pill">Chrome-compatible MVP</span>
+                <span class="extension-pill">Local-first scanning</span>
+                <span class="extension-pill">Safe-send warnings</span>
+            </div>
         </div>
-        <a href="https://app.ledebe.com" class="btn-try" target="_blank" rel="noopener noreferrer">Open Web App →</a>
+        <a href="/demo/" class="btn-extension">Request early access</a>
     </div>
 
     <!-- VS Code -->
     <div class="vscode-card">
         <div>
-            <h2>VS Code Extension</h2>
-            <p>Protect code, configs, and logs right in your editor. Search "Ledebe Protector" in the Extensions panel.</p>
+            <h2 data-i18n="downloads.vscode.title">VS Code Extension</h2>
+            <p data-i18n="downloads.vscode.desc">Protect code, configs, and logs right in your editor. Search "Ledebe Protector" in the Extensions panel.</p>
         </div>
-        <a href="https://marketplace.visualstudio.com/items?itemName=Ledebe.ledebe-protector" class="btn-vscode" target="_blank" rel="noopener noreferrer">Install Extension →</a>
+        <a href="https://marketplace.visualstudio.com/items?itemName=Ledebe.ledebe-protector" class="btn-vscode" target="_blank" rel="noopener noreferrer" data-i18n="downloads.vscode.btn">Install Extension →</a>
     </div>
 
     <!-- Mac -->
     <div class="platform-section">
-        <h2>🍎 macOS</h2>
+        <h2>🍎 <span data-i18n="downloads.mac.heading">macOS</span></h2>
         <div class="download-cards">
             <div class="dl-card">
                 <div class="dl-card-icon">💻</div>
-                <h3>Apple Silicon (M1, M2, M3)</h3>
-                <div class="req">Requires macOS 11 Big Sur or later</div>
-                <a href="https://ledebe.com/downloads/Ledebe%20Protector-1.0.0-arm64.dmg" class="dl-btn">Download .dmg</a>
-                <a href="https://ledebe.com/downloads/Ledebe%20Protector-1.0.0-arm64-mac.zip" class="dl-btn secondary">Download .zip</a>
+                <h3 data-i18n="downloads.mac.siliconTitle">Apple Silicon (M1, M2, M3)</h3>
+                <div class="req" data-i18n="downloads.mac.siliconReq">Requires macOS 11 Big Sur or later</div>
+                <a href="https://ledebe.com/downloads/Ledebe%20Protector-1.0.0-arm64.dmg" class="dl-btn" data-i18n="downloads.mac.btnDmg">Download .dmg</a>
+                <a href="https://ledebe.com/downloads/Ledebe%20Protector-1.0.0-arm64-mac.zip" class="dl-btn secondary" data-i18n="downloads.mac.btnZip">Download .zip</a>
             </div>
             <div class="dl-card">
                 <div class="dl-card-icon">🖥️</div>
-                <h3>Intel Mac</h3>
-                <div class="req">Requires macOS 10.15 Catalina or later</div>
-                <a href="https://ledebe.com/downloads/Ledebe%20Protector-1.0.0-x64.dmg" class="dl-btn">Download .dmg</a>
-                <a href="https://ledebe.com/downloads/Ledebe%20Protector-1.0.0-mac.zip" class="dl-btn secondary">Download .zip</a>
+                <h3 data-i18n="downloads.mac.intelTitle">Intel Mac</h3>
+                <div class="req" data-i18n="downloads.mac.intelReq">Requires macOS 10.15 Catalina or later</div>
+                <a href="https://ledebe.com/downloads/Ledebe%20Protector-1.0.0-x64.dmg" class="dl-btn" data-i18n="downloads.mac.btnDmg">Download .dmg</a>
+                <a href="https://ledebe.com/downloads/Ledebe%20Protector-1.0.0-mac.zip" class="dl-btn secondary" data-i18n="downloads.mac.btnZip">Download .zip</a>
             </div>
         </div>
-        <div class="notice">
+        <div class="notice" data-i18n-html="downloads.mac.notice">
             🍎 <strong>One-time setup on macOS:</strong> While we complete Apple notarisation, macOS will show a security prompt on first launch. Simply right-click the app icon → <strong>Open</strong> → <strong>Open</strong>. This only happens once — it's a standard step for new apps distributed outside the App Store.
         </div>
     </div>
 
     <!-- Windows -->
     <div class="platform-section">
-        <h2>🪟 Windows</h2>
+        <h2>🪟 <span data-i18n="downloads.win.heading">Windows</span></h2>
         <div class="download-cards">
             <div class="dl-card">
+                <div class="dl-card-icon">🏪</div>
+                <h3><span data-i18n="downloads.win.storeTitle">Microsoft Store</span> <span style="font-size:0.75rem;background:#dcfce7;color:#166534;padding:2px 8px;border-radius:999px;margin-left:6px;vertical-align:middle;" data-i18n="downloads.win.storeBadge">Recommended</span></h3>
+                <div class="req" data-i18n="downloads.win.storeReq">Signed by Microsoft, auto-updates, no security warnings</div>
+                <a href="https://apps.microsoft.com/detail/9N6HCR9DSLPT" class="dl-btn" target="_blank" rel="noopener" data-i18n="downloads.win.storeBtn">Get it from Microsoft Store →</a>
+            </div>
+            <div class="dl-card">
                 <div class="dl-card-icon">🖥️</div>
-                <h3>Windows Installer</h3>
-                <div class="req">Compatible with Windows 10 and Windows 11</div>
-                <a href="https://ledebe.com/downloads/Ledebe%20Protector%20Setup%201.0.0.exe" class="dl-btn">Download Setup .exe</a>
+                <h3 data-i18n="downloads.win.directTitle">Direct Installer</h3>
+                <div class="req" data-i18n="downloads.win.directReq">Compatible with Windows 10 and Windows 11</div>
+                <a href="https://ledebe.com/downloads/Ledebe%20Protector%20Setup%201.0.0.exe" class="dl-btn secondary" data-i18n="downloads.win.directBtn">Download Setup .exe</a>
             </div>
         </div>
-        <div class="notice">
-            ⚠️ <strong>Windows SmartScreen warning:</strong> You may see a "Windows protected your PC" message. Click <strong>More info</strong> → <strong>Run anyway</strong> to proceed. This warning appears for newly published apps without a code signing certificate.
+        <div class="notice" data-i18n-html="downloads.win.notice">
+            ⚠️ <strong>SmartScreen warning</strong> only applies to the Direct Installer. If you see "Windows protected your PC", click <strong>More info</strong> → <strong>Run anyway</strong>. The Microsoft Store version is signed by Microsoft and skips this warning entirely.
         </div>
     </div>
 
     <!-- Linux -->
     <div class="platform-section">
-        <h2>🐧 Linux</h2>
+        <h2>🐧 <span data-i18n="downloads.linux.heading">Linux</span></h2>
         <div class="download-cards">
             <div class="dl-card">
                 <div class="dl-card-icon">📦</div>
-                <h3>AppImage (Universal)</h3>
-                <div class="req">Works on Ubuntu 18.04+, Fedora, Debian, and most distros</div>
-                <a href="https://ledebe.com/downloads/Ledebe%20Protector-1.0.0.AppImage" class="dl-btn">Download .AppImage</a>
+                <h3 data-i18n="downloads.linux.appimageTitle">AppImage (Universal)</h3>
+                <div class="req" data-i18n="downloads.linux.appimageReq">Works on Ubuntu 18.04+, Fedora, Debian, and most distros</div>
+                <a href="https://ledebe.com/downloads/Ledebe%20Protector-1.0.0.AppImage" class="dl-btn" data-i18n="downloads.linux.appimageBtn">Download .AppImage</a>
             </div>
             <div class="dl-card">
                 <div class="dl-card-icon">📦</div>
-                <h3>Snap Package</h3>
-                <div class="req">For Ubuntu and Snap-enabled distributions</div>
-                <a href="https://ledebe.com/downloads/ledebe-protector_1.0.0_amd64.snap" class="dl-btn">Download .snap</a>
+                <h3 data-i18n="downloads.linux.snapTitle">Snap Package</h3>
+                <div class="req" data-i18n="downloads.linux.snapReq">For Ubuntu and Snap-enabled distributions</div>
+                <a href="https://ledebe.com/downloads/ledebe-protector_1.0.0_amd64.snap" class="dl-btn" data-i18n="downloads.linux.snapBtn">Download .snap</a>
             </div>
         </div>
         <div class="notice">
-            ℹ️ <strong>AppImage setup:</strong> After downloading, make the file executable before running:
+            ℹ️ <strong data-i18n="downloads.linux.noticeIntro">AppImage setup:</strong> <span data-i18n="downloads.linux.noticeStep1">After downloading, make the file executable before running:</span>
             <br><code style="background:#fef3c7;padding:2px 6px;border-radius:4px;font-size:0.82rem;">chmod +x "Ledebe Protector-1.0.0.AppImage"</code>
-            <br>If it fails to launch, install libfuse2: <code style="background:#fef3c7;padding:2px 6px;border-radius:4px;font-size:0.82rem;">sudo apt install libfuse2</code>
+            <br><span data-i18n="downloads.linux.noticeStep2">If it fails to launch, install libfuse2:</span> <code style="background:#fef3c7;padding:2px 6px;border-radius:4px;font-size:0.82rem;">sudo apt install libfuse2</code>
         </div>
     </div>
 
@@ -289,40 +348,40 @@
         <div class="footer-content">
             <div class="footer-section">
                 <h4>Ledebe</h4>
-                <p>Secure data protection for everyone</p>
+                <p data-i18n="footer.tagline">Privacy-first protection for anyone using AI. Your data stays on your device, always.</p>
             </div>
             <div class="footer-section">
-                <h4>Product</h4>
+                <h4 data-i18n="footer.product">Product</h4>
                 <ul>
-                    <li><a href="/downloads/">Downloads</a></li>
-                    <li><a href="/pricing/">Pricing</a></li>
-                    <li><a href="/docs/">Documentation</a></li>
-                    <li><a href="https://marketplace.visualstudio.com/items?itemName=Ledebe.ledebe-protector" target="_blank" rel="noopener noreferrer">VS Code Extension</a></li>
-                    <li><a href="https://app.ledebe.com" target="_blank" rel="noopener noreferrer">Web App</a></li>
+                    <li><a href="/downloads/" data-i18n="footer.downloads">Downloads</a></li>
+                    <li><a href="/pricing/" data-i18n="footer.pricing">Pricing</a></li>
+                    <li><a href="/docs/" data-i18n="footer.documentation">Documentation</a></li>
+                    <li><a href="https://marketplace.visualstudio.com/items?itemName=Ledebe.ledebe-protector" target="_blank" rel="noopener noreferrer" data-i18n="footer.vscodeExt">VS Code Extension</a></li>
+                    <li><a href="https://app.ledebe.com" target="_blank" rel="noopener noreferrer" data-i18n="footer.webApp">Web App</a></li>
                 </ul>
             </div>
             <div class="footer-section">
-                <h4>Company</h4>
+                <h4 data-i18n="footer.company">Company</h4>
                 <ul>
-                    <li><a href="/about/">About</a></li>
-                    <li><a href="/contact/">Contact</a></li>
-                    <li><a href="/demo/">Book a Demo</a></li>
+                    <li><a href="/about/" data-i18n="footer.about">About</a></li>
+                    <li><a href="/contact/" data-i18n="footer.contact">Contact</a></li>
+                    <li><a href="/demo/" data-i18n="footer.bookDemo">Book a Demo</a></li>
                 </ul>
             </div>
             <div class="footer-section">
-                <h4>Legal</h4>
+                <h4 data-i18n="footer.legal">Legal</h4>
                 <ul>
-                    <li><a href="/privacy/">Privacy Policy</a></li>
-                    <li><a href="/terms/">Terms of Service</a></li>
+                    <li><a href="/privacy/" data-i18n="footer.privacy">Privacy Policy</a></li>
+                    <li><a href="/terms/" data-i18n="footer.terms">Terms of Service</a></li>
                 </ul>
             </div>
         </div>
         <div class="footer-bottom">
-            <p>&copy; 2026 Ledebe Technologies. All rights reserved.</p>
+            <p data-i18n="footer.copyright">&copy; 2026 Ledebe Technologies. All rights reserved.</p>
         </div>
     </div>
 </footer>
 
-<script src="../i18n.js?v=4"></script>
+<script src="../i18n.js?v=6"></script>
 </body>
 </html>

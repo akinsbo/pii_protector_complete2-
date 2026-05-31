@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ledebe Browser Protector</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <main class="popup-shell">
+    <section class="popup-hero">
+      <div class="popup-kicker">Ledebe Browser Protector</div>
+      <h1>Protect prompts before they leave the page.</h1>
+      <p>Scan text fields in ChatGPT, Gmail, forms, and other browser tools without leaving your workflow.</p>
+    </section>
+
+    <section class="popup-panel">
+      <div class="status-row">
+        <span class="status-label">Current site</span>
+        <strong id="current-host">Loading...</strong>
+      </div>
+      <div class="status-row">
+        <span class="status-label">Detected right now</span>
+        <strong id="finding-count">0 items</strong>
+      </div>
+      <div class="summary-list" id="finding-summary"></div>
+    </section>
+
+    <section class="popup-panel">
+      <label class="toggle-row">
+        <span>
+          <strong>Realtime protection</strong>
+          <small>Show warnings while typing.</small>
+        </span>
+        <input type="checkbox" id="enabled-toggle">
+      </label>
+      <label class="toggle-row">
+        <span>
+          <strong>Safe send</strong>
+          <small>Warn before form submit when PII is still present.</small>
+        </span>
+        <input type="checkbox" id="safesend-toggle">
+      </label>
+      <label class="toggle-row">
+        <span>
+          <strong>Scan on paste</strong>
+          <small>Check newly pasted text automatically.</small>
+        </span>
+        <input type="checkbox" id="paste-toggle">
+      </label>
+    </section>
+
+    <section class="popup-actions">
+      <button class="btn btn-primary" id="protect-btn">Protect active field</button>
+      <button class="btn btn-secondary" id="rescan-btn">Rescan</button>
+      <button class="btn btn-secondary" id="pause-btn">Pause on this site</button>
+    </section>
+  </main>
+  <script src="popup.js"></script>
+</body>
+</html>

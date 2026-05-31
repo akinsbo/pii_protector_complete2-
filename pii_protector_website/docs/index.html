@@ -3,6 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
     <title>Documentation — Ledebe</title>
     <meta name="description" content="Ledebe documentation. Learn how to mask PII, use custom terms, upload documents, and integrate with AI tools.">
     <link rel="canonical" href="https://ledebe.com/docs/">
@@ -337,45 +341,45 @@
     </header>
 
     <div class="docs-hero">
-        <h1>Documentation</h1>
-        <p>Everything you need to install and use Ledebe Protector</p>
+        <h1 data-i18n="docs.hero.title">Documentation</h1>
+        <p data-i18n="docs.hero.subtitle">Everything you need to install and use Ledebe Protector</p>
     </div>
 
     <div class="docs-layout">
 
         <!-- Sidebar -->
         <aside class="docs-sidebar">
-            <h4>Getting Started</h4>
+            <h4 data-i18n="docs.sidebar.started">Getting Started</h4>
             <ul>
-                <li><a href="#overview">Overview</a></li>
-                <li><a href="#how-to-use">How to Use</a></li>
-                <li><a href="#requirements">System Requirements</a></li>
+                <li><a href="#overview" data-i18n="docs.sidebar.overview">Overview</a></li>
+                <li><a href="#how-to-use" data-i18n="docs.sidebar.howToUse">How to Use</a></li>
+                <li><a href="#requirements" data-i18n="docs.sidebar.requirements">System Requirements</a></li>
             </ul>
-            <h4>Installation</h4>
+            <h4 data-i18n="docs.sidebar.install">Installation</h4>
             <ul>
-                <li><a href="#mac-silicon">macOS (Apple Silicon)</a></li>
-                <li><a href="#mac-intel">macOS (Intel)</a></li>
-                <li><a href="#windows">Windows</a></li>
-                <li><a href="#linux">Linux</a></li>
+                <li><a href="#mac-silicon" data-i18n="docs.sidebar.macSilicon">macOS (Apple Silicon)</a></li>
+                <li><a href="#mac-intel" data-i18n="docs.sidebar.macIntel">macOS (Intel)</a></li>
+                <li><a href="#windows" data-i18n="docs.sidebar.windows">Windows</a></li>
+                <li><a href="#linux" data-i18n="docs.sidebar.linux">Linux</a></li>
             </ul>
-            <h4>Using Ledebe</h4>
+            <h4 data-i18n="docs.sidebar.using">Using Ledebe</h4>
             <ul>
-                <li><a href="#protect-text">Protecting Text</a></li>
-                <li><a href="#highlight-protect">Highlight to Protect / Unprotect</a></li>
-                <li><a href="#custom-terms">Custom Terms</a></li>
-                <li><a href="#file-upload">File Upload</a></li>
-                <li><a href="#ai-chat">AI Chat</a></li>
-                <li><a href="#history">History &amp; Search</a></li>
-                <li><a href="#keyboard-shortcuts">Keyboard Shortcuts</a></li>
+                <li><a href="#protect-text" data-i18n="docs.sidebar.protectText">Protecting Text</a></li>
+                <li><a href="#highlight-protect" data-i18n="docs.sidebar.highlightProtect">Highlight to Protect / Unprotect</a></li>
+                <li><a href="#custom-terms" data-i18n="docs.sidebar.customTerms">Custom Terms</a></li>
+                <li><a href="#file-upload" data-i18n="docs.sidebar.fileUpload">File Upload</a></li>
+                <li><a href="#ai-chat" data-i18n="docs.sidebar.aiChat">AI Chat</a></li>
+                <li><a href="#history" data-i18n="docs.sidebar.history">History &amp; Search</a></li>
+                <li><a href="#keyboard-shortcuts" data-i18n="docs.sidebar.keyboard">Keyboard Shortcuts</a></li>
             </ul>
-            <h4>Extensions</h4>
+            <h4 data-i18n="docs.sidebar.extensions">Extensions</h4>
             <ul>
-                <li><a href="#vscode">VS Code Extension</a></li>
+                <li><a href="#vscode" data-i18n="docs.sidebar.vscode">VS Code Extension</a></li>
             </ul>
-            <h4>Help</h4>
+            <h4 data-i18n="docs.sidebar.help">Help</h4>
             <ul>
-                <li><a href="#faq">FAQ</a></li>
-                <li><a href="#troubleshooting">Troubleshooting</a></li>
+                <li><a href="#faq" data-i18n="docs.sidebar.faq">FAQ</a></li>
+                <li><a href="#troubleshooting" data-i18n="docs.sidebar.troubleshooting">Troubleshooting</a></li>
             </ul>
         </aside>
 
@@ -383,13 +387,13 @@
         <main class="docs-content">
 
             <!-- Overview -->
-            <h1>Ledebe Protector Docs</h1>
-            <p class="lead">Ledebe Protector detects and masks personally identifiable information (PII) before you share text with AI tools, colleagues, or external services. Your original data never leaves your device.</p>
+            <h1 data-i18n="docs.pageTitle">Ledebe Protector Docs</h1>
+            <p class="lead" data-i18n="docs.pageLead">Ledebe Protector detects and masks personally identifiable information (PII) before you share text with AI tools, colleagues, or external services. Your original data never leaves your device.</p>
 
             <div class="doc-section" id="overview">
-                <h2>🛡️ Overview</h2>
-                <p>Ledebe Protector works by replacing sensitive information in your text with safe placeholders, letting you share or process the text freely. You can then restore the original content at any time.</p>
-                <p>Supported PII types:</p>
+                <h2>🛡️ <span data-i18n="docs.overview.title">Overview</span></h2>
+                <p data-i18n="docs.overview.p1">Ledebe Protector works by replacing sensitive information in your text with safe placeholders, letting you share or process the text freely. You can then restore the original content at any time.</p>
+                <p data-i18n="docs.overview.typesIntro">Supported PII types:</p>
                 <ul>
                     <li><strong>Emails</strong> — e.g. john@example.com → [LDB_EMAIL#1]</li>
                     <li><strong>Phone numbers</strong> — local and international formats</li>
@@ -404,64 +408,60 @@
             <!-- How to Use -->
             <div class="doc-section" id="how-to-use">
                 <div style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); border-radius: 12px; padding: 2rem 2.5rem; margin-bottom: 2rem; color: white;">
-                    <h2 style="font-size: 2rem; font-weight: 800; color: white; margin-bottom: 0.4rem; display: block;">🚀 How to Use Ledebe</h2>
-                    <p style="opacity: 0.85; margin: 0; font-size: 1rem;">New to Ledebe? Follow these steps to protect and share text safely in under a minute.</p>
+                    <h2 style="font-size: 2rem; font-weight: 800; color: white; margin-bottom: 0.4rem; display: block;">🚀 <span data-i18n="docs.howToUse.title">How to Use Ledebe</span></h2>
+                    <p style="opacity: 0.85; margin: 0; font-size: 1rem;" data-i18n="docs.howToUse.subtitle">New to Ledebe? Follow these steps to protect and share text safely in under a minute.</p>
                 </div>
 
-                <h3>Step 1 — Type or paste your text</h3>
-                <p>Open the app and type (or paste) any text that contains sensitive information into the main input area. It could be an email, a support ticket, a contract excerpt — anything.</p>
+                <h3 data-i18n="docs.howToUse.s1Title">Step 1 — Type or paste your text</h3>
+                <p data-i18n="docs.howToUse.s1Body">Open the app and type (or paste) any text that contains sensitive information into the main input area. It could be an email, a support ticket, a contract excerpt — anything.</p>
                 <div class="callout callout-info">
                     <span class="callout-icon">ℹ️</span>
-                    <div>Example: <em>"Hi, my name is Sarah Jones, email sarah@company.com and my phone is 07911 123456."</em></div>
+                    <div data-i18n-html="docs.howToUse.s1Example">Example: <em>"Hi, my name is Sarah Jones, email sarah@company.com and my phone is 07911 123456."</em></div>
                 </div>
 
-                <h3>Step 2 — Click Send / Protect</h3>
-                <p>Click the <strong>Send</strong> button (or press <strong>Ctrl + Enter</strong> / <strong>⌘ Cmd + Enter</strong> on Mac). Ledebe automatically scans your text and replaces every piece of detected PII with a safe placeholder.</p>
+                <h3 data-i18n="docs.howToUse.s2Title">Step 2 — Click Send / Protect</h3>
+                <p data-i18n-html="docs.howToUse.s2Body">Click the <strong>Send</strong> button (or press <strong>Ctrl + Enter</strong> / <strong>⌘ Cmd + Enter</strong> on Mac). Ledebe automatically scans your text and replaces every piece of detected PII with a safe placeholder.</p>
                 <div class="callout callout-tip">
                     <span class="callout-icon">💡</span>
-                    <div>The result will look like: <em>"Hi, my name is [LDB_CUSTOM1], email [LDB_EMAIL1] and my phone is [LDB_PHONE1]."</em> — safe to share anywhere.</div>
+                    <div data-i18n-html="docs.howToUse.s2Example">The result will look like: <em>"Hi, my name is [LDB_CUSTOM1], email [LDB_EMAIL1] and my phone is [LDB_PHONE1]."</em> — safe to share anywhere.</div>
                 </div>
 
-                <h3>Step 3 — Switch between views</h3>
-                <p>Each message has two tabs beneath it:</p>
-                <ul>
-                    <li><strong>Plain Text</strong> — your original, unmasked text (visible only to you).</li>
-                    <li><strong>Protected Text</strong> — the masked version with placeholders, safe to copy and share.</li>
-                </ul>
+                <h3 data-i18n="docs.howToUse.s3Title">Step 3 — Switch between views</h3>
+                <p data-i18n-html="docs.howToUse.s3Body">Each message has two tabs beneath it:</p>
 
-                <h3>Step 4 — Copy the protected text</h3>
-                <p>Click the <strong>📋 Copy</strong> button on the message, or press <strong>Ctrl/⌘ Cmd + Shift + X</strong>, to copy the protected version to your clipboard. Paste it into ChatGPT, an email, a support system — wherever you need it.</p>
+                <h3 data-i18n="docs.howToUse.s4Title">Step 4 — Copy the protected text</h3>
+                <p data-i18n-html="docs.howToUse.s4Body">Click the <strong>📋 Copy</strong> button on the message, or press <strong>Ctrl/⌘ Cmd + Shift + X</strong>, to copy the protected version to your clipboard. Paste it into ChatGPT, an email, a support system — wherever you need it.</p>
 
-                <h3>Step 5 — Restore the original (optional)</h3>
-                <p>If you receive a reply that contains placeholders (e.g. from an AI tool), paste it back into Ledebe. It will automatically swap the placeholders back to the real values, so you can read the response with your actual data.</p>
+                <h3 data-i18n="docs.howToUse.s5Title">Step 5 — Restore the original (optional)</h3>
+                <p data-i18n="docs.howToUse.s5Body">If you receive a reply that contains placeholders (e.g. from an AI tool), paste it back into Ledebe. It will automatically swap the placeholders back to the real values, so you can read the response with your actual data.</p>
 
-                <h3>Step 6 — Add custom terms (optional)</h3>
-                <p>Have specific words you always want to hide — like your company name, a project code, or a client name? Add them to <strong>Custom Terms</strong> in the sidebar. They'll be masked automatically every time.</p>
+                <h3 data-i18n="docs.howToUse.s6Title">Step 6 — Add custom terms (optional)</h3>
+                <p data-i18n-html="docs.howToUse.s6Body">Have specific words you always want to hide — like your company name, a project code, or a client name? Add them to <strong>Custom Terms</strong> in the sidebar. They'll be masked automatically every time.</p>
 
                 <div class="callout callout-tip">
                     <span class="callout-icon">💡</span>
-                    <div><strong>Quick tip:</strong> As you type, Ledebe suggests words to add as custom terms. If a word is already protected, it shows a green <em>"already protected"</em> chip so you never add the same term twice.</div>
+                    <div data-i18n-html="docs.howToUse.s6Tip"><strong>Quick tip:</strong> As you type, Ledebe suggests words to add as custom terms. If a word is already protected, it shows a green <em>"already protected"</em> chip so you never add the same term twice.</div>
                 </div>
 
-                <h3>Switching between Protect and Ask AI</h3>
-                <p>At the bottom of the screen, just above the text box, you'll see a mode toggle:</p>
+                <h3 data-i18n="docs.howToUse.modeTitle">Switching between Protect and Ask AI</h3>
+                <p data-i18n="docs.howToUse.modeIntro">At the bottom of the screen, just above the text box, you'll see a mode toggle:</p>
                 <div style="display:flex;gap:0.5rem;margin:1rem 0;">
                     <span style="background:var(--primary-blue);color:white;padding:0.35rem 1rem;border-radius:9999px;font-size:0.9rem;font-weight:600;">🛡️ Protect</span>
                     <span style="background:var(--bg-light);border:1px solid var(--border);color:var(--text-gray);padding:0.35rem 1rem;border-radius:9999px;font-size:0.9rem;font-weight:600;">🤖 Ask AI</span>
                 </div>
                 <ul>
-                    <li><strong>🛡️ Protect (default)</strong> — masks your text and shows you the safe version to copy. Nothing is sent to any AI. Use this when you just want to sanitise text before pasting it elsewhere.</li>
-                    <li><strong>🤖 Ask AI</strong> — sends your message directly to an AI (OpenAI, Anthropic, or Google) with PII already masked. The AI replies, and you see both the AI's response and a re-masked "Safe to Share" version. Use this for a full private AI chat experience.</li>
+                    <li data-i18n-html="docs.howToUse.modeProtect"><strong>🛡️ Protect (default)</strong> — masks your text and shows you the safe version to copy. Nothing is sent to any AI. Use this when you just want to sanitise text before pasting it elsewhere.</li>
+                    <li data-i18n-html="docs.howToUse.modeAsk"><strong>🤖 Ask AI</strong> — sends your message directly to an AI (OpenAI, Anthropic, or Google) with PII already masked. The AI replies, and you see both the AI's response and a re-masked "Safe to Share" version. Use this for a full private AI chat experience.</li>
                 </ul>
                 <div class="callout callout-tip">
                     <span class="callout-icon">💡</span>
-                    <div>You can switch modes at any time — even mid-conversation. The mode toggle remembers your last choice.</div>
+                    <div data-i18n="docs.howToUse.modeTip">You can switch modes at any time — even mid-conversation. The mode toggle remembers your last choice.</div>
                 </div>
             </div>
 
             <!-- System Requirements -->
             <div class="doc-section" id="requirements">
-                <h2>💻 System Requirements</h2>
+                <h2>💻 <span data-i18n="docs.reqs.title">System Requirements</span></h2>
                 <ul>
                     <li><strong>macOS:</strong> macOS 11 (Big Sur) or later for Apple Silicon · macOS 10.15 (Catalina) or later for Intel</li>
                     <li><strong>Windows:</strong> Windows 10 or later (64-bit)</li>
@@ -474,10 +474,10 @@
 
             <!-- macOS Apple Silicon -->
             <div class="doc-section" id="mac-silicon">
-                <h2>🍎 macOS <span class="platform-badge badge-mac">Apple Silicon</span></h2>
-                <p>For M1, M2, and M3 Macs. Download the <strong>arm64.dmg</strong> file.</p>
+                <h2>🍎 <span data-i18n="docs.macSilicon.title">macOS</span> <span class="platform-badge badge-mac">Apple Silicon</span></h2>
+                <p data-i18n-html="docs.macSilicon.intro">For M1, M2, and M3 Macs. Download the <strong>arm64.dmg</strong> file.</p>
 
-                <h3>Installation steps</h3>
+                <h3 data-i18n="docs.macSilicon.stepsTitle">Installation steps</h3>
                 <ol class="steps">
                     <li>Download <strong>Ledebe Protector-1.0.0-arm64.dmg</strong> from the <a href="/downloads/">Downloads</a> page.</li>
                     <li>Open the downloaded <code>.dmg</code> file from your Downloads folder.</li>
@@ -487,21 +487,21 @@
 
                 <div class="callout callout-warning">
                     <span class="callout-icon">⚠️</span>
-                    <div><strong>Gatekeeper warning:</strong> On first launch, macOS may show "Ledebe Protector cannot be opened because it is from an unidentified developer." To bypass: right-click the app icon → click <strong>Open</strong> → click <strong>Open</strong> in the dialog. You only need to do this once.</div>
+                    <div data-i18n-html="docs.macSilicon.gateWarning"><strong>Gatekeeper warning:</strong> On first launch, macOS may show "Ledebe Protector cannot be opened because it is from an unidentified developer." To bypass: right-click the app icon → click <strong>Open</strong> → click <strong>Open</strong> in the dialog. You only need to do this once.</div>
                 </div>
 
                 <div class="callout callout-tip">
                     <span class="callout-icon">💡</span>
-                    <div>Alternatively, go to <strong>System Settings → Privacy &amp; Security</strong> and click <strong>Open Anyway</strong> next to the Ledebe Protector entry.</div>
+                    <div data-i18n-html="docs.macSilicon.altTip">Alternatively, go to <strong>System Settings → Privacy &amp; Security</strong> and click <strong>Open Anyway</strong> next to the Ledebe Protector entry.</div>
                 </div>
             </div>
 
             <!-- macOS Intel -->
             <div class="doc-section" id="mac-intel">
-                <h2>🍎 macOS <span class="platform-badge badge-mac">Intel</span></h2>
-                <p>For Intel-based Macs. Download the <strong>x64.dmg</strong> file.</p>
+                <h2>🍎 <span data-i18n="docs.macIntel.title">macOS</span> <span class="platform-badge badge-mac">Intel</span></h2>
+                <p data-i18n-html="docs.macIntel.intro">For Intel-based Macs. Download the <strong>x64.dmg</strong> file.</p>
 
-                <h3>Installation steps</h3>
+                <h3 data-i18n="docs.macIntel.stepsTitle">Installation steps</h3>
                 <ol class="steps">
                     <li>Download <strong>Ledebe Protector-1.0.0-x64.dmg</strong> from the <a href="/downloads/">Downloads</a> page.</li>
                     <li>Open the <code>.dmg</code> file and drag the app to <strong>Applications</strong>.</li>
@@ -510,16 +510,16 @@
 
                 <div class="callout callout-warning">
                     <span class="callout-icon">⚠️</span>
-                    <div>Same Gatekeeper behaviour as Apple Silicon — right-click → <strong>Open</strong> on first launch if macOS blocks it.</div>
+                    <div data-i18n-html="docs.macIntel.gateWarning">Same Gatekeeper behaviour as Apple Silicon — right-click → <strong>Open</strong> on first launch if macOS blocks it.</div>
                 </div>
             </div>
 
             <!-- Windows -->
             <div class="doc-section" id="windows">
-                <h2>🪟 Windows <span class="platform-badge badge-win">10 / 11</span></h2>
-                <p>Download the <strong>Ledebe Protector Setup 1.0.0.exe</strong> NSIS installer. This creates Start Menu shortcuts, a desktop icon, and an uninstaller.</p>
+                <h2>🪟 <span data-i18n="docs.windows.title">Windows</span> <span class="platform-badge badge-win">10 / 11</span></h2>
+                <p data-i18n-html="docs.windows.intro">Download the <strong>Ledebe Protector Setup 1.0.0.exe</strong> NSIS installer. This creates Start Menu shortcuts, a desktop icon, and an uninstaller.</p>
 
-                <h3>Installation steps</h3>
+                <h3 data-i18n="docs.windows.stepsTitle">Installation steps</h3>
                 <ol class="steps">
                     <li>Download <strong>Ledebe Protector Setup 1.0.0.exe</strong> from the <a href="/downloads/">Downloads</a> page.</li>
                     <li>Run the installer — you may see a <strong>Windows SmartScreen</strong> warning ("Windows protected your PC"). Click <strong>More info</strong> then <strong>Run anyway</strong>.</li>
@@ -529,21 +529,21 @@
 
                 <div class="callout callout-warning">
                     <span class="callout-icon">⚠️</span>
-                    <div><strong>SmartScreen warning</strong> is normal for newly published apps without an EV code signing certificate. The app is safe — click <strong>More info → Run anyway</strong> to proceed.</div>
+                    <div data-i18n-html="docs.windows.smartScreen"><strong>SmartScreen warning</strong> is normal for newly published apps without an EV code signing certificate. The app is safe — click <strong>More info → Run anyway</strong> to proceed.</div>
                 </div>
 
                 <div class="callout callout-info">
                     <span class="callout-icon">ℹ️</span>
-                    <div>To uninstall: go to <strong>Settings → Apps</strong>, find Ledebe Protector, and click <strong>Uninstall</strong>.</div>
+                    <div data-i18n-html="docs.windows.uninstall">To uninstall: go to <strong>Settings → Apps</strong>, find Ledebe Protector, and click <strong>Uninstall</strong>.</div>
                 </div>
             </div>
 
             <!-- Linux -->
             <div class="doc-section" id="linux">
-                <h2>🐧 Linux <span class="platform-badge badge-linux">AppImage</span></h2>
-                <p>Ledebe Protector ships as a universal <strong>AppImage</strong> — no installation required. It runs on Ubuntu, Debian, Fedora, Arch, and most other distros.</p>
+                <h2>🐧 <span data-i18n="docs.linux.title">Linux</span> <span class="platform-badge badge-linux">AppImage</span></h2>
+                <p data-i18n-html="docs.linux.intro">Ledebe Protector ships as a universal <strong>AppImage</strong> — no installation required. It runs on Ubuntu, Debian, Fedora, Arch, and most other distros.</p>
 
-                <h3>Installation steps</h3>
+                <h3 data-i18n="docs.linux.stepsTitle">Installation steps</h3>
                 <ol class="steps">
                     <li>Download <strong>Ledebe Protector-1.0.0.AppImage</strong> from the <a href="/downloads/">Downloads</a> page.</li>
                     <li>Open a terminal and navigate to your Downloads folder:
@@ -559,12 +559,12 @@
 
                 <div class="callout callout-tip">
                     <span class="callout-icon">💡</span>
-                    <div>You can also right-click the AppImage in your file manager → <strong>Properties → Permissions</strong> → check <strong>"Allow executing file as program"</strong>, then double-click to run.</div>
+                    <div data-i18n-html="docs.linux.gui">You can also right-click the AppImage in your file manager → <strong>Properties → Permissions</strong> → check <strong>"Allow executing file as program"</strong>, then double-click to run.</div>
                 </div>
 
                 <div class="callout callout-info">
                     <span class="callout-icon">ℹ️</span>
-                    <div>Some distros require <code>libfuse2</code> for AppImages. If the app fails to launch, install it:<br>
+                    <div><span data-i18n-html="docs.linux.fuseHelp">Some distros require <code>libfuse2</code> for AppImages. If the app fails to launch, install it:</span><br>
                     <strong>Ubuntu/Debian:</strong> <code>sudo apt install libfuse2</code><br>
                     <strong>Fedora:</strong> <code>sudo dnf install fuse-libs</code></div>
                 </div>
@@ -572,7 +572,7 @@
 
             <!-- Protecting Text -->
             <div class="doc-section" id="protect-text">
-                <h2>🔒 Protecting Text</h2>
+                <h2>🔒 <span data-i18n="docs.protectText.title">Protecting Text</span></h2>
                 <ol class="steps">
                     <li>Paste or type your text into the input area at the bottom of the screen.</li>
                     <li>Click <strong>Send</strong>. Ledebe scans and replaces all detected PII with placeholders like <code>[LDB_EMAIL1]</code>, <code>[LDB_PHONE1]</code>.</li>
@@ -582,23 +582,23 @@
                 </ol>
                 <div class="callout callout-tip">
                     <span class="callout-icon">💡</span>
-                    <div>Placeholders are consistent within a session — the same email always maps to the same placeholder, so your text structure is preserved.</div>
+                    <div data-i18n="docs.protectText.tip">Placeholders are consistent within a session — the same email always maps to the same placeholder, so your text structure is preserved.</div>
                 </div>
             </div>
 
             <!-- Highlight to Protect / Unprotect -->
             <div class="doc-section" id="highlight-protect">
-                <h2>✋ Highlight to Protect / Unprotect</h2>
-                <p>You can protect or unprotect individual words directly from any sent message — without retyping anything.</p>
+                <h2>✋ <span data-i18n="docs.highlightProtect.title">Highlight to Protect / Unprotect</span></h2>
+                <p data-i18n="docs.highlightProtect.intro">You can protect or unprotect individual words directly from any sent message — without retyping anything.</p>
 
-                <h3>Protect a word</h3>
+                <h3 data-i18n="docs.highlightProtect.protectTitle">Protect a word</h3>
                 <ol class="steps">
                     <li>Highlight any word or phrase inside a sent message bubble.</li>
                     <li>A floating button appears above your selection: <strong>🛡️ + Protect</strong></li>
                     <li>Click it — the word is added to your Custom Terms and the message is re-protected immediately.</li>
                 </ol>
 
-                <h3>Unprotect a word</h3>
+                <h3 data-i18n="docs.highlightProtect.unprotectTitle">Unprotect a word</h3>
                 <ol class="steps">
                     <li>Highlight a word that is already in your protected terms.</li>
                     <li>The floating button now shows: <strong>🔓 Unprotect</strong> (in red)</li>
@@ -607,16 +607,16 @@
 
                 <div class="callout callout-info">
                     <span class="callout-icon">ℹ️</span>
-                    <div>This works inside chat messages and inside the document preview. Changes take effect immediately — no need to re-send the message.</div>
+                    <div data-i18n="docs.highlightProtect.info">This works inside chat messages and inside the document preview. Changes take effect immediately — no need to re-send the message.</div>
                 </div>
             </div>
 
             <!-- Custom Terms -->
             <div class="doc-section" id="custom-terms">
-                <h2>⚙️ Custom Terms</h2>
-                <p>Add your own words or phrases to always protect — names, company names, project codes, anything sensitive.</p>
+                <h2>⚙️ <span data-i18n="docs.customTerms.title">Custom Terms</span></h2>
+                <p data-i18n="docs.customTerms.intro">Add your own words or phrases to always protect — names, company names, project codes, anything sensitive.</p>
 
-                <h3>Adding a term</h3>
+                <h3 data-i18n="docs.customTerms.addTitle">Adding a term</h3>
                 <ol class="steps">
                     <li>Open the <strong>Custom Terms</strong> panel in the sidebar (bottom left).</li>
                     <li>Type your term and click <strong>Save &amp; Close</strong>.</li>
@@ -624,8 +624,8 @@
                     <li>Terms are saved locally and persist across sessions.</li>
                 </ol>
 
-                <h3>Searching your terms</h3>
-                <p>If you have many terms saved, use the built-in search to find them quickly.</p>
+                <h3 data-i18n="docs.customTerms.searchTitle">Searching your terms</h3>
+                <p data-i18n="docs.customTerms.searchIntro">If you have many terms saved, use the built-in search to find them quickly.</p>
                 <ol class="steps">
                     <li>Click the <strong>🔍 icon</strong> in the Custom Terms header.</li>
                     <li>A search popup opens showing all saved terms.</li>
@@ -635,23 +635,23 @@
 
                 <div class="callout callout-tip">
                     <span class="callout-icon">💡</span>
-                    <div>The search popup shows a count e.g. <em>"4 of 47 terms"</em> so you always know how many terms match your query.</div>
+                    <div data-i18n-html="docs.customTerms.searchTip">The search popup shows a count e.g. <em>"4 of 47 terms"</em> so you always know how many terms match your query.</div>
                 </div>
             </div>
 
             <!-- File Upload -->
             <div class="doc-section" id="file-upload">
-                <h2>📂 File Upload</h2>
-                <p>Ledebe can process entire documents — not just typed text. Upload a file and it extracts, protects, and previews the content for you.</p>
+                <h2>📂 <span data-i18n="docs.fileUpload.title">File Upload</span></h2>
+                <p data-i18n="docs.fileUpload.intro">Ledebe can process entire documents — not just typed text. Upload a file and it extracts, protects, and previews the content for you.</p>
 
-                <h3>How to upload</h3>
+                <h3 data-i18n="docs.fileUpload.uploadTitle">How to upload</h3>
                 <ol class="steps">
                     <li>Click the <strong>+</strong> button in the input area (bottom left of the text box).</li>
                     <li>Select a file from your device.</li>
                     <li>Ledebe processes it and shows a document card with the file name, word count, and number of items protected.</li>
                 </ol>
 
-                <h3>Supported file types</h3>
+                <h3 data-i18n="docs.fileUpload.supportedTitle">Supported file types</h3>
                 <ul>
                     <li><strong>.txt / .csv</strong> — text extracted and protected instantly</li>
                     <li><strong>.docx</strong> — full Word document processed and previewed</li>
@@ -659,26 +659,26 @@
                     <li><strong>Images (JPG, PNG, etc.)</strong> — OCR extracts text from the image, then it's protected</li>
                 </ul>
 
-                <h3>Document preview</h3>
-                <p>After uploading, click the document card to open the preview modal. It shows two side-by-side views:</p>
+                <h3 data-i18n="docs.fileUpload.previewTitle">Document preview</h3>
+                <p data-i18n="docs.fileUpload.previewIntro">After uploading, click the document card to open the preview modal. It shows two side-by-side views:</p>
                 <ul>
                     <li><strong>Original</strong> — your document as uploaded</li>
                     <li><strong>Protected</strong> — all PII replaced with placeholders</li>
                 </ul>
-                <p>From the preview you can <strong>📥 Download</strong> the protected version as a file.</p>
+                <p data-i18n-html="docs.fileUpload.previewDownload">From the preview you can <strong>📥 Download</strong> the protected version as a file.</p>
 
                 <div class="callout callout-info">
                     <span class="callout-icon">ℹ️</span>
-                    <div>You can also highlight text inside the document preview to trigger the <strong>🛡️ Protect</strong> / <strong>🔓 Unprotect</strong> floating button, just like in chat messages.</div>
+                    <div data-i18n-html="docs.fileUpload.previewHighlight">You can also highlight text inside the document preview to trigger the <strong>🛡️ Protect</strong> / <strong>🔓 Unprotect</strong> floating button, just like in chat messages.</div>
                 </div>
             </div>
 
             <!-- AI Chat -->
             <div class="doc-section" id="ai-chat">
-                <h2>🤖 AI Chat</h2>
-                <p>Switch to <strong>Ask AI</strong> mode to send questions directly to an AI. Ledebe masks your PII before the message is sent, so the AI never sees your real data.</p>
+                <h2>🤖 <span data-i18n="docs.aiChat.title">AI Chat</span></h2>
+                <p data-i18n-html="docs.aiChat.intro">Switch to <strong>Ask AI</strong> mode to send questions directly to an AI. Ledebe masks your PII before the message is sent, so the AI never sees your real data.</p>
 
-                <h3>Setup</h3>
+                <h3 data-i18n="docs.aiChat.setupTitle">Setup</h3>
                 <ol class="steps">
                     <li>Click <strong>⚙️ Settings</strong> in the top bar.</li>
                     <li>Enter your API key for the provider you want to use:
@@ -694,24 +694,24 @@
 
                 <div class="callout callout-info">
                     <span class="callout-icon">ℹ️</span>
-                    <div>API keys are stored locally only — they are never sent to Ledebe servers.</div>
+                    <div data-i18n="docs.aiChat.keyInfo">API keys are stored locally only — they are never sent to Ledebe servers.</div>
                 </div>
             </div>
 
             <!-- History -->
             <div class="doc-section" id="history">
-                <h2>📋 History &amp; Search</h2>
-                <p>Every conversation is automatically saved to your local history. The sidebar on the left lists all past chats.</p>
+                <h2>📋 <span data-i18n="docs.history.title">History &amp; Search</span></h2>
+                <p data-i18n="docs.history.intro">Every conversation is automatically saved to your local history. The sidebar on the left lists all past chats.</p>
 
-                <h3>Using history</h3>
+                <h3 data-i18n="docs.history.usingTitle">Using history</h3>
                 <ul>
                     <li>Click any history item to reload that full conversation.</li>
                     <li>Hover over an item → click <strong>⋯</strong> → <strong>Rename</strong> or <strong>Delete</strong>.</li>
                     <li>Click <strong>+ New Chat</strong> at the top of the sidebar to start fresh.</li>
                 </ul>
 
-                <h3>Searching history with ⌘K</h3>
-                <p>Press <strong>⌘K</strong> (Mac) or <strong>Ctrl+K</strong> (Windows) to open the command palette — a fast search over all your past chats.</p>
+                <h3 data-i18n="docs.history.searchTitle">Searching history with ⌘K</h3>
+                <p data-i18n-html="docs.history.searchIntro">Press <strong>⌘K</strong> (Mac) or <strong>Ctrl+K</strong> (Windows) to open the command palette — a fast search over all your past chats.</p>
                 <ol class="steps">
                     <li>Press <strong>⌘K</strong> — the search palette slides in.</li>
                     <li>Start typing — results filter instantly, with matching text highlighted.</li>
@@ -722,46 +722,46 @@
 
                 <div class="callout callout-tip">
                     <span class="callout-icon">💡</span>
-                    <div>You can also click the <strong>Search history</strong> button at the top of the sidebar to open the same palette.</div>
+                    <div data-i18n-html="docs.history.searchTip">You can also click the <strong>Search history</strong> button at the top of the sidebar to open the same palette.</div>
                 </div>
             </div>
 
             <!-- Keyboard Shortcuts -->
             <div class="doc-section" id="keyboard-shortcuts">
-                <h2>⌨️ Keyboard Shortcuts</h2>
-                <p>Ledebe is fully keyboard-navigable. Use these shortcuts to work faster:</p>
+                <h2>⌨️ <span data-i18n="docs.keyboard.title">Keyboard Shortcuts</span></h2>
+                <p data-i18n="docs.keyboard.intro">Ledebe is fully keyboard-navigable. Use these shortcuts to work faster:</p>
 
                 <table style="width:100%;border-collapse:collapse;font-size:0.95rem;">
                     <thead>
                         <tr style="border-bottom:2px solid var(--border);">
-                            <th style="text-align:left;padding:0.6rem 0.75rem;color:var(--text-dark);">Action</th>
-                            <th style="text-align:left;padding:0.6rem 0.75rem;color:var(--text-dark);">Mac</th>
-                            <th style="text-align:left;padding:0.6rem 0.75rem;color:var(--text-dark);">Windows / Linux</th>
+                            <th style="text-align:left;padding:0.6rem 0.75rem;color:var(--text-dark);" data-i18n="docs.keyboard.colAction">Action</th>
+                            <th style="text-align:left;padding:0.6rem 0.75rem;color:var(--text-dark);" data-i18n="docs.keyboard.colMac">Mac</th>
+                            <th style="text-align:left;padding:0.6rem 0.75rem;color:var(--text-dark);" data-i18n="docs.keyboard.colWin">Windows / Linux</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr style="border-bottom:1px solid var(--border);">
-                            <td style="padding:0.6rem 0.75rem;color:var(--text-gray);">Search history (command palette)</td>
+                            <td style="padding:0.6rem 0.75rem;color:var(--text-gray);" data-i18n="docs.keyboard.rSearch">Search history (command palette)</td>
                             <td style="padding:0.6rem 0.75rem;"><kbd style="background:var(--bg-light);border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-size:0.8rem;">⌘K</kbd></td>
                             <td style="padding:0.6rem 0.75rem;"><kbd style="background:var(--bg-light);border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-size:0.8rem;">Ctrl+K</kbd></td>
                         </tr>
                         <tr style="border-bottom:1px solid var(--border);">
-                            <td style="padding:0.6rem 0.75rem;color:var(--text-gray);">New chat</td>
+                            <td style="padding:0.6rem 0.75rem;color:var(--text-gray);" data-i18n="docs.keyboard.rNew">New chat</td>
                             <td style="padding:0.6rem 0.75rem;"><kbd style="background:var(--bg-light);border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-size:0.8rem;">⌘⇧N</kbd></td>
                             <td style="padding:0.6rem 0.75rem;"><kbd style="background:var(--bg-light);border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-size:0.8rem;">Ctrl+Shift+N</kbd></td>
                         </tr>
                         <tr style="border-bottom:1px solid var(--border);">
-                            <td style="padding:0.6rem 0.75rem;color:var(--text-gray);">Send message</td>
+                            <td style="padding:0.6rem 0.75rem;color:var(--text-gray);" data-i18n="docs.keyboard.rSend">Send message</td>
                             <td style="padding:0.6rem 0.75rem;"><kbd style="background:var(--bg-light);border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-size:0.8rem;">⌘↵</kbd></td>
                             <td style="padding:0.6rem 0.75rem;"><kbd style="background:var(--bg-light);border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-size:0.8rem;">Ctrl+Enter</kbd></td>
                         </tr>
                         <tr style="border-bottom:1px solid var(--border);">
-                            <td style="padding:0.6rem 0.75rem;color:var(--text-gray);">Toggle sidebar</td>
+                            <td style="padding:0.6rem 0.75rem;color:var(--text-gray);" data-i18n="docs.keyboard.rToggle">Toggle sidebar</td>
                             <td style="padding:0.6rem 0.75rem;"><kbd style="background:var(--bg-light);border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-size:0.8rem;">⌘⇧L</kbd></td>
                             <td style="padding:0.6rem 0.75rem;"><kbd style="background:var(--bg-light);border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-size:0.8rem;">Ctrl+Shift+L</kbd></td>
                         </tr>
                         <tr>
-                            <td style="padding:0.6rem 0.75rem;color:var(--text-gray);">Show all shortcuts</td>
+                            <td style="padding:0.6rem 0.75rem;color:var(--text-gray);" data-i18n="docs.keyboard.rAll">Show all shortcuts</td>
                             <td style="padding:0.6rem 0.75rem;"><kbd style="background:var(--bg-light);border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-size:0.8rem;">⌘/</kbd></td>
                             <td style="padding:0.6rem 0.75rem;"><kbd style="background:var(--bg-light);border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-size:0.8rem;">Ctrl+/</kbd></td>
                         </tr>
@@ -771,10 +771,10 @@
 
             <!-- VS Code Extension -->
             <div class="doc-section" id="vscode">
-                <h2>🧩 VS Code Extension</h2>
-                <p>Ledebe is also available as a <strong>VS Code extension</strong> — built for developers who want to protect sensitive data before sharing code, logs, or config files with AI tools like GitHub Copilot or ChatGPT.</p>
+                <h2>🧩 <span data-i18n="docs.vscode.title">VS Code Extension</span></h2>
+                <p data-i18n-html="docs.vscode.intro">Ledebe is also available as a <strong>VS Code extension</strong> — built for developers who want to protect sensitive data before sharing code, logs, or config files with AI tools like GitHub Copilot or ChatGPT.</p>
 
-                <h3>Install</h3>
+                <h3 data-i18n="docs.vscode.installTitle">Install</h3>
                 <ol class="steps">
                     <li>Open VS Code.</li>
                     <li>Go to the <strong>Extensions</strong> panel (left sidebar).</li>
@@ -782,7 +782,7 @@
                     <li>Click <strong>Install</strong>.</li>
                 </ol>
 
-                <h3>Features</h3>
+                <h3 data-i18n="docs.vscode.featuresTitle">Features</h3>
                 <ul>
                     <li><strong>Right-click → 🛡️ Protect with Ledebe</strong> — masks PII in any selected text inline</li>
                     <li><strong>Right-click → 🔓 Restore Original</strong> — swaps placeholders back to real values</li>
@@ -791,17 +791,17 @@
                     <li><strong>Auto-detect on file open</strong> — warns you when PII is found in <code>.env</code>, <code>.log</code>, <code>.json</code>, <code>.csv</code> files</li>
                 </ul>
 
-                <h3>Keyboard shortcut</h3>
+                <h3 data-i18n="docs.vscode.shortcutTitle">Keyboard shortcut</h3>
                 <table style="width:100%;border-collapse:collapse;font-size:0.95rem;">
                     <thead>
                         <tr style="border-bottom:2px solid var(--border);">
-                            <th style="text-align:left;padding:0.6rem 0.75rem;color:var(--text-dark);">Action</th>
-                            <th style="text-align:left;padding:0.6rem 0.75rem;color:var(--text-dark);">Shortcut</th>
+                            <th style="text-align:left;padding:0.6rem 0.75rem;color:var(--text-dark);" data-i18n="docs.vscode.colAction">Action</th>
+                            <th style="text-align:left;padding:0.6rem 0.75rem;color:var(--text-dark);" data-i18n="docs.vscode.colShortcut">Shortcut</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td style="padding:0.6rem 0.75rem;color:var(--text-gray);">Protect selected text</td>
+                            <td style="padding:0.6rem 0.75rem;color:var(--text-gray);" data-i18n="docs.vscode.rProtect">Protect selected text</td>
                             <td style="padding:0.6rem 0.75rem;"><kbd style="background:var(--bg-light);border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-size:0.8rem;">⌘⇧L</kbd> Mac &nbsp;/&nbsp; <kbd style="background:var(--bg-light);border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-size:0.8rem;">Ctrl+Shift+L</kbd> Windows</td>
                         </tr>
                     </tbody>
@@ -809,90 +809,90 @@
 
                 <div class="callout callout-tip">
                     <span class="callout-icon">💡</span>
-                    <div>Custom terms added in the VS Code extension are saved per VS Code profile — separate from the desktop app's terms list.</div>
+                    <div data-i18n="docs.vscode.tip">Custom terms added in the VS Code extension are saved per VS Code profile — separate from the desktop app's terms list.</div>
                 </div>
             </div>
 
             <!-- FAQ -->
             <div class="doc-section" id="faq">
-                <h2>❓ FAQ</h2>
+                <h2>❓ <span data-i18n="docs.faq.title">FAQ</span></h2>
 
                 <div class="faq-item">
                     <button class="faq-question" onclick="toggleFaq(this)">
-                        How do I unprotect a word I already protected?
+                        <span data-i18n="docs.faq.q1">How do I unprotect a word I already protected?</span>
                         <span class="faq-chevron">▼</span>
                     </button>
-                    <div class="faq-answer">
+                    <div class="faq-answer" data-i18n-html="docs.faq.a1">
                         Highlight the word inside any sent message. If it's already in your protected terms, the floating button will show <strong>🔓 Unprotect</strong> (in red). Click it and the word is removed from your terms and the message updates immediately.
                     </div>
                 </div>
 
                 <div class="faq-item">
                     <button class="faq-question" onclick="toggleFaq(this)">
-                        How do I search my chat history?
+                        <span data-i18n="docs.faq.q2">How do I search my chat history?</span>
                         <span class="faq-chevron">▼</span>
                     </button>
-                    <div class="faq-answer">
+                    <div class="faq-answer" data-i18n-html="docs.faq.a2">
                         Press <strong>⌘K</strong> (Mac) or <strong>Ctrl+K</strong> (Windows) to open the command palette. Start typing to filter past chats, use arrow keys to navigate, and press Enter to open one. Press Esc to close.
                     </div>
                 </div>
 
                 <div class="faq-item">
                     <button class="faq-question" onclick="toggleFaq(this)">
-                        Does Ledebe send my data anywhere?
+                        <span data-i18n="docs.faq.q3">Does Ledebe send my data anywhere?</span>
                         <span class="faq-chevron">▼</span>
                     </button>
-                    <div class="faq-answer">
+                    <div class="faq-answer" data-i18n-html="docs.faq.a3">
                         No. All PII detection and masking happens locally on your device. The only outbound traffic is when you use the AI chat feature — in that case, only the <em>masked</em> text (with placeholders, not your real data) is sent to the AI provider's API.
                     </div>
                 </div>
 
                 <div class="faq-item">
                     <button class="faq-question" onclick="toggleFaq(this)">
-                        Can I restore the original text after sharing the protected version?
+                        <span data-i18n="docs.faq.q4">Can I restore the original text after sharing the protected version?</span>
                         <span class="faq-chevron">▼</span>
                     </button>
-                    <div class="faq-answer">
+                    <div class="faq-answer" data-i18n-html="docs.faq.a4">
                         Yes — as long as you are in the same session or the placeholder map has been saved. Paste the protected text back into Ledebe and click <strong>Restore</strong>.
                     </div>
                 </div>
 
                 <div class="faq-item">
                     <button class="faq-question" onclick="toggleFaq(this)">
-                        Where are my API keys stored?
+                        <span data-i18n="docs.faq.q5">Where are my API keys stored?</span>
                         <span class="faq-chevron">▼</span>
                     </button>
-                    <div class="faq-answer">
+                    <div class="faq-answer" data-i18n="docs.faq.a5">
                         API keys are stored in your device's local storage only. They are never uploaded to Ledebe servers or included in any crash reports.
                     </div>
                 </div>
 
                 <div class="faq-item">
                     <button class="faq-question" onclick="toggleFaq(this)">
-                        The app says it's from an unidentified developer on Mac — is it safe?
+                        <span data-i18n="docs.faq.q6">The app says it's from an unidentified developer on Mac — is it safe?</span>
                         <span class="faq-chevron">▼</span>
                     </button>
-                    <div class="faq-answer">
+                    <div class="faq-answer" data-i18n-html="docs.faq.a6">
                         Yes, it is safe. This warning appears because the app is not yet enrolled in Apple's notarisation program. Right-click the app → <strong>Open</strong> → <strong>Open</strong> to bypass it. You only need to do this once.
                     </div>
                 </div>
 
                 <div class="faq-item">
                     <button class="faq-question" onclick="toggleFaq(this)">
-                        Windows SmartScreen blocked the installer — what do I do?
+                        <span data-i18n="docs.faq.q7">Windows SmartScreen blocked the installer — what do I do?</span>
                         <span class="faq-chevron">▼</span>
                     </button>
-                    <div class="faq-answer">
+                    <div class="faq-answer" data-i18n-html="docs.faq.a7">
                         Click <strong>More info</strong> in the SmartScreen dialog, then click <strong>Run anyway</strong>. This warning appears for newly published apps. The installer is safe.
                     </div>
                 </div>
 
                 <div class="faq-item">
                     <button class="faq-question" onclick="toggleFaq(this)">
-                        The Linux AppImage won't launch — what do I do?
+                        <span data-i18n="docs.faq.q8">The Linux AppImage won't launch — what do I do?</span>
                         <span class="faq-chevron">▼</span>
                     </button>
-                    <div class="faq-answer">
+                    <div class="faq-answer" data-i18n-html="docs.faq.a8">
                         Make sure the file has execute permission: <code>chmod +x "Ledebe Protector-1.0.0.AppImage"</code>. If it still fails, install <code>libfuse2</code>: on Ubuntu/Debian run <code>sudo apt install libfuse2</code>.
                     </div>
                 </div>
@@ -900,27 +900,27 @@
 
             <!-- Troubleshooting -->
             <div class="doc-section" id="troubleshooting">
-                <h2>🔧 Troubleshooting</h2>
+                <h2>🔧 <span data-i18n="docs.trouble.title">Troubleshooting</span></h2>
 
-                <h3>App crashes on launch</h3>
-                <p>Crash reports are stored at <code>~/.ledebe-crashes/</code>. If you need support, include the latest crash log when contacting us.</p>
+                <h3 data-i18n="docs.trouble.crashTitle">App crashes on launch</h3>
+                <p data-i18n-html="docs.trouble.crashBody">Crash reports are stored at <code>~/.ledebe-crashes/</code>. If you need support, include the latest crash log when contacting us.</p>
 
-                <h3>PII not being detected</h3>
-                <p>Ensure the text format matches a supported pattern. For unusual formats (e.g. non-standard phone formats), add the value as a <strong>Custom Term</strong>.</p>
+                <h3 data-i18n="docs.trouble.piiTitle">PII not being detected</h3>
+                <p data-i18n-html="docs.trouble.piiBody">Ensure the text format matches a supported pattern. For unusual formats (e.g. non-standard phone formats), add the value as a <strong>Custom Term</strong>.</p>
 
-                <h3>AI chat not responding</h3>
+                <h3 data-i18n="docs.trouble.aiTitle">AI chat not responding</h3>
                 <ul>
                     <li>Check that your API key is correct in Settings.</li>
                     <li>Verify you have an active internet connection.</li>
                     <li>Check your API quota/limits with the provider.</li>
                 </ul>
 
-                <h3>Dark mode not saving</h3>
-                <p>Dark mode preference is stored in local storage. Clearing your browser cache (in Electron: <strong>Settings → Clear Data</strong>) will reset it.</p>
+                <h3 data-i18n="docs.trouble.darkTitle">Dark mode not saving</h3>
+                <p data-i18n-html="docs.trouble.darkBody">Dark mode preference is stored in local storage. Clearing your browser cache (in Electron: <strong>Settings → Clear Data</strong>) will reset it.</p>
 
                 <div class="callout callout-info">
                     <span class="callout-icon">ℹ️</span>
-                    <div>Need more help? Email us at <a href="mailto:hello@ledebe.com" style="color: var(--primary-blue);">hello@ledebe.com</a> or visit the <a href="/contact/" style="color: var(--primary-blue);">contact page</a>.</div>
+                    <div data-i18n-html="docs.trouble.helpInfo">Need more help? Email us at <a href="mailto:hello@ledebe.com" style="color: var(--primary-blue);">hello@ledebe.com</a> or visit the <a href="/contact/" style="color: var(--primary-blue);">contact page</a>.</div>
                 </div>
             </div>
 
@@ -932,36 +932,36 @@
             <div class="footer-content">
                 <div class="footer-section">
                     <h4>Ledebe</h4>
-                    <p>Secure data protection for everyone</p>
+                    <p data-i18n="footer.tagline">Privacy-first protection for anyone using AI. Your data stays on your device, always.</p>
                 </div>
                 <div class="footer-section">
-                    <h4>Product</h4>
+                    <h4 data-i18n="footer.product">Product</h4>
                     <ul>
-                        <li><a href="/downloads/">Downloads</a></li>
-                        <li><a href="/pricing/">Pricing</a></li>
-                        <li><a href="/docs/">Documentation</a></li>
-                        <li><a href="https://marketplace.visualstudio.com/items?itemName=Ledebe.ledebe-protector" target="_blank" rel="noopener noreferrer">VS Code Extension</a></li>
-                        <li><a href="https://app.ledebe.com" target="_blank" rel="noopener noreferrer">Web App</a></li>
+                        <li><a href="/downloads/" data-i18n="footer.downloads">Downloads</a></li>
+                        <li><a href="/pricing/" data-i18n="footer.pricing">Pricing</a></li>
+                        <li><a href="/docs/" data-i18n="footer.documentation">Documentation</a></li>
+                        <li><a href="https://marketplace.visualstudio.com/items?itemName=Ledebe.ledebe-protector" target="_blank" rel="noopener noreferrer" data-i18n="footer.vscodeExt">VS Code Extension</a></li>
+                        <li><a href="https://app.ledebe.com" target="_blank" rel="noopener noreferrer" data-i18n="footer.webApp">Web App</a></li>
                     </ul>
                 </div>
                 <div class="footer-section">
-                    <h4>Company</h4>
+                    <h4 data-i18n="footer.company">Company</h4>
                     <ul>
-                        <li><a href="/about/">About</a></li>
-                        <li><a href="/contact/">Contact</a></li>
-                        <li><a href="/demo/">Book a Demo</a></li>
+                        <li><a href="/about/" data-i18n="footer.about">About</a></li>
+                        <li><a href="/contact/" data-i18n="footer.contact">Contact</a></li>
+                        <li><a href="/demo/" data-i18n="footer.bookDemo">Book a Demo</a></li>
                     </ul>
                 </div>
                 <div class="footer-section">
-                    <h4>Legal</h4>
+                    <h4 data-i18n="footer.legal">Legal</h4>
                     <ul>
-                        <li><a href="/privacy/">Privacy Policy</a></li>
-                        <li><a href="/terms/">Terms of Service</a></li>
+                        <li><a href="/privacy/" data-i18n="footer.privacy">Privacy Policy</a></li>
+                        <li><a href="/terms/" data-i18n="footer.terms">Terms of Service</a></li>
                     </ul>
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; 2026 Ledebe Technologies. All rights reserved.</p>
+                <p data-i18n="footer.copyright">&copy; 2026 Ledebe Technologies. All rights reserved.</p>
             </div>
         </div>
     </footer>
@@ -975,6 +975,6 @@
         }
     </script>
 
-<script src="../i18n.js?v=4"></script>
+<script src="../i18n.js?v=6"></script>
 </body>
 </html>

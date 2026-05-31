@@ -3,6 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
     <title>Pricing — Ledebe</title>
     <meta name="description" content="Simple, transparent pricing. Start free. Upgrade when you need more. No hidden fees.">
     <link rel="canonical" href="https://ledebe.com/pricing/">
@@ -367,14 +371,14 @@
 
 <!-- ── Hero ── -->
 <section class="page-hero">
-    <div class="page-hero-label">Pricing</div>
-    <h1>Simple, honest pricing</h1>
-    <p>Start free — no card required. Upgrade when you need more. Cancel any time. All paid plans include a <strong>14-day money-back guarantee</strong>.</p>
+    <div class="page-hero-label" data-i18n="pricing.hero.label">Pricing</div>
+    <h1 data-i18n="pricing.hero.title">Simple, honest pricing</h1>
+    <p data-i18n-html="pricing.hero.intro">Start free — no card required. Upgrade when you need more. Cancel any time. All paid plans include a <strong>14-day money-back guarantee</strong>.</p>
 
     <!-- Billing toggle -->
     <div class="billing-toggle" id="billingToggle">
-        <button class="toggle-label active" id="toggleMonthly" onclick="setBilling('monthly')">Monthly</button>
-        <button class="toggle-label" id="toggleAnnual" onclick="setBilling('annual')">Annual <span class="save-badge">Save 20%</span></button>
+        <button class="toggle-label active" id="toggleMonthly" onclick="setBilling('monthly')" data-i18n="pricing.billing.monthly">Monthly</button>
+        <button class="toggle-label" id="toggleAnnual" onclick="setBilling('annual')"><span data-i18n="pricing.billing.annual">Annual</span> <span class="save-badge" data-i18n="pricing.billing.save">Save 20%</span></button>
     </div>
 </section>
 
@@ -384,100 +388,100 @@
 
         <!-- Free -->
         <div class="pricing-card">
-            <div class="tier-name">Personal</div>
-            <div class="tier-title">Free</div>
-            <div class="tier-desc">For individuals trying it out or light daily use.</div>
+            <div class="tier-name" data-i18n="pricing.personal.name">Personal</div>
+            <div class="tier-title" data-i18n="pricing.personal.title">Free</div>
+            <div class="tier-desc" data-i18n="pricing.personal.desc">For individuals trying it out or light daily use.</div>
             <div class="tier-price">
                 <div class="price-amount"><span class="currency">£</span>0</div>
-                <div class="price-per">forever</div>
+                <div class="price-per" data-i18n="pricing.billing.forever">forever</div>
                 <div class="price-annual-note">&nbsp;</div>
             </div>
-            <a href="https://app.ledebe.com" class="tier-cta cta-free">Get started free</a>
-            <div class="features-heading">What's included</div>
+            <a href="https://app.ledebe.com" class="tier-cta cta-free" data-i18n="pricing.personal.cta">Get started free</a>
+            <div class="features-heading" data-i18n="pricing.whatsIncluded">What's included</div>
             <ul class="tier-features">
-                <li><span class="check">✓</span> Unlimited text protection</li>
-                <li><span class="check">✓</span> Up to 20 custom terms</li>
-                <li><span class="check">✓</span> 3 file uploads per day</li>
-                <li><span class="check">✓</span> Last 30 conversations</li>
-                <li><span class="check">✓</span> VS Code extension</li>
-                <li><span class="check">✓</span> Dark / light mode</li>
-                <li class="dimmed"><span class="cross">✕</span> AI chat (bring your own key)</li>
-                <li class="dimmed"><span class="cross">✕</span> Unlimited file uploads</li>
-                <li class="dimmed"><span class="cross">✕</span> Company sync</li>
-                <li class="dimmed"><span class="cross">✕</span> Priority support</li>
+                <li><span class="check">✓</span> <span data-i18n="pricing.personal.f1">Unlimited text protection</span></li>
+                <li><span class="check">✓</span> <span data-i18n="pricing.personal.f2">Up to 20 custom terms</span></li>
+                <li><span class="check">✓</span> <span data-i18n="pricing.personal.f3">3 file uploads per day</span></li>
+                <li><span class="check">✓</span> <span data-i18n="pricing.personal.f4">Last 30 conversations</span></li>
+                <li><span class="check">✓</span> <span data-i18n="pricing.personal.f5">VS Code extension</span></li>
+                <li><span class="check">✓</span> <span data-i18n="pricing.personal.f6">Dark / light mode</span></li>
+                <li class="dimmed"><span class="cross">✕</span> <span data-i18n="pricing.personal.f7">AI chat (bring your own key)</span></li>
+                <li class="dimmed"><span class="cross">✕</span> <span data-i18n="pricing.personal.f8">Unlimited file uploads</span></li>
+                <li class="dimmed"><span class="cross">✕</span> <span data-i18n="pricing.personal.f9">Company sync</span></li>
+                <li class="dimmed"><span class="cross">✕</span> <span data-i18n="pricing.personal.f10">Priority support</span></li>
             </ul>
         </div>
 
         <!-- Pro -->
         <div class="pricing-card featured">
-            <div class="featured-badge">Most popular</div>
-            <div class="tier-name">Professional</div>
-            <div class="tier-title">Pro</div>
-            <div class="tier-desc">For power users, freelancers, and professionals who want more.</div>
+            <div class="featured-badge" data-i18n="pricing.featured">Most popular</div>
+            <div class="tier-name" data-i18n="pricing.pro.name">Professional</div>
+            <div class="tier-title" data-i18n="pricing.pro.title">Pro</div>
+            <div class="tier-desc" data-i18n="pricing.pro.desc">For power users, freelancers, and professionals who want more.</div>
             <div class="tier-price">
                 <div class="price-amount" id="proPrice"><span class="currency">£</span>8</div>
                 <div class="price-per" id="proPer">per month</div>
                 <div class="price-annual-note" id="proAnnualNote">&nbsp;</div>
             </div>
-            <a href="mailto:hello@ledebe.com?subject=Pro%20plan%20enquiry" class="tier-cta cta-pro" id="proCtaLink">Get Started →</a>
-            <div class="features-heading">Everything in Free, plus</div>
+            <a href="mailto:hello@ledebe.com?subject=Pro%20plan%20enquiry" class="tier-cta cta-pro" id="proCtaLink" data-i18n="pricing.pro.cta">Get Started →</a>
+            <div class="features-heading" data-i18n="pricing.everythingInFree">Everything in Free, plus</div>
             <ul class="tier-features">
-                <li><span class="check">✓</span> Unlimited custom terms</li>
-                <li><span class="check">✓</span> Unlimited file uploads (50 MB/file)</li>
-                <li><span class="check">✓</span> AI chat with your own API key</li>
-                <li><span class="check">✓</span> Full chat history (unlimited)</li>
-                <li><span class="check">✓</span> Export protected documents</li>
-                <li><span class="check">✓</span> Priority email support</li>
-                <li><span class="check">✓</span> Early access to new features</li>
-                <li class="dimmed"><span class="cross">✕</span> Company sync</li>
-                <li class="dimmed"><span class="cross">✕</span> Admin dashboard</li>
+                <li><span class="check">✓</span> <span data-i18n="pricing.pro.f1">Unlimited custom terms</span></li>
+                <li><span class="check">✓</span> <span data-i18n="pricing.pro.f2">Unlimited file uploads (50 MB/file)</span></li>
+                <li><span class="check">✓</span> <span data-i18n="pricing.pro.f3">AI chat with your own API key</span></li>
+                <li><span class="check">✓</span> <span data-i18n="pricing.pro.f4">Full chat history (unlimited)</span></li>
+                <li><span class="check">✓</span> <span data-i18n="pricing.pro.f5">Export protected documents</span></li>
+                <li><span class="check">✓</span> <span data-i18n="pricing.pro.f6">Priority email support</span></li>
+                <li><span class="check">✓</span> <span data-i18n="pricing.pro.f7">Early access to new features</span></li>
+                <li class="dimmed"><span class="cross">✕</span> <span data-i18n="pricing.pro.f8">Company sync</span></li>
+                <li class="dimmed"><span class="cross">✕</span> <span data-i18n="pricing.pro.f9">Admin dashboard</span></li>
             </ul>
         </div>
 
         <!-- Team -->
         <div class="pricing-card">
-            <div class="tier-name">Business</div>
-            <div class="tier-title">Team</div>
-            <div class="tier-desc">For SMBs and departments that need shared control and visibility.</div>
+            <div class="tier-name" data-i18n="pricing.team.name">Business</div>
+            <div class="tier-title" data-i18n="pricing.team.title">Team</div>
+            <div class="tier-desc" data-i18n="pricing.team.desc">For SMBs and departments that need shared control and visibility.</div>
             <div class="tier-price">
                 <div class="price-amount" id="teamPrice"><span class="currency">£</span>18</div>
                 <div class="price-per" id="teamPer">per user / month</div>
                 <div class="price-annual-note" id="teamAnnualNote">&nbsp;</div>
             </div>
-            <a href="mailto:hello@ledebe.com?subject=Team%20plan%20enquiry" class="tier-cta cta-team" id="teamCtaLink">Get Started →</a>
-            <div class="features-heading">Everything in Pro, plus</div>
+            <a href="mailto:hello@ledebe.com?subject=Team%20plan%20enquiry" class="tier-cta cta-team" id="teamCtaLink" data-i18n="pricing.team.cta">Get Started →</a>
+            <div class="features-heading" data-i18n="pricing.everythingInPro">Everything in Pro, plus</div>
             <ul class="tier-features">
-                <li><span class="check">✓</span> Company sync — shared terms</li>
-                <li><span class="check">✓</span> Admin dashboard & team management</li>
-                <li><span class="check">✓</span> Centrally managed protected terms</li>
-                <li><span class="check">✓</span> Audit log</li>
-                <li><span class="check">✓</span> Dedicated account manager (10+ users)</li>
-                <li><span class="check">✓</span> Invoice billing available</li>
-                <li><span class="check">✓</span> SSO — coming soon</li>
+                <li><span class="check">✓</span> <span data-i18n="pricing.team.f1">Company sync — shared terms</span></li>
+                <li><span class="check">✓</span> <span data-i18n="pricing.team.f2">Admin dashboard & team management</span></li>
+                <li><span class="check">✓</span> <span data-i18n="pricing.team.f3">Centrally managed protected terms</span></li>
+                <li><span class="check">✓</span> <span data-i18n="pricing.team.f4">Audit log</span></li>
+                <li><span class="check">✓</span> <span data-i18n="pricing.team.f5">Dedicated account manager (10+ users)</span></li>
+                <li><span class="check">✓</span> <span data-i18n="pricing.team.f6">Invoice billing available</span></li>
+                <li><span class="check">✓</span> <span data-i18n="pricing.team.f7">SSO — coming soon</span></li>
             </ul>
-            <p style="font-size:0.78rem;color:var(--text-gray);margin-top:1rem;">Minimum 3 users</p>
+            <p style="font-size:0.78rem;color:var(--text-gray);margin-top:1rem;" data-i18n="pricing.billing.minUsers">Minimum 3 users</p>
         </div>
 
         <!-- Enterprise -->
         <div class="pricing-card">
-            <div class="tier-name">Enterprise</div>
-            <div class="tier-title">Custom</div>
-            <div class="tier-desc">For large organisations and regulated industries.</div>
+            <div class="tier-name" data-i18n="pricing.ent.name">Enterprise</div>
+            <div class="tier-title" data-i18n="pricing.ent.title">Custom</div>
+            <div class="tier-desc" data-i18n="pricing.ent.desc">For large organisations and regulated industries.</div>
             <div class="tier-price">
-                <div class="price-amount" style="font-size:1.8rem;">Custom</div>
-                <div class="price-per">annual contract</div>
+                <div class="price-amount" style="font-size:1.8rem;" data-i18n="pricing.ent.priceLabel">Custom</div>
+                <div class="price-per" data-i18n="pricing.billing.annualContract">annual contract</div>
                 <div class="price-annual-note">&nbsp;</div>
             </div>
-            <a href="mailto:hello@ledebe.com?subject=Enterprise%20enquiry" class="tier-cta cta-enterprise">Talk to us →</a>
-            <div class="features-heading">Everything in Team, plus</div>
+            <a href="mailto:hello@ledebe.com?subject=Enterprise%20enquiry" class="tier-cta cta-enterprise" data-i18n="pricing.ent.cta">Talk to us →</a>
+            <div class="features-heading" data-i18n="pricing.everythingInTeam">Everything in Team, plus</div>
             <ul class="tier-features">
-                <li><span class="check">✓</span> On-premise deployment option</li>
-                <li><span class="check">✓</span> Custom integrations</li>
-                <li><span class="check">✓</span> Uptime SLA (terms in contract)</li>
-                <li><span class="check">✓</span> Compliance documentation on request</li>
-                <li><span class="check">✓</span> Custom term library</li>
-                <li><span class="check">✓</span> Dedicated onboarding</li>
-                <li><span class="check">✓</span> Volume discounts</li>
+                <li><span class="check">✓</span> <span data-i18n="pricing.ent.f1">On-premise deployment option</span></li>
+                <li><span class="check">✓</span> <span data-i18n="pricing.ent.f2">Custom integrations</span></li>
+                <li><span class="check">✓</span> <span data-i18n="pricing.ent.f3">Uptime SLA (terms in contract)</span></li>
+                <li><span class="check">✓</span> <span data-i18n="pricing.ent.f4">Compliance documentation on request</span></li>
+                <li><span class="check">✓</span> <span data-i18n="pricing.ent.f5">Custom term library</span></li>
+                <li><span class="check">✓</span> <span data-i18n="pricing.ent.f6">Dedicated onboarding</span></li>
+                <li><span class="check">✓</span> <span data-i18n="pricing.ent.f7">Volume discounts</span></li>
             </ul>
         </div>
 
@@ -488,79 +492,79 @@
 <div class="trust-strip">
     <div class="trust-strip-inner">
         <div class="trust-item">
-            <div class="title">No card needed</div>
-            <div class="sub">Start free, upgrade later</div>
+            <div class="title" data-i18n="pricing.trust.t1Title">No card needed</div>
+            <div class="sub" data-i18n="pricing.trust.t1Sub">Start free, upgrade later</div>
         </div>
         <div class="trust-item">
-            <div class="title">Cancel any time</div>
-            <div class="sub">No lock-ins or penalties</div>
+            <div class="title" data-i18n="pricing.trust.t2Title">Cancel any time</div>
+            <div class="sub" data-i18n="pricing.trust.t2Sub">No lock-ins or penalties</div>
         </div>
         <div class="trust-item">
-            <div class="title">Switch plans freely</div>
-            <div class="sub">Upgrade or downgrade instantly</div>
+            <div class="title" data-i18n="pricing.trust.t3Title">Switch plans freely</div>
+            <div class="sub" data-i18n="pricing.trust.t3Sub">Upgrade or downgrade instantly</div>
         </div>
         <div class="trust-item">
-            <div class="title">Invoices included</div>
-            <div class="sub">Automatic receipts for every payment</div>
+            <div class="title" data-i18n="pricing.trust.t4Title">Invoices included</div>
+            <div class="sub" data-i18n="pricing.trust.t4Sub">Automatic receipts for every payment</div>
         </div>
         <div class="trust-item">
-            <div class="title">Payments via Paddle</div>
-            <div class="sub">PCI-compliant, secure checkout</div>
+            <div class="title" data-i18n="pricing.trust.t5Title">Payments via Paddle</div>
+            <div class="sub" data-i18n="pricing.trust.t5Sub">PCI-compliant, secure checkout</div>
         </div>
     </div>
 </div>
 
 <!-- ── FAQ ── -->
 <div class="faq-section">
-    <h2>Frequently asked questions</h2>
+    <h2 data-i18n="pricing.faq.title">Frequently asked questions</h2>
 
     <div class="faq-item">
         <button class="faq-q" onclick="toggleFaq(this)">
-            Is the free plan really free forever? <span class="arrow">▼</span>
+            <span data-i18n="pricing.faq.q1">Is the free plan really free forever?</span> <span class="arrow">▼</span>
         </button>
-        <div class="faq-a">Yes. The Personal plan is free indefinitely — no trial period, no credit card required. Core PII masking will always be free.</div>
+        <div class="faq-a" data-i18n="pricing.faq.a1">Yes. The Personal plan is free indefinitely — no trial period, no credit card required. Core PII masking will always be free.</div>
     </div>
 
     <div class="faq-item">
         <button class="faq-q" onclick="toggleFaq(this)">
-            What counts as a "file upload"? <span class="arrow">▼</span>
+            <span data-i18n="pricing.faq.q2">What counts as a "file upload"?</span> <span class="arrow">▼</span>
         </button>
-        <div class="faq-a">Any PDF, Word document, image (JPEG/PNG), or CSV you upload for PII scanning. Free users get 3 uploads per day. Pro and above have unlimited uploads up to 50 MB per file.</div>
+        <div class="faq-a" data-i18n="pricing.faq.a2">Any PDF, Word document, image (JPEG/PNG), or CSV you upload for PII scanning. Free users get 3 uploads per day. Pro and above have unlimited uploads up to 50 MB per file.</div>
     </div>
 
     <div class="faq-item">
         <button class="faq-q" onclick="toggleFaq(this)">
-            Do I need to provide my own AI API key? <span class="arrow">▼</span>
+            <span data-i18n="pricing.faq.q3">Do I need to provide my own AI API key?</span> <span class="arrow">▼</span>
         </button>
-        <div class="faq-a">Yes — for AI chat ("Ask AI" mode), you supply your own OpenAI, Anthropic, or Gemini API key. This keeps your protected data completely out of our systems. Your key is stored locally and never uploaded to Ledebe.</div>
+        <div class="faq-a" data-i18n="pricing.faq.a3">Yes — for AI chat ("Ask AI" mode), you supply your own OpenAI, Anthropic, or Gemini API key. This keeps your protected data completely out of our systems. Your key is stored locally and never uploaded to Ledebe.</div>
     </div>
 
     <div class="faq-item">
         <button class="faq-q" onclick="toggleFaq(this)">
-            How does billing work for the Team plan? <span class="arrow">▼</span>
+            <span data-i18n="pricing.faq.q4">How does billing work for the Team plan?</span> <span class="arrow">▼</span>
         </button>
-        <div class="faq-a">Team plans are billed per active user per month (minimum 3 users). You can add or remove seats at any time — billing adjusts automatically at the next cycle. Invoice billing is available on request.</div>
+        <div class="faq-a" data-i18n="pricing.faq.a4">Team plans are billed per active user per month (minimum 3 users). You can add or remove seats at any time — billing adjusts automatically at the next cycle. Invoice billing is available on request.</div>
     </div>
 
     <div class="faq-item">
         <button class="faq-q" onclick="toggleFaq(this)">
-            Can I switch plans at any time? <span class="arrow">▼</span>
+            <span data-i18n="pricing.faq.q5">Can I switch plans at any time?</span> <span class="arrow">▼</span>
         </button>
-        <div class="faq-a">Yes. Upgrades apply immediately. Downgrades take effect at the end of your current billing period, and you keep access to paid features until then.</div>
+        <div class="faq-a" data-i18n="pricing.faq.a5">Yes. Upgrades apply immediately. Downgrades take effect at the end of your current billing period, and you keep access to paid features until then.</div>
     </div>
 
     <div class="faq-item">
         <button class="faq-q" onclick="toggleFaq(this)">
-            What payment methods do you accept? <span class="arrow">▼</span>
+            <span data-i18n="pricing.faq.q6">What payment methods do you accept?</span> <span class="arrow">▼</span>
         </button>
-        <div class="faq-a">We accept all major credit and debit cards (Visa, Mastercard, Amex) via Paddle, our payments provider. Enterprise clients can pay by bank transfer or invoice.</div>
+        <div class="faq-a" data-i18n="pricing.faq.a6">We accept all major credit and debit cards (Visa, Mastercard, Amex) via Paddle, our payments provider. Enterprise clients can pay by bank transfer or invoice.</div>
     </div>
 
     <div class="faq-item">
         <button class="faq-q" onclick="toggleFaq(this)">
-            Is there a refund policy? <span class="arrow">▼</span>
+            <span data-i18n="pricing.faq.q7">Is there a refund policy?</span> <span class="arrow">▼</span>
         </button>
-        <div class="faq-a">We offer a 14-day refund on all paid plans if you're not satisfied. Contact hello@ledebe.com and we'll sort it, no questions asked.</div>
+        <div class="faq-a" data-i18n="pricing.faq.a7">We offer a 14-day refund on all paid plans if you're not satisfied. Contact hello@ledebe.com and we'll sort it, no questions asked.</div>
     </div>
 
 </div>
@@ -571,47 +575,48 @@
         <div class="footer-content">
             <div class="footer-section">
                 <h4>Ledebe</h4>
-                <p>Privacy-first protection for anyone using AI. Your data stays on your device, always.</p>
+                <p data-i18n="footer.tagline">Privacy-first protection for anyone using AI. Your data stays on your device, always.</p>
             </div>
             <div class="footer-section">
-                <h4>Product</h4>
+                <h4 data-i18n="footer.product">Product</h4>
                 <ul>
-                    <li><a href="/downloads/">Downloads</a></li>
-                    <li><a href="/pricing/">Pricing</a></li>
-                    <li><a href="/docs/">Documentation</a></li>
-                    <li><a href="https://marketplace.visualstudio.com/items?itemName=Ledebe.ledebe-protector">VS Code Extension</a></li>
-                    <li><a href="https://app.ledebe.com">Web App</a></li>
+                    <li><a href="/downloads/" data-i18n="footer.downloads">Downloads</a></li>
+                    <li><a href="/pricing/" data-i18n="footer.pricing">Pricing</a></li>
+                    <li><a href="/docs/" data-i18n="footer.documentation">Documentation</a></li>
+                    <li><a href="https://marketplace.visualstudio.com/items?itemName=Ledebe.ledebe-protector" data-i18n="footer.vscodeExt">VS Code Extension</a></li>
+                    <li><a href="https://app.ledebe.com" data-i18n="footer.webApp">Web App</a></li>
                 </ul>
             </div>
             <div class="footer-section">
-                <h4>Company</h4>
+                <h4 data-i18n="footer.company">Company</h4>
                 <ul>
-                    <li><a href="/about/">About</a></li>
-                    <li><a href="/contact/">Contact</a></li>
-                    <li><a href="/demo/">Book a Demo</a></li>
+                    <li><a href="/about/" data-i18n="footer.about">About</a></li>
+                    <li><a href="/contact/" data-i18n="footer.contact">Contact</a></li>
+                    <li><a href="/demo/" data-i18n="footer.bookDemo">Book a Demo</a></li>
                 </ul>
             </div>
             <div class="footer-section">
-                <h4>Legal</h4>
+                <h4 data-i18n="footer.legal">Legal</h4>
                 <ul>
-                    <li><a href="/privacy/">Privacy Policy</a></li>
-                    <li><a href="/terms/">Terms of Service</a></li>
+                    <li><a href="/privacy/" data-i18n="footer.privacy">Privacy Policy</a></li>
+                    <li><a href="/terms/" data-i18n="footer.terms">Terms of Service</a></li>
                 </ul>
             </div>
         </div>
         <div class="footer-bottom">
-            <p>&copy; 2026 Ledebe Technologies. All rights reserved. Built with privacy in mind.</p>
+            <p data-i18n="footer.copyright">&copy; 2026 Ledebe Technologies. All rights reserved. Built with privacy in mind.</p>
         </div>
     </div>
 </footer>
 
+<script src="../i18n.js?v=5"></script>
 <script>
     // ── Billing toggle ──
     const prices = {
-        pro:  { monthly: { amount: '£8',  per: 'per month',          note: '' },
-                annual:  { amount: '£75', per: 'per year',           note: 'Save £21 vs monthly' } },
-        team: { monthly: { amount: '£18', per: 'per user / month',   note: '' },
-                annual:  { amount: '£160',per: 'per user / year',    note: 'Save £56 per user vs monthly' } }
+        pro:  { monthly: { amount: '£8',   perKey: 'pricing.billing.perMonth',     noteKey: null },
+                annual:  { amount: '£75',  perKey: 'pricing.billing.perYear',      noteKey: 'pricing.pro.annualNote' } },
+        team: { monthly: { amount: '£18',  perKey: 'pricing.billing.perUserMonth', noteKey: null },
+                annual:  { amount: '£160', perKey: 'pricing.billing.perUserYear',  noteKey: 'pricing.team.annualNote' } }
     };
     const ctaLinks = {
         pro:  'mailto:hello@ledebe.com?subject=Pro%20plan%20enquiry',
@@ -630,11 +635,15 @@
             document.getElementById(tier + 'Price').innerHTML = p.amount.startsWith('£')
                 ? '<span class="currency">£</span>' + p.amount.slice(1)
                 : p.amount;
-            document.getElementById(tier + 'Per').textContent = p.per;
-            document.getElementById(tier + 'AnnualNote').textContent = p.note || '\u00a0';
+            document.getElementById(tier + 'Per').textContent = (typeof t === 'function') ? t(p.perKey) : '';
+            document.getElementById(tier + 'AnnualNote').textContent = (p.noteKey && typeof t === 'function') ? t(p.noteKey) : '\u00a0';
             document.getElementById(tier + 'CtaLink').href = ctaLinks[tier];
         });
     }
+
+    // Initial render after i18n.js loads, and re-render whenever language changes
+    document.addEventListener('DOMContentLoaded', () => setBilling(billing));
+    document.addEventListener('i18n:changed', () => setBilling(billing));
 
     // ── FAQ accordion ──
     function toggleFaq(btn) {
@@ -649,6 +658,5 @@
         }
     }
 </script>
-<script src="../i18n.js?v=4"></script>
 </body>
 </html>

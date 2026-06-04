@@ -20,7 +20,10 @@ let panelDragState = null;
 let selectionButton = null;
 let warnedEditable = null;
 let warnedAt = 0;
+let lastTextCueRect = null;
 const restoreSnapshots = new WeakMap();
+let pendingRestoreState = null;
+const HIGHLIGHT_SUPPORTED = typeof globalThis.CSS !== "undefined" && Boolean(globalThis.CSS.highlights) && typeof globalThis.Highlight !== "undefined";
 
 function hasValidExtensionContext() {
   try {
@@ -68,13 +71,44 @@ function getHost() {
   return window.location.hostname;
 }
 
+function isGoogleDocsHost() {
+  return getHost().includes("docs.google.com");
+}
+
 function isPausedForHost() {
   return ledebeSettings.pausedHosts.includes(getHost());
+}
+
+function isGoogleDocsEditorSurface(node) {
+  if (!isGoogleDocsHost() || !node || !(node instanceof HTMLElement)) {
+    return false;
+  }
+
+  if (node.matches("iframe.docs-texteventtarget-iframe, .docs-texteventtarget-iframe")) {
+    return true;
+  }
+
+  if (node.matches(".kix-appview-editor, .kix-page, .kix-canvas-tile-content")) {
+    return true;
+  }
+
+  if (node instanceof HTMLBodyElement) {
+    const frameElement = node.ownerDocument.defaultView?.frameElement;
+    if (frameElement instanceof HTMLIFrameElement && frameElement.classList.contains("docs-texteventtarget-iframe")) {
+      return true;
+    }
+  }
+
+  return Boolean(node.closest(".kix-appview-editor"));
 }
 
 function isEditableElement(node) {
   if (!node || !(node instanceof HTMLElement)) {
     return false;
+  }
+
+  if (isGoogleDocsEditorSurface(node)) {
+    return true;
   }
 
   if (node instanceof HTMLTextAreaElement) {
@@ -96,15 +130,52 @@ function isInsideLedebeUi(node) {
   );
 }
 
+function getEditableRoot(node) {
+  if (!(node instanceof HTMLElement)) {
+    return null;
+  }
+
+  if (isGoogleDocsEditorSurface(node) || node instanceof HTMLInputElement || node instanceof HTMLTextAreaElement) {
+    return node;
+  }
+
+  if (!node.isContentEditable) {
+    return null;
+  }
+
+  let root = node;
+  let current = node.parentElement;
+  while (current && current !== document.body) {
+    if (isInsideLedebeUi(current)) {
+      break;
+    }
+
+    if (!current.isContentEditable) {
+      break;
+    }
+
+    root = current;
+    current = current.parentElement;
+  }
+
+  return root;
+}
+
 function resolveEditableElement(node) {
-  let current = node instanceof HTMLElement ? node : null;
+  let current = null;
+
+  if (node instanceof HTMLElement) {
+    current = node;
+  } else if (node instanceof Node && node.parentElement) {
+    current = node.parentElement;
+  }
 
   while (current) {
     if (isInsideLedebeUi(current)) {
       return null;
     }
     if (isEditableElement(current)) {
-      return current;
+      return getEditableRoot(current) || current;
     }
     current = current.parentElement;
   }
@@ -112,9 +183,200 @@ function resolveEditableElement(node) {
   return null;
 }
 
+function getSelectionEditableTarget(selection) {
+  if (!selection) {
+    return null;
+  }
+
+  const candidates = [
+    selection.anchorNode,
+    selection.focusNode,
+    selection.rangeCount ? selection.getRangeAt(0).commonAncestorContainer : null,
+    document.activeElement
+  ];
+
+  for (const candidate of candidates) {
+    const resolved = resolveEditableElement(candidate);
+    if (resolved) {
+      return resolved;
+    }
+  }
+
+  return null;
+}
+
+function getSelectionRect(selection) {
+  if (!selection || !selection.rangeCount) {
+    return null;
+  }
+
+  const range = selection.getRangeAt(0);
+  const directRect = range.getBoundingClientRect();
+  if (directRect && (directRect.width || directRect.height)) {
+    return directRect;
+  }
+
+  const clientRects = Array.from(range.getClientRects());
+  if (clientRects.length) {
+    return clientRects[clientRects.length - 1];
+  }
+
+  const target = getSelectionEditableTarget(selection);
+  return target?.getBoundingClientRect() || null;
+}
+
+function rememberTextCueRect(rect) {
+  if (!rect || (!rect.width && !rect.height)) {
+    return;
+  }
+
+  lastTextCueRect = {
+    top: rect.top,
+    left: rect.left,
+    right: rect.right,
+    bottom: rect.bottom,
+    width: rect.width,
+    height: rect.height
+  };
+}
+
+function getCaretOrSelectionRect(element = activeEditable) {
+  const selection = document.getSelection();
+  const selectionTarget = getSelectionEditableTarget(selection);
+  if (selection && selection.rangeCount && selectionTarget && (!element || selectionTarget === element)) {
+    const rect = getSelectionRect(selection);
+    if (rect && (rect.width || rect.height)) {
+      rememberTextCueRect(rect);
+      return rect;
+    }
+  }
+
+  if (lastTextCueRect) {
+    return lastTextCueRect;
+  }
+
+  return element?.getBoundingClientRect() || null;
+}
+
+function getSelectionButtonPosition(selection, target) {
+  const rect = getSelectionRect(selection) || target?.getBoundingClientRect();
+  if (!rect) {
+    return null;
+  }
+
+  const host = getHost();
+  if (host.includes("mail.google.com") || host.includes("docs.google.com")) {
+    return {
+      x: rect.right - Math.min(Math.max(rect.width * 0.2, 12), 24),
+      y: rect.top + 4
+    };
+  }
+
+  return {
+    x: rect.left + rect.width / 2,
+    y: rect.top
+  };
+}
+
+function getAnchorElementForLauncher(element) {
+  if (!(element instanceof HTMLElement)) {
+    return element;
+  }
+
+  const host = getHost();
+
+  if (isGoogleDocsEditorSurface(element)) {
+    return element;
+  }
+
+  if (host.includes("claude.ai") || host.includes("anthropic.com")) {
+    const claudeContainer =
+      element.closest('[role="textbox"]')?.parentElement?.parentElement ||
+      element.closest("form") ||
+      element.closest('[class*="ProseMirror"]') ||
+      element.closest('[class*="composer"]');
+
+    if (claudeContainer instanceof HTMLElement) {
+      return claudeContainer;
+    }
+  }
+
+  if (host.includes("mail.google.com")) {
+    const gmailContainer =
+      element.closest('[role="textbox"]') ||
+      element.closest('[contenteditable="true"]') ||
+      element;
+
+    if (gmailContainer instanceof HTMLElement) {
+      return gmailContainer;
+    }
+  }
+
+  let best = element;
+  let current = element;
+  while (current && current !== document.body) {
+    const rect = current.getBoundingClientRect();
+    if (rect.width >= 220 && rect.height >= 44) {
+      best = current;
+    }
+    current = current.parentElement;
+  }
+
+  return best;
+}
+
+function getLauncherPlacement(anchorElement) {
+  const host = getHost();
+  const rect = anchorElement.getBoundingClientRect();
+
+  if (host.includes("office.com") || host.includes("officeapps.live.com") || host.includes("word-edit.officeapps.live.com")) {
+    const top = Math.max(8, Math.min(window.innerHeight - 34, rect.bottom - 34));
+    const left = Math.max(8, Math.min(window.innerWidth - 34, rect.right - 34));
+    return { top, left };
+  }
+
+  if (host.includes("docs.google.com")) {
+    const top = Math.max(8, Math.min(window.innerHeight - 34, rect.bottom - 34));
+    const left = Math.max(8, Math.min(window.innerWidth - 34, rect.right - 34));
+    return { top, left };
+  }
+
+  if (host.includes("claude.ai") || host.includes("anthropic.com") || host.includes("chatgpt.com") || host.includes("chat.openai.com")) {
+    const top = Math.max(12, Math.min(window.innerHeight - 52, rect.bottom - 38));
+    const left = Math.max(12, Math.min(window.innerWidth - 52, rect.right - 34));
+    return { top, left };
+  }
+
+  if (host.includes("mail.google.com")) {
+    const top = Math.max(8, Math.min(window.innerHeight - 34, rect.bottom - 34));
+    const left = Math.max(8, Math.min(window.innerWidth - 34, rect.right - 34));
+    return { top, left };
+  }
+
+  if (host.includes("claude.ai") || host.includes("anthropic.com") || host.includes("chatgpt.com") || host.includes("chat.openai.com")) {
+    const top = Math.max(8, Math.min(window.innerHeight - 34, rect.bottom - 34));
+    const left = Math.max(8, Math.min(window.innerWidth - 34, rect.right - 34));
+    return { top, left };
+  }
+
+  const verticalMid = rect.top + Math.min(rect.height / 2, 80);
+  const top = Math.max(8, Math.min(window.innerHeight - 34, verticalMid - 14));
+  const preferredLeft = rect.right + 6;
+  const fallbackLeft = rect.right - 34;
+  const left = preferredLeft + 34 <= window.innerWidth
+    ? preferredLeft
+    : Math.max(8, Math.min(window.innerWidth - 34, fallbackLeft));
+
+  return { top, left };
+}
+
 function getEditableText(element) {
   if (!element) {
     return "";
+  }
+
+  if (isGoogleDocsEditorSurface(element)) {
+    return element.innerText || element.textContent || "";
   }
 
   if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
@@ -125,6 +387,10 @@ function getEditableText(element) {
 }
 
 function setEditableText(element, value) {
+  if (isGoogleDocsEditorSurface(element)) {
+    return;
+  }
+
   if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
     const nativeSetter = Object.getOwnPropertyDescriptor(
       Object.getPrototypeOf(element),
@@ -168,7 +434,140 @@ function toast(message) {
 }
 
 function clearAllHighlights() {
+  if (!HIGHLIGHT_SUPPORTED) {
+    return;
+  }
+
+  CSS.highlights.delete("ledebe-sensitive-highlight");
+  CSS.highlights.delete("ledebe-protected-highlight");
   return;
+}
+
+function collectTextNodes(root) {
+  if (!(root instanceof Node)) {
+    return [];
+  }
+
+  const nodes = [];
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      if (!node.textContent?.trim()) {
+        return NodeFilter.FILTER_REJECT;
+      }
+
+      const parent = node.parentElement;
+      if (!parent || isInsideLedebeUi(parent)) {
+        return NodeFilter.FILTER_REJECT;
+      }
+
+      return NodeFilter.FILTER_ACCEPT;
+    }
+  });
+
+  let current = walker.nextNode();
+  while (current) {
+    nodes.push(current);
+    current = walker.nextNode();
+  }
+
+  return nodes;
+}
+
+function buildRangesFromOffsets(root, offsets) {
+  if (!(root instanceof Node) || !offsets.length) {
+    return [];
+  }
+
+  const textNodes = collectTextNodes(root);
+  if (!textNodes.length) {
+    return [];
+  }
+
+  const ranges = [];
+  for (const offset of offsets) {
+    let startNode = null;
+    let endNode = null;
+    let startOffset = 0;
+    let endOffset = 0;
+    let cursor = 0;
+
+    for (const node of textNodes) {
+      const text = node.textContent || "";
+      const nodeStart = cursor;
+      const nodeEnd = cursor + text.length;
+
+      if (!startNode && offset.start >= nodeStart && offset.start <= nodeEnd) {
+        startNode = node;
+        startOffset = Math.max(0, offset.start - nodeStart);
+      }
+
+      if (!endNode && offset.end >= nodeStart && offset.end <= nodeEnd) {
+        endNode = node;
+        endOffset = Math.max(0, offset.end - nodeStart);
+      }
+
+      cursor = nodeEnd;
+      if (startNode && endNode) {
+        break;
+      }
+    }
+
+    if (!startNode || !endNode) {
+      continue;
+    }
+
+    const range = new Range();
+    range.setStart(startNode, startOffset);
+    range.setEnd(endNode, endOffset);
+    ranges.push(range);
+  }
+
+  return ranges;
+}
+
+function getProtectedTokenOffsets(text) {
+  const offsets = [];
+  const regex = /\[LDB_[A-Z_0-9]+\]/g;
+  let match;
+  while ((match = regex.exec(text)) !== null) {
+    offsets.push({
+      start: match.index,
+      end: match.index + match[0].length
+    });
+  }
+  return offsets;
+}
+
+function supportsDirectTextReplacement(element) {
+  return Boolean(element) && !isGoogleDocsEditorSurface(element);
+}
+
+function rememberRestoreSnapshot(element, value) {
+  if (!element || restoreSnapshots.has(element)) {
+    return;
+  }
+
+  restoreSnapshots.set(element, value);
+  pendingRestoreState = {
+    host: getHost(),
+    text: value
+  };
+}
+
+function hasRestoreTarget(element) {
+  if (element && restoreSnapshots.has(element)) {
+    return true;
+  }
+
+  return Boolean(pendingRestoreState?.host === getHost() && typeof pendingRestoreState?.text === "string");
+}
+
+function clearRestoreState(element) {
+  if (element && restoreSnapshots.has(element)) {
+    restoreSnapshots.delete(element);
+  }
+
+  pendingRestoreState = null;
 }
 
 function ensureSelectionButton() {
@@ -179,11 +578,11 @@ function ensureSelectionButton() {
   selectionButton = document.createElement("button");
   selectionButton.type = "button";
   selectionButton.className = "ledebe-selection-btn";
-  selectionButton.textContent = "🛡 Protect";
-  selectionButton.addEventListener("pointerdown", (event) => {
+  selectionButton.textContent = "🛡 Add to Custom Terms";
+  selectionButton.addEventListener("pointerdown", async (event) => {
     event.preventDefault();
     event.stopPropagation();
-    protectSelection();
+    await toggleSelectedTermProtection();
     hideSelectionButton();
   });
   document.documentElement.appendChild(selectionButton);
@@ -196,15 +595,45 @@ function hideSelectionButton() {
   }
 }
 
-function showSelectionButton(x, y) {
+function showSelectionButton(text, x, y) {
   const button = ensureSelectionButton();
+  const clean = text.trim().toLowerCase();
+  const isProtected = (ledebeSettings.customTerms || []).some((term) => term.toLowerCase() === clean);
+
+  button.dataset.selectionText = text.trim();
+  button.dataset.mode = isProtected ? "unprotect" : "protect";
+  button.innerHTML = isProtected
+    ? `<span class="ledebe-selection-icon">+</span><span>Protected</span>`
+    : `<span class="ledebe-selection-icon">🛡</span><span>Protect</span>`;
+  button.title = isProtected ? "Remove this selection from custom protected terms" : "Add this selection to custom protected terms";
   button.style.display = "flex";
-  button.style.left = `${Math.max(8, Math.min(x - 50, window.innerWidth - 160))}px`;
-  button.style.top = `${Math.max(8, y - 46)}px`;
+  button.style.left = `${Math.max(8, Math.min(x - 44, window.innerWidth - 116))}px`;
+  button.style.top = `${Math.max(8, y - 34)}px`;
 }
 
 function applyVisualHints(element, findings) {
-  return;
+  clearAllHighlights();
+
+  if (!HIGHLIGHT_SUPPORTED || !element || element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
+    return;
+  }
+
+  const fullText = getEditableText(element);
+  const findingOffsets = findings.map((finding) => ({
+    start: finding.index,
+    end: finding.index + finding.value.length
+  }));
+  const protectedOffsets = getProtectedTokenOffsets(fullText);
+
+  const sensitiveRanges = buildRangesFromOffsets(element, findingOffsets);
+  if (sensitiveRanges.length) {
+    CSS.highlights.set("ledebe-sensitive-highlight", new Highlight(...sensitiveRanges));
+  }
+
+  const protectedRanges = buildRangesFromOffsets(element, protectedOffsets);
+  if (protectedRanges.length) {
+    CSS.highlights.set("ledebe-protected-highlight", new Highlight(...protectedRanges));
+  }
 }
 
 function ensureLauncher() {
@@ -220,25 +649,43 @@ function ensureLauncher() {
     <div class="ledebe-launcher-rail" aria-hidden="true"></div>
     <div class="ledebe-fan-actions">
       <button type="button" class="ledebe-fan-btn ledebe-fan-btn-chat" data-action="chat">
-        <span class="ledebe-fan-icon">...</span>
+        <span class="ledebe-fan-icon">AI</span>
         <span class="ledebe-fan-label">Chat</span>
       </button>
       <button type="button" class="ledebe-fan-btn ledebe-fan-btn-protect" data-action="protect">
-        <span class="ledebe-fan-icon">+</span>
+        <span class="ledebe-fan-icon">P</span>
         <span class="ledebe-fan-label">Protect</span>
       </button>
       <button type="button" class="ledebe-fan-btn ledebe-fan-btn-pause" data-action="pause">
-        <span class="ledebe-fan-icon">||</span>
+        <span class="ledebe-fan-icon">II</span>
         <span class="ledebe-fan-label">Pause</span>
       </button>
     </div>
     <button type="button" class="ledebe-launcher-main" aria-label="Ledebe assistant">
       <span class="ledebe-launcher-core">
         <img src="${logoUrl}" alt="Ledebe">
+        <span class="ledebe-launcher-fallback" aria-hidden="true">L</span>
       </span>
       <span class="ledebe-launcher-count" hidden>0</span>
     </button>
   `;
+
+  const launcherImage = launcherRoot.querySelector(".ledebe-launcher-core img");
+  const launcherFallback = launcherRoot.querySelector(".ledebe-launcher-fallback");
+  if (!logoUrl && launcherImage instanceof HTMLElement && launcherFallback instanceof HTMLElement) {
+    launcherImage.hidden = true;
+    launcherFallback.hidden = false;
+  } else if (launcherImage instanceof HTMLImageElement && launcherFallback instanceof HTMLElement) {
+    launcherFallback.hidden = true;
+    launcherImage.addEventListener("error", () => {
+      launcherImage.hidden = true;
+      launcherFallback.hidden = false;
+    }, { once: true });
+    launcherImage.addEventListener("load", () => {
+      launcherImage.hidden = false;
+      launcherFallback.hidden = true;
+    }, { once: true });
+  }
 
   launcherRoot.addEventListener("mouseenter", () => setLauncherExpanded(true));
   launcherRoot.addEventListener("mouseleave", () => scheduleLauncherCollapse());
@@ -397,23 +844,15 @@ function positionLauncher(element) {
   }
 
   const launcher = ensureLauncher();
-  const rect = element.getBoundingClientRect();
-  const verticalMid = rect.top + Math.min(rect.height / 2, 80);
-  const top = Math.max(12, Math.min(window.innerHeight - 64, verticalMid - 28));
+  const anchorElement = getAnchorElementForLauncher(element);
+  const placement = getLauncherPlacement(anchorElement);
 
-  if (!launcherAnchor || launcherAnchor.element !== element) {
-    const preferredLeft = rect.right + 10;
-    const fallbackLeft = rect.right - 66;
-    const side = preferredLeft + 56 <= window.innerWidth ? "right" : "inside";
-    const left = side === "right"
-      ? preferredLeft
-      : Math.max(12, Math.min(window.innerWidth - 64, fallbackLeft));
-
-    launcherAnchor = { element, side, left };
+  if (!launcherAnchor || launcherAnchor.element !== anchorElement) {
+    launcherAnchor = { element: anchorElement };
   }
 
-  launcher.style.top = `${top}px`;
-  launcher.style.left = `${launcherAnchor.left}px`;
+  launcher.style.top = `${placement.top}px`;
+  launcher.style.left = `${placement.left}px`;
   launcher.hidden = false;
   updateLauncherCount();
   updateLauncherPausedState();
@@ -462,10 +901,11 @@ function renderAssistantPanel() {
   }
 
   const panel = ensureAssistantPanel();
-  const canRestore = restoreSnapshots.has(activeEditable);
+  const canRestore = hasRestoreTarget(activeEditable);
   const findings = summarizeFindings(activeFindings);
   const customTerms = ledebeSettings.customTerms || [];
   const paused = isPausedForHost();
+  const canDirectProtect = supportsDirectTextReplacement(activeEditable);
 
   panel.innerHTML = `
     <div class="ledebe-chat-header">
@@ -484,10 +924,16 @@ function renderAssistantPanel() {
         </div>
       </div>
       <div class="ledebe-chat-actions">
-        <button type="button" class="ledebe-chat-action primary" data-action="protect-panel" ${paused ? "disabled" : ""}>Protect this field</button>
+        <button type="button" class="ledebe-chat-action primary" data-action="protect-panel" ${(paused || !canDirectProtect) ? "disabled" : ""}>Protect this field</button>
         <button type="button" class="ledebe-chat-action" data-action="restore-panel" ${canRestore ? "" : "disabled"}>Restore original text</button>
         <button type="button" class="ledebe-chat-action" data-action="pause-panel">${paused ? "Resume on this site" : "Pause on this site"}</button>
       </div>
+      ${!canDirectProtect ? `
+        <div class="ledebe-chat-card">
+          <strong>Google Docs mode</strong>
+          <p>Use the shield on a selected word or phrase to add it to custom terms. Full in-place document replacement is disabled here for safety.</p>
+        </div>
+      ` : ""}
       <div class="ledebe-chat-card">
         <strong>Custom terms</strong>
         <p>Add names, project codes, client terms, or anything Ledebe should always protect.</p>
@@ -647,9 +1093,50 @@ function protectTextValue(value) {
   return maskText(value, ledebeSettings.customTerms);
 }
 
+function protectOnlyExactTerm(value, term) {
+  if (!term.trim()) {
+    return { masked: value, replacements: [] };
+  }
+
+  const regex = new RegExp(escapeForRegex(term), "gi");
+  let replaced = false;
+  const masked = value.replace(regex, () => {
+    replaced = true;
+    return "[LDB_CUSTOM_1]";
+  });
+
+  return {
+    masked,
+    replacements: replaced ? [{ token: "[LDB_CUSTOM_1]", original: term }] : []
+  };
+}
+
+function protectSelectedTermAcrossField(term) {
+  const element = activeEditable;
+  if (!element || !supportsDirectTextReplacement(element)) {
+    return { replacements: [] };
+  }
+
+  const original = getEditableText(element);
+  const result = protectOnlyExactTerm(original, term);
+  if (!result.replacements.length) {
+    return result;
+  }
+
+  rememberRestoreSnapshot(element, original);
+  setEditableText(element, result.masked);
+  analyzeElement(element);
+  return result;
+}
+
 function protectActiveField() {
   if (!activeEditable) {
     toast("Focus a text field first.");
+    return;
+  }
+
+  if (!supportsDirectTextReplacement(activeEditable)) {
+    toast("Use the selection shield to add words from Google Docs to custom terms.");
     return;
   }
 
@@ -660,7 +1147,7 @@ function protectActiveField() {
     return;
   }
 
-  restoreSnapshots.set(activeEditable, original);
+  rememberRestoreSnapshot(activeEditable, original);
   setEditableText(activeEditable, result.masked);
   analyzeElement(activeEditable);
   toast(`Protected ${result.replacements.length} item${result.replacements.length === 1 ? "" : "s"}.`);
@@ -672,14 +1159,21 @@ function restoreActiveField() {
     return;
   }
 
-  const original = restoreSnapshots.get(activeEditable);
+  if (!supportsDirectTextReplacement(activeEditable)) {
+    toast("Restore is only available for fields Ledebe can edit directly.");
+    return;
+  }
+
+  const original = restoreSnapshots.get(activeEditable) ?? (
+    pendingRestoreState?.host === getHost() ? pendingRestoreState.text : undefined
+  );
   if (typeof original !== "string") {
     toast("No Ledebe restore point for this field yet.");
     return;
   }
 
   setEditableText(activeEditable, original);
-  restoreSnapshots.delete(activeEditable);
+  clearRestoreState(activeEditable);
   analyzeElement(activeEditable);
   toast("Original text restored.");
 }
@@ -691,7 +1185,12 @@ function protectSelection() {
     return;
   }
 
-  restoreSnapshots.set(element, getEditableText(element));
+  if (!supportsDirectTextReplacement(element)) {
+    toast("Use the selection shield to add Google Docs text to custom terms.");
+    return;
+  }
+
+  rememberRestoreSnapshot(element, getEditableText(element));
 
   if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
     const start = element.selectionStart ?? 0;
@@ -737,6 +1236,47 @@ function protectSelection() {
   toast(`Protected ${result.replacements.length} selected item${result.replacements.length === 1 ? "" : "s"}.`);
 }
 
+async function toggleSelectedTermProtection() {
+  const selectedText = selectionButton?.dataset.selectionText?.trim();
+  if (!selectedText) {
+    toast("Highlight a word or phrase first.");
+    return;
+  }
+
+  const customTerms = [...(ledebeSettings.customTerms || [])];
+  const normalized = selectedText.toLowerCase();
+  const existingIndex = customTerms.findIndex((term) => term.toLowerCase() === normalized);
+
+  if (existingIndex >= 0) {
+    customTerms.splice(existingIndex, 1);
+    await safeStorageSet({ customTerms });
+    ledebeSettings.customTerms = customTerms;
+    analyzeElement(activeEditable);
+    if (assistantOpen) {
+      renderAssistantPanel();
+    }
+    toast(`"${selectedText}" removed from protected terms.`);
+    return;
+  }
+
+  customTerms.push(selectedText);
+  await safeStorageSet({ customTerms });
+  ledebeSettings.customTerms = customTerms;
+
+  if (activeEditable) {
+    const result = protectSelectedTermAcrossField(selectedText);
+    if (!result.replacements.length) {
+      analyzeElement(activeEditable);
+    }
+  }
+
+  if (assistantOpen) {
+    renderAssistantPanel();
+  }
+
+  toast(`"${selectedText}" added to protected terms and protected across this field.`);
+}
+
 async function togglePauseSite() {
   const pausedHosts = new Set(ledebeSettings.pausedHosts || []);
   const host = getHost();
@@ -765,6 +1305,7 @@ function handleFocus(event) {
   }
 
   activeEditable = target;
+  rememberTextCueRect(target.getBoundingClientRect());
   analyzeElement(target);
 }
 
@@ -775,6 +1316,7 @@ function handleInput(event) {
   }
 
   activeEditable = target;
+  rememberTextCueRect(target.getBoundingClientRect());
   analyzeElement(target);
 }
 
@@ -785,6 +1327,7 @@ function handlePaste(event) {
   }
 
   activeEditable = target;
+  rememberTextCueRect(target.getBoundingClientRect());
   window.setTimeout(() => analyzeElement(target), 10);
 }
 
@@ -809,24 +1352,31 @@ function handleSelectionChange() {
     return;
   }
 
-  const target = resolveEditableElement(selection.anchorNode);
+  const target = getSelectionEditableTarget(selection);
   if (!target || isPausedForHost() || !ledebeSettings.enabled) {
     hideSelectionButton();
     return;
   }
 
   activeEditable = target;
-  analyzeElement(target);
+  if (supportsDirectTextReplacement(target)) {
+    analyzeElement(target);
+  } else {
+    positionLauncher(target);
+  }
 
   const selectedText = selection.toString().trim();
   if (selectedText.length > 1) {
     setLauncherExpanded(true);
-    const range = selection.rangeCount ? selection.getRangeAt(0) : null;
-    const rect = range?.getBoundingClientRect();
-    if (rect && (rect.width || rect.height)) {
-      showSelectionButton(rect.left + rect.width / 2, rect.top);
+    const cueRect = getSelectionRect(selection);
+    rememberTextCueRect(cueRect);
+    const buttonPosition = getSelectionButtonPosition(selection, target);
+    if (buttonPosition) {
+      showSelectionButton(selectedText, buttonPosition.x, buttonPosition.y);
     }
   } else {
+    const cueRect = getSelectionRect(selection);
+    rememberTextCueRect(cueRect);
     hideSelectionButton();
   }
 }
@@ -861,6 +1411,19 @@ function handlePointerMove(event) {
 }
 
 function handlePointerUp() {
+  window.setTimeout(() => {
+    const selection = document.getSelection();
+    const selectedText = selection?.toString().trim() || "";
+    if (selectedText.length > 1 && getSelectionEditableTarget(selection)) {
+      handleSelectionChange();
+      return;
+    }
+
+    if (!selectedText) {
+      hideSelectionButton();
+    }
+  }, 0);
+
   panelDragState = null;
 }
 
@@ -907,6 +1470,10 @@ if (hasValidExtensionContext()) {
 
     for (const [key, value] of Object.entries(changes)) {
       ledebeSettings[key] = value.newValue;
+    }
+
+    if (assistantOpen) {
+      renderAssistantPanel();
     }
 
     if (activeEditable) {

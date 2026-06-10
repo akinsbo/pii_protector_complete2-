@@ -122,7 +122,7 @@
   position: absolute;
   top: 0;
   right: 100%;
-  width: 120px;
+  width: 112px;
   height: 28px;
   pointer-events: none;
 }
@@ -134,7 +134,7 @@
   height: 28px;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   pointer-events: none;
 }
 
@@ -155,10 +155,10 @@
   width: 28px;
   height: 28px;
   border-radius: 999px;
-  background: #ffffff;
-  color: #fff;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  box-shadow: 0 8px 16px rgba(15, 23, 42, 0.16);
+  background: linear-gradient(180deg, #f6c453 0%, #d8a52e 100%);
+  color: #122033;
+  border: 1px solid rgba(146, 94, 11, 0.24);
+  box-shadow: 0 10px 20px rgba(216, 165, 46, 0.32);
 }
 
 .ledebe-launcher:hover {
@@ -175,22 +175,21 @@
 }
 
 .ledebe-launcher-core img {
-  width: 14px;
-  height: 14px;
+  width: 18px;
+  height: 18px;
   object-fit: contain;
   display: block;
+  border-radius: 999px;
 }
 
 .ledebe-launcher-fallback {
-  width: 14px;
-  height: 14px;
+  width: 100%;
+  height: 100%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 999px;
-  background: #1e3a8a;
-  color: #fff;
-  font-size: 9px;
+  color: #122033;
+  font-size: 11px;
   font-weight: 800;
   line-height: 1;
 }
@@ -199,14 +198,14 @@
   position: absolute;
   top: -2px;
   right: -2px;
-  min-width: 14px;
-  height: 14px;
+  min-width: 13px;
+  height: 13px;
   border-radius: 999px;
   background: #f59e0b;
   color: #122033;
-  font-size: 8px;
+  font-size: 7px;
   font-weight: 800;
-  line-height: 14px;
+  line-height: 13px;
   box-shadow: 0 3px 8px rgba(245, 158, 11, 0.28);
 }
 
@@ -218,16 +217,16 @@
 
 .ledebe-fan-btn {
   position: relative;
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   border-radius: 999px;
   background: #fff;
   color: #313f36;
   border: 1px solid rgba(15, 23, 42, 0.08);
-  box-shadow: 0 7px 14px rgba(18, 32, 51, 0.14);
+  box-shadow: 0 7px 14px rgba(18, 32, 51, 0.12);
   opacity: 0;
   pointer-events: none;
-  transform: translateX(14px) scale(0.92);
+  transform: translateX(10px) scale(0.92);
   transition: transform 0.18s ease, opacity 0.18s ease;
 }
 
@@ -236,14 +235,14 @@
   align-items: center;
   justify-content: center;
   width: 100%;
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 800;
   letter-spacing: 0.02em;
 }
 
 .ledebe-fan-label {
   position: absolute;
-  top: calc(100% + 6px);
+  bottom: calc(100% + 6px);
   left: 50%;
   transform: translateX(-50%);
   background: rgba(15, 23, 42, 0.92);
@@ -257,8 +256,7 @@
   transition: opacity 0.18s ease;
 }
 
-.ledebe-fan-btn:hover .ledebe-fan-label,
-.ledebe-launcher.is-expanded .ledebe-fan-label {
+.ledebe-fan-btn:hover .ledebe-fan-label {
   opacity: 1;
 }
 
@@ -276,7 +274,7 @@
   transition-delay: 0.03s;
 }
 
-.ledebe-launcher.is-expanded .ledebe-fan-btn-pause {
+.ledebe-launcher.is-expanded .ledebe-fan-btn-restore {
   transition-delay: 0.06s;
 }
 

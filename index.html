@@ -2484,6 +2484,7 @@
                 { prefix: 'LDB_NINO',   pattern: /\b[A-Z]{2}\s?\d{2}\s?\d{2}\s?\d{2}\s?[A-Z]\b/g },
                 { prefix: 'LDB_ID',     pattern: /\b\d{3}[-\s]\d{2}[-\s]\d{4}\b/g },
                 { prefix: 'LDB_PHONE',  pattern: /(?:\+?[1-9]\d{6,14}|\(?\d{3}\)?[-\s]\d{3}[-\s]\d{4})/g },
+                { prefix: 'LDB_APIKEY', pattern: /\b(?:sk|pk|api|key|token|secret|bearer)[_\-]?[A-Za-z0-9]{20,}\b/gi },
             ];
 
             rules.forEach(rule => {
@@ -2528,6 +2529,26 @@
         let processedImageData = null; // Store processed image data (original + protected)
         let previewData = null; // Store document preview data
         let directAIMode = false; // Direct AI Chat mode
+
+        function getCombinedPlaceholderMap() {
+            const combined = { ...placeholderMap };
+            if (typeof aiChat !== 'undefined' && aiChat?.cumulativePlaceholderMap) {
+                Object.assign(combined, aiChat.cumulativePlaceholderMap);
+            }
+            return combined;
+        }
+
+        function restoreKnownPlaceholders(text) {
+            const combinedMap = getCombinedPlaceholderMap();
+            let restored = text;
+
+            Object.entries(combinedMap).forEach(([placeholder, original]) => {
+                const escaped = placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                restored = restored.replace(new RegExp(escaped, 'g'), original);
+            });
+
+            return restored;
+        }
 
         // Dark mode toggle
         const darkMode = document.getElementById('darkMode');
@@ -4122,7 +4143,7 @@ ${selectionScript}
             if (!text) return;
 
             // Check if text contains placeholders (restore operation)
-            const isRestore = /\[LDB_(EMAIL|PHONE|CUSTOM)\d+\]/.test(text);
+            const isRestore = /\[LDB_[A-Z0-9_]+(?:_\d+|\d+)\]/.test(text);
 
             // Clear welcome message and exit empty state
             const welcomePrompt = document.querySelector('.welcome-prompt');
@@ -4133,10 +4154,7 @@ ${selectionScript}
 
             if (isRestore) {
                 // Restore operation: replace placeholders with original values
-                let restored = text;
-                for (const [placeholder, original] of Object.entries(placeholderMap)) {
-                    restored = restored.replace(new RegExp(placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), original);
-                }
+                const restored = restoreKnownPlaceholders(text);
                 addRestoreMessage(text, restored);
                 saveToHistory(text, restored, text);
                 sendOSNotification('Text restored', 'Your original text has been restored.');

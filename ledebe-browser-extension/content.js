@@ -23,6 +23,8 @@ let warnedAt = 0;
 let lastTextCueRect = null;
 const restoreSnapshots = new WeakMap();
 let pendingRestoreState = null;
+const sessionPlaceholderMap = new Map();
+const PLACEHOLDER_STORAGE_KEY = "ledebeSessionPlaceholderMap";
 const HIGHLIGHT_SUPPORTED = typeof globalThis.CSS !== "undefined" && Boolean(globalThis.CSS.highlights) && typeof globalThis.Highlight !== "undefined";
 
 function hasValidExtensionContext() {
@@ -65,6 +67,99 @@ async function safeStorageSet(value) {
   } catch (error) {
     return false;
   }
+}
+
+async function safeSessionStorageGet(key) {
+  try {
+    if (!hasValidExtensionContext()) {
+      return {};
+    }
+    if (chrome.storage?.local) {
+      return await chrome.storage.local.get(key);
+    }
+    if (chrome.storage?.session) {
+      return await chrome.storage.session.get(key);
+    }
+    return {};
+  } catch (error) {
+    return {};
+  }
+}
+
+async function safeSessionStorageSet(value) {
+  try {
+    if (!hasValidExtensionContext()) {
+      return false;
+    }
+    if (chrome.storage?.local) {
+      await chrome.storage.local.set(value);
+      return true;
+    }
+    if (chrome.storage?.session) {
+      await chrome.storage.session.set(value);
+      return true;
+    }
+    return false;
+  } catch (error) {
+    return false;
+  }
+}
+
+function placeholderMappingMissingForText(value) {
+  return value.includes("[LDB_") && sessionPlaceholderMap.size === 0;
+}
+
+function hasKnownPlaceholdersInText(value) {
+  if (!value.includes("[LDB_") || !sessionPlaceholderMap.size) {
+    return false;
+  }
+
+  for (const token of sessionPlaceholderMap.keys()) {
+    if (value.includes(token)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function showMissingPlaceholderMappingToast() {
+  toast("Protected placeholders found, but Ledebe has no saved mappings for them in this browser.");
+}
+
+function canRestoreFromMappings(element) {
+  if (!element) {
+    return false;
+  }
+
+  const value = getEditableText(element);
+  return hasKnownPlaceholdersInText(value);
+}
+
+function shouldHandlePlaceholderRestore(element) {
+  if (!element) {
+    return false;
+  }
+
+  return getEditableText(element).includes("[LDB_");
+}
+
+function restoreFromMappings(element) {
+  const currentText = getEditableText(element);
+  const restoredPlaceholders = restoreKnownPlaceholdersInText(currentText);
+  if (restoredPlaceholders.restoredCount > 0) {
+    setEditableText(element, restoredPlaceholders.restored);
+    analyzeElement(element);
+    toast(`Restored ${restoredPlaceholders.restoredCount} protected item${restoredPlaceholders.restoredCount === 1 ? "" : "s"} in this text.`);
+    return true;
+  }
+
+  if (placeholderMappingMissingForText(currentText)) {
+    showMissingPlaceholderMappingToast();
+    return true;
+  }
+
+  return false;
 }
 
 function getHost() {
@@ -286,6 +381,10 @@ function getAnchorElementForLauncher(element) {
   const host = getHost();
 
   if (isGoogleDocsEditorSurface(element)) {
+    const docsEditor = document.querySelector(".kix-appview-editor");
+    if (docsEditor instanceof HTMLElement) {
+      return docsEditor;
+    }
     return element;
   }
 
@@ -330,14 +429,16 @@ function getLauncherPlacement(anchorElement) {
   const rect = anchorElement.getBoundingClientRect();
 
   if (host.includes("office.com") || host.includes("officeapps.live.com") || host.includes("word-edit.officeapps.live.com")) {
-    const top = Math.max(8, Math.min(window.innerHeight - 34, rect.bottom - 34));
-    const left = Math.max(8, Math.min(window.innerWidth - 34, rect.right - 34));
+    const top = Math.max(120, Math.min(window.innerHeight - 34, rect.top + 14));
+    const left = Math.max(10, Math.min(window.innerWidth - 34, rect.left + 10));
     return { top, left };
   }
 
   if (host.includes("docs.google.com")) {
-    const top = Math.max(8, Math.min(window.innerHeight - 34, rect.bottom - 34));
-    const left = Math.max(8, Math.min(window.innerWidth - 34, rect.right - 34));
+    const docsPage = document.querySelector(".kix-page, .kix-page-paginated");
+    const pageRect = docsPage instanceof HTMLElement ? docsPage.getBoundingClientRect() : rect;
+    const top = Math.max(220, Math.min(window.innerHeight - 34, pageRect.top + 82));
+    const left = Math.max(14, Math.min(window.innerWidth - 34, pageRect.left - 22));
     return { top, left };
   }
 
@@ -348,12 +449,6 @@ function getLauncherPlacement(anchorElement) {
   }
 
   if (host.includes("mail.google.com")) {
-    const top = Math.max(8, Math.min(window.innerHeight - 34, rect.bottom - 34));
-    const left = Math.max(8, Math.min(window.innerWidth - 34, rect.right - 34));
-    return { top, left };
-  }
-
-  if (host.includes("claude.ai") || host.includes("anthropic.com") || host.includes("chatgpt.com") || host.includes("chat.openai.com")) {
     const top = Math.max(8, Math.min(window.innerHeight - 34, rect.bottom - 34));
     const left = Math.max(8, Math.min(window.innerWidth - 34, rect.right - 34));
     return { top, left };
@@ -554,8 +649,32 @@ function rememberRestoreSnapshot(element, value) {
   };
 }
 
+function replaceSessionPlaceholderMap(nextMap) {
+  sessionPlaceholderMap.clear();
+  for (const [token, original] of Object.entries(nextMap || {})) {
+    if (token && typeof original === "string") {
+      sessionPlaceholderMap.set(token, original);
+    }
+  }
+}
+
+async function loadSessionPlaceholderMap() {
+  const stored = await safeSessionStorageGet(PLACEHOLDER_STORAGE_KEY);
+  replaceSessionPlaceholderMap(stored[PLACEHOLDER_STORAGE_KEY] || {});
+}
+
+function persistSessionPlaceholderMap() {
+  void safeSessionStorageSet({
+    [PLACEHOLDER_STORAGE_KEY]: Object.fromEntries(sessionPlaceholderMap)
+  });
+}
+
 function hasRestoreTarget(element) {
   if (element && restoreSnapshots.has(element)) {
+    return true;
+  }
+
+  if (element && canRestoreFromMappings(element)) {
     return true;
   }
 
@@ -568,6 +687,44 @@ function clearRestoreState(element) {
   }
 
   pendingRestoreState = null;
+}
+
+function rememberPlaceholderReplacements(replacements = []) {
+  let changed = false;
+  for (const replacement of replacements) {
+    if (!replacement?.token || typeof replacement.original !== "string") {
+      continue;
+    }
+    if (sessionPlaceholderMap.get(replacement.token) !== replacement.original) {
+      sessionPlaceholderMap.set(replacement.token, replacement.original);
+      changed = true;
+    }
+  }
+
+  if (changed) {
+    persistSessionPlaceholderMap();
+  }
+}
+
+function restoreKnownPlaceholdersInText(value) {
+  let restored = value;
+  let restoredCount = 0;
+
+  for (const [token, original] of sessionPlaceholderMap.entries()) {
+    if (!restored.includes(token)) {
+      continue;
+    }
+
+    const escaped = token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    let tokenCount = 0;
+    restored = restored.replace(new RegExp(escaped, "g"), () => {
+      tokenCount += 1;
+      return original;
+    });
+    restoredCount += tokenCount;
+  }
+
+  return { restored, restoredCount };
 }
 
 function ensureSelectionButton() {
@@ -656,15 +813,15 @@ function ensureLauncher() {
         <span class="ledebe-fan-icon">P</span>
         <span class="ledebe-fan-label">Protect</span>
       </button>
-      <button type="button" class="ledebe-fan-btn ledebe-fan-btn-pause" data-action="pause">
-        <span class="ledebe-fan-icon">II</span>
-        <span class="ledebe-fan-label">Pause</span>
+      <button type="button" class="ledebe-fan-btn ledebe-fan-btn-restore" data-action="restore">
+        <span class="ledebe-fan-icon">R</span>
+        <span class="ledebe-fan-label">Restore</span>
       </button>
     </div>
     <button type="button" class="ledebe-launcher-main" aria-label="Ledebe assistant">
       <span class="ledebe-launcher-core">
         <img src="${logoUrl}" alt="Ledebe">
-        <span class="ledebe-launcher-fallback" aria-hidden="true">L</span>
+        <span class="ledebe-launcher-fallback" aria-hidden="true">🛡</span>
       </span>
       <span class="ledebe-launcher-count" hidden>0</span>
     </button>
@@ -676,14 +833,11 @@ function ensureLauncher() {
     launcherImage.hidden = true;
     launcherFallback.hidden = false;
   } else if (launcherImage instanceof HTMLImageElement && launcherFallback instanceof HTMLElement) {
+    launcherImage.hidden = false;
     launcherFallback.hidden = true;
     launcherImage.addEventListener("error", () => {
       launcherImage.hidden = true;
       launcherFallback.hidden = false;
-    }, { once: true });
-    launcherImage.addEventListener("load", () => {
-      launcherImage.hidden = false;
-      launcherFallback.hidden = true;
     }, { once: true });
   }
 
@@ -706,8 +860,8 @@ function ensureLauncher() {
         toggleAssistantPanel();
       } else if (action === "protect") {
         protectActiveField();
-      } else if (action === "pause") {
-        await togglePauseSite();
+      } else if (action === "restore") {
+        restoreActiveField();
       }
     });
   }
@@ -814,21 +968,16 @@ function updateLauncherPausedState() {
   const paused = isPausedForHost();
   launcherRoot.classList.toggle("is-paused", paused);
 
-  const pauseLabel = launcherRoot.querySelector(".ledebe-fan-btn-pause .ledebe-fan-label");
-  const pauseIcon = launcherRoot.querySelector(".ledebe-fan-btn-pause .ledebe-fan-icon");
   const protectButton = launcherRoot.querySelector(".ledebe-fan-btn-protect");
+  const restoreButton = launcherRoot.querySelector(".ledebe-fan-btn-restore");
   const chatButton = launcherRoot.querySelector(".ledebe-fan-btn-chat");
-
-  if (pauseLabel) {
-    pauseLabel.textContent = paused ? "Resume" : "Pause";
-  }
-
-  if (pauseIcon) {
-    pauseIcon.textContent = paused ? ">" : "||";
-  }
 
   if (protectButton) {
     protectButton.disabled = paused;
+  }
+
+  if (restoreButton) {
+    restoreButton.disabled = false;
   }
 
   if (chatButton) {
@@ -1124,6 +1273,7 @@ function protectSelectedTermAcrossField(term) {
   }
 
   rememberRestoreSnapshot(element, original);
+  rememberPlaceholderReplacements(result.replacements);
   setEditableText(element, result.masked);
   analyzeElement(element);
   return result;
@@ -1148,6 +1298,7 @@ function protectActiveField() {
   }
 
   rememberRestoreSnapshot(activeEditable, original);
+  rememberPlaceholderReplacements(result.replacements);
   setEditableText(activeEditable, result.masked);
   analyzeElement(activeEditable);
   toast(`Protected ${result.replacements.length} item${result.replacements.length === 1 ? "" : "s"}.`);
@@ -1162,6 +1313,12 @@ function restoreActiveField() {
   if (!supportsDirectTextReplacement(activeEditable)) {
     toast("Restore is only available for fields Ledebe can edit directly.");
     return;
+  }
+
+  if (shouldHandlePlaceholderRestore(activeEditable)) {
+    if (restoreFromMappings(activeEditable)) {
+      return;
+    }
   }
 
   const original = restoreSnapshots.get(activeEditable) ?? (
@@ -1208,6 +1365,7 @@ function protectSelection() {
       return;
     }
 
+    rememberPlaceholderReplacements(result.replacements);
     const next = value.slice(0, start) + result.masked + value.slice(end);
     setEditableText(element, next);
     element.setSelectionRange(start, start + result.masked.length);
@@ -1230,6 +1388,7 @@ function protectSelection() {
     return;
   }
 
+  rememberPlaceholderReplacements(result.replacements);
   range.deleteContents();
   range.insertNode(document.createTextNode(result.masked));
   analyzeElement(element);
@@ -1464,6 +1623,13 @@ async function loadSettings() {
 
 if (hasValidExtensionContext()) {
   chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName === "session" || areaName === "local") {
+      if (changes[PLACEHOLDER_STORAGE_KEY]) {
+        replaceSessionPlaceholderMap(changes[PLACEHOLDER_STORAGE_KEY].newValue || {});
+      }
+      return;
+    }
+
     if (areaName !== "sync") {
       return;
     }
@@ -1517,7 +1683,7 @@ if (hasValidExtensionContext()) {
   });
 }
 
-loadSettings().then(() => {
+Promise.all([loadSettings(), loadSessionPlaceholderMap()]).then(() => {
   document.addEventListener("focusin", handleFocus, true);
   document.addEventListener("focusout", handleFocusOut, true);
   document.addEventListener("pointerdown", handlePointerDown, true);

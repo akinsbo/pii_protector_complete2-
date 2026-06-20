@@ -207,6 +207,20 @@
     return element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement;
   }
 
+  // A surface whose content the AI app syncs back to its servers or treats as
+  // model context: the editable Canvas / artifact / textdoc, or an AI message
+  // bubble. Writing a *real* value into one of these could send it to the AI, so
+  // we never reveal (unprotect) into them — the prompt composer is the only
+  // editable place real values are allowed, and even then only by the user.
+  function isSyncedDocSurface(element) {
+    const box = getComposer(element) || element;
+    if (!(box instanceof HTMLElement)) return false;
+    return Boolean(box.closest(
+      '[data-message-author-role], [data-testid*="canvas"], [class*="canvas"], '
+      + '[class*="artifact"], [class*="textdoc"], [data-testid*="artifact"], article'
+    ));
+  }
+
   // ---- read / write field text --------------------------------------------
 
   function getComposerText(element) {
@@ -458,6 +472,14 @@
     const original = placeholderMap.get(token);
     if (typeof original !== "string") return;
 
+    // Never write a real value into a surface the AI app syncs (Canvas, artifact,
+    // message). The value stays visible in this panel only.
+    if (isSyncedDocSurface(element)) {
+      toast("Revealing here could send it to the AI. The real value stays in this panel only.");
+      refreshDrawer();
+      return;
+    }
+
     const current = getFieldText(element);
     if (!current.includes(token)) {
       refreshDrawer();
@@ -705,10 +727,14 @@
   }
 
   function openDrawer() {
-    ensureDrawer();
+    const el = ensureDrawer();
     drawerOpen = true;
     refreshDrawer();
-    requestAnimationFrame(() => drawer.classList.add("is-open"));
+    // Commit the off-screen start state (translateX) before flipping to open, so
+    // the slide actually animates. A single requestAnimationFrame on a freshly
+    // inserted node can be collapsed by the browser, skipping the transition.
+    void el.offsetWidth;
+    el.classList.add("is-open");
   }
 
   function closeDrawer() {

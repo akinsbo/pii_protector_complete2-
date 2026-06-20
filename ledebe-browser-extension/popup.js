@@ -7,6 +7,7 @@ const DEFAULTS = {
   scanOnPaste: true,
   restoreResponses: true,
   persistMappings: true,
+  appendInstruction: true,
   customTerms: [],
   pausedHosts: []
 };
@@ -41,6 +42,7 @@ async function refresh() {
   $("enabled-toggle").checked = settings.enabled !== false;
   $("auto-replace-toggle").checked = settings.autoReplace !== false;
   $("paste-toggle").checked = settings.scanOnPaste !== false;
+  $("append-instruction-toggle").checked = settings.appendInstruction !== false;
   $("restore-responses-toggle").checked = settings.restoreResponses !== false;
   $("persist-toggle").checked = settings.persistMappings !== false;
   $("custom-terms").value = (settings.customTerms || []).join("\n");
@@ -64,6 +66,7 @@ async function setSetting(key, value) {
 $("enabled-toggle").addEventListener("change", (e) => setSetting("enabled", e.target.checked));
 $("auto-replace-toggle").addEventListener("change", (e) => setSetting("autoReplace", e.target.checked));
 $("paste-toggle").addEventListener("change", (e) => setSetting("scanOnPaste", e.target.checked));
+$("append-instruction-toggle").addEventListener("change", (e) => setSetting("appendInstruction", e.target.checked));
 $("restore-responses-toggle").addEventListener("change", (e) => setSetting("restoreResponses", e.target.checked));
 $("persist-toggle").addEventListener("change", (e) => setSetting("persistMappings", e.target.checked));
 

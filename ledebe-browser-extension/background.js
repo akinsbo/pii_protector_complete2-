@@ -10,6 +10,7 @@ const DEFAULT_SETTINGS = {
   scanOnPaste: true,
   restoreResponses: true,
   persistMappings: true,
+  appendInstruction: true,
   customTerms: [],
   pausedHosts: []
 };

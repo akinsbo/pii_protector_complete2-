@@ -23,9 +23,19 @@
     scanOnPaste: true,
     restoreResponses: true, // reveal real values inside the AI's reply
     persistMappings: true,  // keep token→value map across browser restarts
+    appendInstruction: true,// on send, ask the AI to keep [LDB_…] placeholders intact
     customTerms: [],
     pausedHosts: []
   };
+
+  // Appended to a prompt on send (once, only when it contains placeholders) so
+  // the model echoes the tokens verbatim and we can restore them in the reply.
+  const RETAIN_MARKER = "[Ledebe note to the assistant:";
+  const RETAIN_NOTE =
+    "\n\n" + RETAIN_MARKER + " the bracketed tokens like [LDB_EMAIL_1] are"
+    + " placeholders for redacted personal data. Keep every [LDB_…] token exactly"
+    + " as written — do not alter, remove, translate, expand, or invent values"
+    + " for them.]";
 
   let settings = { ...DEFAULTS };
   let activeEditable = null;
@@ -948,6 +958,40 @@
     if (!target) return;
     activeEditable = target;
     liveReplace(target, true);
+    appendRetainInstruction(target);
+  }
+
+  // Append the "keep the placeholders" note to the prompt, once, and only when
+  // the prompt actually contains placeholders. Goes into the composer text so it
+  // is sent to the AI alongside the masked prompt.
+  function appendRetainInstruction(element) {
+    if (!settings.appendInstruction || !element) return;
+    if (!isPlainField(element) && !element.isContentEditable && !getComposer(element)) return;
+    const text = getFieldText(element);
+    if (!text.includes("[LDB_") || text.includes(RETAIN_MARKER)) return;
+
+    selfEdit = true;
+    try {
+      if (isPlainField(element)) {
+        setPlainValue(element, text + RETAIN_NOTE);
+        element.selectionStart = element.selectionEnd = element.value.length;
+      } else {
+        const box = getComposer(element) || element;
+        box.focus();
+        const sel = window.getSelection();
+        const range = document.createRange();
+        range.selectNodeContents(box);
+        range.collapse(false); // caret to end
+        sel.removeAllRanges();
+        sel.addRange(range);
+        if (!document.execCommand("insertText", false, RETAIN_NOTE)) {
+          box.textContent = text + RETAIN_NOTE;
+        }
+        box.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: RETAIN_NOTE }));
+      }
+    } finally {
+      window.setTimeout(() => { selfEdit = false; }, 0);
+    }
   }
 
   function onKeyDown(event) {

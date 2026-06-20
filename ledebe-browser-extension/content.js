@@ -615,6 +615,7 @@
   let drawerOpen = false;
   let drawerDismissed = false;
   let latestRestoredText = "";
+  let activeTab = "field"; // "home" | "words" | "field"
 
   function escapeHtml(value) {
     return String(value).replace(/[&<>"']/g, (ch) => (
@@ -631,17 +632,18 @@
         <div class="ledebe-drawer__brand">
           <img class="ledebe-drawer__logo" alt="" />
           <div>
-            <strong>Ledebe</strong>
+            <strong>Ledebe Protector</strong>
             <span class="ledebe-drawer__sub"></span>
           </div>
         </div>
         <button type="button" class="ledebe-drawer__close" aria-label="Close">×</button>
       </header>
+      <nav class="ledebe-tabs">
+        <button type="button" class="ledebe-tab" data-tab="home">Home</button>
+        <button type="button" class="ledebe-tab" data-tab="words">Custom words</button>
+        <button type="button" class="ledebe-tab" data-tab="field">This field</button>
+      </nav>
       <div class="ledebe-drawer__body"></div>
-      <footer class="ledebe-drawer__foot">
-        <button type="button" class="ledebe-drawer__protect-all">Protect all</button>
-        <span class="ledebe-drawer__hint">Sensitive data is protected automatically. Click any row to toggle.</span>
-      </footer>
     `;
     const logo = drawer.querySelector(".ledebe-drawer__logo");
     const logoUrl = runtimeUrl("ledebe-icon.png");
@@ -652,16 +654,37 @@
       drawerDismissed = true;
       closeDrawer();
     });
-    drawer.querySelector(".ledebe-drawer__protect-all").addEventListener("click", protectActiveField);
+    drawer.querySelectorAll(".ledebe-tab").forEach((btn) => {
+      btn.addEventListener("click", () => setActiveTab(btn.dataset.tab));
+    });
 
     document.documentElement.appendChild(drawer);
     return drawer;
+  }
+
+  function setActiveTab(tab) {
+    activeTab = tab;
+    refreshDrawer();
   }
 
   function sectionEl(title) {
     const el = document.createElement("div");
     el.className = "ledebe-drawer__section";
     el.textContent = title;
+    return el;
+  }
+
+  function leadEl(text) {
+    const el = document.createElement("p");
+    el.className = "ledebe-drawer__lead";
+    el.textContent = text;
+    return el;
+  }
+
+  function emptyEl(text) {
+    const el = document.createElement("p");
+    el.className = "ledebe-drawer__empty";
+    el.textContent = text;
     return el;
   }
 
@@ -681,22 +704,134 @@
     return row;
   }
 
-  function refreshDrawer() {
-    if (!drawerOpen || !drawer) return;
+  function copyButton(label, getText) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "ledebe-drawer__copy";
+    btn.textContent = label;
+    btn.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(getText());
+        btn.textContent = "Copied";
+        setTimeout(() => { btn.textContent = label; }, 1200);
+      } catch (error) {
+        /* clipboard blocked */
+      }
+    });
+    return btn;
+  }
+
+  // ---- Home tab: the chat, mirrored with real values restored -------------
+
+  function collectRestoredTranscript() {
+    const turns = [];
+    for (const el of document.querySelectorAll("[data-message-author-role]")) {
+      if (isInsideLedebeUi(el)) continue;
+      const raw = el.innerText || el.textContent || "";
+      if (!raw.trim()) continue;
+      let text = restorePlaceholders(raw, placeholderMap).restored;
+      const note = text.indexOf(RETAIN_MARKER); // hide our injected on-send note
+      if (note !== -1) text = text.slice(0, note).trim();
+      if (!text) continue;
+      turns.push({ role: el.getAttribute("data-message-author-role") || "user", text });
+    }
+    return turns;
+  }
+
+  function renderHomePane(body) {
+    body.appendChild(leadEl("Your chat with real values restored — shown only here. The page itself keeps the placeholders."));
+
+    const turns = collectRestoredTranscript();
+    if (!turns.length) {
+      if (latestRestoredText) {
+        const pre = document.createElement("pre");
+        pre.className = "ledebe-drawer__restored";
+        pre.textContent = latestRestoredText;
+        body.appendChild(pre);
+        body.appendChild(copyButton("Copy restored reply", () => latestRestoredText));
+      } else {
+        body.appendChild(emptyEl("No restored content yet. Send a protected prompt and the chat will mirror here with your real values."));
+      }
+      return;
+    }
+
+    for (const turn of turns) {
+      const msg = document.createElement("div");
+      msg.className = `ledebe-msg ledebe-msg--${turn.role === "assistant" ? "assistant" : "user"}`;
+      const who = document.createElement("div");
+      who.className = "ledebe-msg__role";
+      who.textContent = turn.role === "assistant" ? "Assistant" : "You";
+      const text = document.createElement("div");
+      text.className = "ledebe-msg__text";
+      text.textContent = turn.text;
+      msg.append(who, text);
+      body.appendChild(msg);
+    }
+
+    body.appendChild(copyButton("Copy restored transcript", () =>
+      turns.map((t) => `${t.role === "assistant" ? "Assistant" : "You"}:\n${t.text}`).join("\n\n")));
+  }
+
+  // ---- Custom words tab ----------------------------------------------------
+
+  function addCustomTerm(term) {
+    const terms = [...(settings.customTerms || [])];
+    if (!term || terms.some((t) => t.toLowerCase() === term.toLowerCase())) return;
+    terms.push(term);
+    settings.customTerms = terms;
+    unprotected.delete(term.toLowerCase());
+    void syncSet({ customTerms: terms });
+    if (activeEditable) liveReplace(activeEditable, true); // protect it right away
+    refreshDrawer();
+  }
+
+  function removeCustomTerm(term) {
+    settings.customTerms = (settings.customTerms || []).filter((t) => t.toLowerCase() !== term.toLowerCase());
+    void syncSet({ customTerms: settings.customTerms });
+    refreshDrawer();
+  }
+
+  function renderWordsPane(body) {
+    body.appendChild(leadEl("Always protect these words — names, project codes, client terms. They get masked just like detected PII."));
+
+    const add = document.createElement("div");
+    add.className = "ledebe-words__add";
+    const input = document.createElement("input");
+    input.type = "text";
+    input.className = "ledebe-words__input";
+    input.placeholder = "Add a word or phrase…";
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "ledebe-words__btn";
+    btn.textContent = "Add";
+    const submit = () => { const v = input.value.trim(); if (v) { addCustomTerm(v); } };
+    btn.addEventListener("click", submit);
+    input.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); submit(); } });
+    add.append(input, btn);
+    body.appendChild(add);
+
+    const terms = settings.customTerms || [];
+    if (!terms.length) {
+      body.appendChild(emptyEl("No custom words yet."));
+      return;
+    }
+    body.appendChild(sectionEl(`Custom words (${terms.length})`));
+    for (const term of terms) {
+      body.appendChild(rowEl("protected", term, "custom word", "Remove", () => removeCustomTerm(term)));
+    }
+  }
+
+  // ---- This-field tab: live protected / exposed list -----------------------
+
+  function renderFieldPane(body) {
     const text = getFieldText(activeEditable);
     const prot = protectedItems(text);
     const exposed = exposedItems(text);
 
-    const sub = drawer.querySelector(".ledebe-drawer__sub");
-    sub.textContent = `${prot.length} protected · ${exposed.length} exposed`;
-
-    const body = drawer.querySelector(".ledebe-drawer__body");
-    body.innerHTML = "";
-
     if (exposed.length) {
       body.appendChild(sectionEl(`Exposed (${exposed.length})`));
       for (const item of exposed) {
-        body.appendChild(rowEl("exposed", item.value, `${item.label} · not protected`, "Protect",
+        body.appendChild(rowEl("exposed", item.value, `${item.label} · protecting…`, "Protect",
           () => protectValue(item.value)));
       }
     }
@@ -709,9 +844,6 @@
       }
     }
 
-    // Every mapping captured this session — stays visible after the composer
-    // clears, so the placeholder↔value pairs are always retained and auditable
-    // (and remain available to restore later replies).
     const fieldTokens = new Set(prot.map((item) => item.token));
     const sessionEntries = [...placeholderMap.entries()].filter(([token]) => !fieldTokens.has(token));
     if (sessionEntries.length) {
@@ -722,36 +854,28 @@
     }
 
     if (!prot.length && !exposed.length && !sessionEntries.length) {
-      const empty = document.createElement("p");
-      empty.className = "ledebe-drawer__empty";
-      empty.textContent = "No sensitive data detected in this field.";
-      body.appendChild(empty);
+      body.appendChild(emptyEl("No sensitive data detected in this field."));
     }
+  }
 
-    if (latestRestoredText) {
-      body.appendChild(sectionEl("AI reply, restored (shown only here)"));
-      const pre = document.createElement("pre");
-      pre.className = "ledebe-drawer__restored";
-      pre.textContent = latestRestoredText;
-      body.appendChild(pre);
+  function refreshDrawer() {
+    if (!drawerOpen || !drawer) return;
+    drawer.querySelector(".ledebe-drawer__sub").textContent =
+      `${placeholderMap.size} value${placeholderMap.size === 1 ? "" : "s"} protected this session`;
+    drawer.querySelectorAll(".ledebe-tab").forEach((b) => b.classList.toggle("is-active", b.dataset.tab === activeTab));
 
-      const copyBtn = document.createElement("button");
-      copyBtn.type = "button";
-      copyBtn.className = "ledebe-drawer__copy";
-      copyBtn.textContent = "Copy restored reply";
-      copyBtn.addEventListener("click", async () => {
-        try {
-          await navigator.clipboard.writeText(latestRestoredText);
-          copyBtn.textContent = "Copied";
-          setTimeout(() => { copyBtn.textContent = "Copy restored reply"; }, 1200);
-        } catch (error) {
-          /* clipboard blocked */
-        }
-      });
-      body.appendChild(copyBtn);
-    }
+    const body = drawer.querySelector(".ledebe-drawer__body");
+    body.innerHTML = "";
+    if (activeTab === "home") renderHomePane(body);
+    else if (activeTab === "words") renderWordsPane(body);
+    else renderFieldPane(body);
+  }
 
-    drawer.querySelector(".ledebe-drawer__protect-all").disabled = exposed.length === 0;
+  // Shift the page over so the docked panel doesn't cover the chat.
+  function applyPagePush(width) {
+    const html = document.documentElement;
+    html.style.transition = "margin-right 0.26s cubic-bezier(0.22, 1, 0.36, 1)";
+    html.style.marginRight = width ? `${width}px` : "";
   }
 
   function openDrawer() {
@@ -763,11 +887,13 @@
     // inserted node can be collapsed by the browser, skipping the transition.
     void el.offsetWidth;
     el.classList.add("is-open");
+    applyPagePush(el.offsetWidth);
   }
 
   function closeDrawer() {
     drawerOpen = false;
     if (drawer) drawer.classList.remove("is-open");
+    applyPagePush(0);
   }
 
   function maybeOpenDrawer() {
@@ -777,8 +903,12 @@
     }
     const text = getFieldText(activeEditable);
     if (protectedItems(text).length || exposedItems(text).length) {
-      if (drawerOpen) refreshDrawer();
-      else openDrawer();
+      if (drawerOpen) {
+        refreshDrawer();
+      } else {
+        activeTab = "field";
+        openDrawer();
+      }
     } else if (drawerOpen) {
       refreshDrawer();
     }
@@ -859,8 +989,12 @@
     if (!best || !best.text) return;
     latestRestoredText = best.text;
     publishRestored(best.text);
-    if (drawerOpen) refreshDrawer();
-    else if (isAiHost()) openDrawer();
+    if (drawerOpen) {
+      refreshDrawer();
+    } else if (isAiHost() && !drawerDismissed) {
+      activeTab = "home"; // a reply arrived — land on the chat mirror
+      openDrawer();
+    }
   }
 
   function processDirty() {

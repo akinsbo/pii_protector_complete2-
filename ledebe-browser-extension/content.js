@@ -351,6 +351,8 @@
   let selfEdit = false;      // true while WE edit the field, to ignore our events
   let scanTimer = null;
   let scanTarget = null;
+  let idleProtectTimer = null;
+  const IDLE_PROTECT_MS = 800;
 
   function scheduleScan(element, delay = 70) {
     scanTarget = element;
@@ -367,6 +369,22 @@
         }
       }
     }, delay);
+  }
+
+  // Auto-protect: after a short pause in typing, mask everything still detected
+  // — including the value the caret is sitting on, which the live scan leaves
+  // alone so it isn't clobbered mid-keystroke. This is what makes protection
+  // hands-off: no need to click "Protect" or even reach the send button.
+  function scheduleIdleProtect(element) {
+    if (idleProtectTimer) clearTimeout(idleProtectTimer);
+    idleProtectTimer = window.setTimeout(() => {
+      idleProtectTimer = null;
+      try {
+        liveReplace(element, true);
+      } catch (error) {
+        console.debug("[Ledebe]", error);
+      }
+    }, IDLE_PROTECT_MS);
   }
 
   // Replace every newly-completed PII value in `element` with a placeholder.
@@ -622,7 +640,7 @@
       <div class="ledebe-drawer__body"></div>
       <footer class="ledebe-drawer__foot">
         <button type="button" class="ledebe-drawer__protect-all">Protect all</button>
-        <span class="ledebe-drawer__hint">Click a value to protect or unprotect it.</span>
+        <span class="ledebe-drawer__hint">Sensitive data is protected automatically. Click any row to toggle.</span>
       </footer>
     `;
     const logo = drawer.querySelector(".ledebe-drawer__logo");
@@ -941,6 +959,7 @@
     const target = trackTarget(event);
     if (!target) return;
     scheduleScan(target, 90);
+    scheduleIdleProtect(target);
     maybeOpenDrawer();
   }
 
@@ -948,8 +967,11 @@
     if (selfEdit || !settings.scanOnPaste) return;
     const target = trackTarget(event);
     if (!target) return;
-    // Let the paste land first, then scan the resulting text.
-    window.setTimeout(() => scheduleScan(target, 40), 10);
+    // Let the paste land first, then scan + auto-protect the resulting text.
+    window.setTimeout(() => {
+      scheduleScan(target, 40);
+      scheduleIdleProtect(target);
+    }, 10);
   }
 
   // Right before send (Enter / send button), force-mask anything still exposed.

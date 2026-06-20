@@ -223,6 +223,23 @@
   overflow-y: auto;
 }
 
+.ledebe-drawer__copy {
+  margin-top: 8px;
+  width: 100%;
+  border: 1px solid rgba(30, 58, 138, 0.3);
+  background: #eef2ff;
+  color: #1e3a8a;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 9px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.ledebe-drawer__copy:hover {
+  background: #e0e7ff;
+}
+
 .ledebe-drawer__foot {
   display: flex;
   flex-direction: column;

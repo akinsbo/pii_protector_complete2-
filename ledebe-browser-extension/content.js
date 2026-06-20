@@ -469,6 +469,16 @@
     afterProtect(element);
   }
 
+  // Drop a mapping from the session map (it's no longer in any field). Stops it
+  // being restored in future replies; does not touch the page.
+  function forgetToken(token) {
+    const value = placeholderMap.get(token);
+    placeholderMap.delete(token);
+    if (typeof value === "string") unprotected.delete(value.toLowerCase());
+    mappingSet();
+    refreshDrawer();
+  }
+
   // Whole-field write used by per-item toggles + manual protect. For rich
   // composers we select-all then insertText so the editor reconciles cleanly.
   function applyFieldText(element, value) {
@@ -649,7 +659,19 @@
       }
     }
 
-    if (!prot.length && !exposed.length) {
+    // Every mapping captured this session — stays visible after the composer
+    // clears, so the placeholder↔value pairs are always retained and auditable
+    // (and remain available to restore later replies).
+    const fieldTokens = new Set(prot.map((item) => item.token));
+    const sessionEntries = [...placeholderMap.entries()].filter(([token]) => !fieldTokens.has(token));
+    if (sessionEntries.length) {
+      body.appendChild(sectionEl(`Protected this session (${sessionEntries.length})`));
+      for (const [token, value] of sessionEntries) {
+        body.appendChild(rowEl("protected", value, token, "Forget", () => forgetToken(token)));
+      }
+    }
+
+    if (!prot.length && !exposed.length && !sessionEntries.length) {
       const empty = document.createElement("p");
       empty.className = "ledebe-drawer__empty";
       empty.textContent = "No sensitive data detected in this field.";
@@ -662,6 +684,21 @@
       pre.className = "ledebe-drawer__restored";
       pre.textContent = latestRestoredText;
       body.appendChild(pre);
+
+      const copyBtn = document.createElement("button");
+      copyBtn.type = "button";
+      copyBtn.className = "ledebe-drawer__copy";
+      copyBtn.textContent = "Copy restored reply";
+      copyBtn.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(latestRestoredText);
+          copyBtn.textContent = "Copied";
+          setTimeout(() => { copyBtn.textContent = "Copy restored reply"; }, 1200);
+        } catch (error) {
+          /* clipboard blocked */
+        }
+      });
+      body.appendChild(copyBtn);
     }
 
     drawer.querySelector(".ledebe-drawer__protect-all").disabled = exposed.length === 0;
@@ -796,13 +833,29 @@
     for (const node of targets) restoreTextNode(node, created);
   }
 
-  function reportRestored(container) {
-    if (!(container instanceof HTMLElement)) return;
-    const text = (container.innerText || container.textContent || "").trim();
-    if (!text) return;
-    latestRestoredText = text;
-    publishRestored(text);
+  // Build the fully-restored text for a container from its combined innerText.
+  // innerText reassembles a token even when the page split it across <strong>/
+  // <code>/<em> boundaries (common in long markdown replies), so this reveals
+  // placeholders that the in-place text-node restore cannot reach.
+  function restoredTextForContainer(container) {
+    if (!(container instanceof HTMLElement)) return { text: "", count: 0 };
+    const raw = container.innerText || container.textContent || "";
+    const { restored, restoredCount } = restorePlaceholders(raw, placeholderMap);
+    return { text: restored.trim(), count: restoredCount };
+  }
+
+  // Surface the best (most-restored) reply in the side panel and persist it.
+  function reportRestored(containers) {
+    let best = null;
+    for (const container of containers) {
+      const result = restoredTextForContainer(container);
+      if (result.count > 0 && (!best || result.count >= best.count)) best = result;
+    }
+    if (!best || !best.text) return;
+    latestRestoredText = best.text;
+    publishRestored(best.text);
     if (drawerOpen) refreshDrawer();
+    else if (isAiHost()) openDrawer();
   }
 
   function processDirty() {
@@ -823,12 +876,22 @@
       applyingRestore = false;
     }
 
+    // Candidate containers: where we created inline spans, plus any dirty root
+    // that still holds a token (fragmented across nodes — inline restore missed
+    // it, but the panel can reassemble and reveal it from innerText).
     const containers = new Set();
     for (const span of created) {
       const container = span.closest(ASSISTANT_SELECTORS) || span.closest("p, li, article, div");
       if (container && container !== document.body) containers.add(container);
     }
-    for (const container of containers) reportRestored(container);
+    for (const root of roots) {
+      if (!(root instanceof HTMLElement) || !root.isConnected) continue;
+      const container = root.closest(ASSISTANT_SELECTORS) || root;
+      if (container && container !== document.body && (container.innerText || "").indexOf("[LDB_") !== -1) {
+        containers.add(container);
+      }
+    }
+    reportRestored(containers);
   }
 
   function queueRoot(root) {

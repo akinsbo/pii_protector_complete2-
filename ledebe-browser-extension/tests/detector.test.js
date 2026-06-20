@@ -112,6 +112,27 @@ test("restores every occurrence and counts them", () => {
   assert.equal(out.restored, "020 7946 0000 / 020 7946 0000");
 });
 
+test("restores many placeholders across a long, multi-line reply", () => {
+  const mapping = {
+    "[LDB_EMAIL_NS_1]": "n.caldwell.exec@proton.me",
+    "[LDB_PHONE_NS_1]": "(404) 555-0147",
+    "[LDB_PHONE_NS_2]": "(404) 555-0148",
+    "[LDB_ID_NS_1]": "441-88-0000"
+  };
+  const reply = [
+    "Confirmed. Your email [LDB_EMAIL_NS_1] is on file.",
+    "Primary line: [LDB_PHONE_NS_1]; emergency: [LDB_PHONE_NS_2].",
+    "SSN [LDB_ID_NS_1] recorded. We also re-list [LDB_EMAIL_NS_1] for the alt contact."
+  ].join("\n");
+
+  const out = restorePlaceholders(reply, mapping);
+
+  assert.equal(out.restoredCount, 5); // email appears twice
+  assert.ok(!out.restored.includes("[LDB_"));
+  assert.ok(out.restored.includes("n.caldwell.exec@proton.me"));
+  assert.ok(out.restored.includes("(404) 555-0148"));
+});
+
 test("leaves unknown placeholders untouched", () => {
   const out = restorePlaceholders("keep [LDB_UNKNOWN_9] as is", { "[LDB_EMAIL_1]": "x@y.com" });
 

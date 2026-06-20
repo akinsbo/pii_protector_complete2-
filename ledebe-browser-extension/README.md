@@ -1,26 +1,57 @@
 # Ledebe Browser Protector
 
-Chrome-compatible extension for protecting sensitive data directly in browser text fields.
+A Chrome-compatible (Manifest V3) extension that **masks sensitive data as you
+type or paste** into AI chats, then **reveals your real values back in the
+reply** — so your PII never actually leaves the page.
 
-## What this version does
+## What it does
 
-- Scans `input`, `textarea`, and `contenteditable` fields while you type
-- Detects emails, phone numbers, SSNs/ID numbers, credit cards, IPs, API keys, and custom terms
-- Shows a lightweight warning card when sensitive data is present
-- Replaces risky text with unique Ledebe tokens such as `[LDB_EMAIL_AB12_1]`
-- Adds a right-click `Protect with Ledebe` action for editable text
-- Warns on form submit when unprotected sensitive data is still present
-- Stores placeholder mappings only in `chrome.storage.session`, so protected text can be restored later in another editable field during the same browser profile session without writing raw values to disk
+- **Catches PII live.** As you type or paste into an AI composer (ChatGPT,
+  Claude, Gemini, Perplexity, Copilot, Poe, DeepSeek, Grok, …), each detected
+  value is swapped in place for a placeholder such as `[LDB_EMAIL_AB12_1]`. The
+  value you're still in the middle of typing is left alone until you move on.
+- **Detects** emails, phone numbers, SSNs/ID numbers, credit cards (Luhn-checked),
+  IPs, UK National Insurance numbers, API keys/tokens, and your own custom terms.
+- **Slide-in side panel.** When something is detected, a panel slides in listing
+  every value and its placeholder. Click a row to **unprotect** (reveal) it or
+  **protect** an exposed one — a live toggle.
+- **Keeps placeholders on send.** Because replacement happens while you type, the
+  text already carries placeholders by the time you press Enter.
+- **Reveals in the reply.** When the AI echoes a placeholder, the real value is
+  restored in place inside the answer (only in the assistant's turn, never your
+  echoed prompt).
+- **Right-click `Protect with Ledebe`** and a popup **Protect active field**
+  button for manual, on-demand masking on any site.
+
+## Architecture
+
+| File | Purpose |
+| --- | --- |
+| `detector.js` | Pure detection + masking + restore core (`detectPII`, `maskText`, `computeLiveReplacement`, `restorePlaceholders`). DOM-free and unit-tested. |
+| `content.js` | DOM glue: live type/paste replacement, the slide-in panel, and AI-response restoration. |
+| `content.css` | Toast, field flash, restored-value style, and the slide-in panel. |
+| `popup.html/js/css` | Settings + manual actions. |
+| `background.js` | Service worker: context menu, default settings, session-storage access. |
 
 ## Load it in Chrome
 
 1. Open `chrome://extensions`
-2. Enable `Developer mode`
-3. Click `Load unpacked`
+2. Enable **Developer mode**
+3. Click **Load unpacked**
 4. Select the `ledebe-browser-extension/` folder
 
-## Notes
+## Tests
 
-- This is a local-first extension. It uses `chrome.storage.sync` for settings and `chrome.storage.session` for temporary restore mappings.
-- Whole-field protect and restore are limited to plain editable fields Ledebe can update safely. Rich editors such as Gmail compose and Google Docs use targeted selection workflows to avoid formatting loss or misleading restores.
-- The current version focuses on field protection, restore, and safe-send warnings rather than a full AI workflow inside the extension UI.
+Pure-logic tests (zero dependencies, Node's built-in runner) cover the
+type/paste catch engine and the restore path:
+
+```bash
+cd ledebe-browser-extension
+npm test        # runs `node --test`
+```
+
+## Privacy
+
+Local-first. Settings live in `chrome.storage.sync`; the token→value map lives in
+`chrome.storage.local` (when "remember across restarts" is on) or
+`chrome.storage.session` otherwise. Raw values are never sent anywhere.

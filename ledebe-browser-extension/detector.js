@@ -219,15 +219,30 @@ function detectPII(input, customTerms = []) {
   return dedupeOverlappingFindings(findings);
 }
 
+function toLowerSet(input) {
+  const set = new Set();
+  if (input instanceof Set || Array.isArray(input)) {
+    for (const value of input) {
+      set.add(String(value).toLowerCase());
+    }
+  }
+  return set;
+}
+
 function maskText(input, customTerms = [], options = {}) {
   const map = new Map();
   const counters = new Map();
   const namespace = options.namespace || "";
+  const exclude = toLowerSet(options.exclude);
   const findings = detectPII(input, customTerms);
   let result = input;
 
   for (const finding of [...findings].sort((a, b) => b.index - a.index)) {
     if (finding.value.startsWith("[LDB_")) {
+      continue;
+    }
+
+    if (exclude.has(finding.value.toLowerCase())) {
       continue;
     }
 
@@ -249,5 +264,115 @@ function maskText(input, customTerms = [], options = {}) {
   return {
     masked: result,
     replacements: Array.from(map.entries()).map(([token, original]) => ({ token, original }))
+  };
+}
+
+// Live "catch as you type / paste" core.
+//
+// Given the current field text and caret position, returns the text with every
+// detected PII value swapped for a placeholder — EXCEPT the value the caret is
+// currently inside, which is left alone so a half-typed value isn't clobbered
+// mid-keystroke (e.g. while still typing "john@exa…"). It reuses tokens from
+// `existingMap` so the same value always maps to the same placeholder, and skips
+// anything the user has explicitly chosen to leave exposed (`exclude`).
+//
+// Pure and DOM-free so it can be unit tested directly. Returned `replacements`
+// carry original-text offsets (start/end) so a caller can apply them in place
+// (textarea slice or contenteditable Range) without re-detecting.
+function computeLiveReplacement(text, caret, options = {}) {
+  const noChange = { text, caret, changed: false, replacements: [] };
+  if (typeof text !== "string" || !text) {
+    return noChange;
+  }
+
+  const customTerms = options.customTerms || [];
+  const exclude = toLowerSet(options.exclude);
+  const existing = options.existingMap instanceof Map ? options.existingMap : new Map();
+  const namespace = options.namespace || "";
+  const counters = options.counters instanceof Map ? options.counters : new Map();
+  const caretPos = typeof caret === "number" ? caret : null;
+
+  const reverse = new Map();
+  for (const [token, original] of existing.entries()) {
+    reverse.set(original, token);
+  }
+
+  const eligible = detectPII(text, customTerms)
+    .filter((finding) => !finding.value.startsWith("[LDB_"))
+    .filter((finding) => !exclude.has(finding.value.toLowerCase()))
+    // Leave the value the caret is sitting in/just after — it may still be
+    // growing. A caret at the very start (caret <= index) isn't editing it.
+    .filter((finding) => caretPos === null || caretPos <= finding.index || caretPos > finding.end)
+    .sort((a, b) => a.index - b.index);
+
+  if (!eligible.length) {
+    return noChange;
+  }
+
+  const replacements = eligible.map((finding) => {
+    let token = reverse.get(finding.value);
+    if (!token) {
+      const next = (counters.get(finding.type) || 0) + 1;
+      counters.set(finding.type, next);
+      token = createPlaceholderToken(finding.prefix, namespace, next);
+      reverse.set(finding.value, token);
+    }
+    return { token, original: finding.value, start: finding.index, end: finding.end };
+  });
+
+  // Apply right-to-left so earlier offsets stay valid as we splice.
+  let result = text;
+  let nextCaret = caretPos === null ? text.length : caretPos;
+  for (let i = replacements.length - 1; i >= 0; i -= 1) {
+    const item = replacements[i];
+    result = result.slice(0, item.start) + item.token + result.slice(item.end);
+    if (item.end <= nextCaret) {
+      nextCaret += item.token.length - (item.end - item.start);
+    }
+  }
+
+  return { text: result, caret: nextCaret, changed: true, replacements };
+}
+
+// Reverse a masking: swap every known placeholder back to its original value.
+// `mapping` may be a Map or a plain { token: original } object. Pure/testable.
+function restorePlaceholders(text, mapping) {
+  if (typeof text !== "string" || !text) {
+    return { restored: text || "", restoredCount: 0 };
+  }
+
+  const entries = mapping instanceof Map
+    ? Array.from(mapping.entries())
+    : Object.entries(mapping || {});
+
+  let restored = text;
+  let restoredCount = 0;
+  for (const [token, original] of entries) {
+    if (typeof original !== "string" || !restored.includes(token)) {
+      continue;
+    }
+    const escaped = token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    restored = restored.replace(new RegExp(escaped, "g"), () => {
+      restoredCount += 1;
+      return original;
+    });
+  }
+
+  return { restored, restoredCount };
+}
+
+// Dual use: a content-script global in the browser, a CommonJS module in tests.
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = {
+    LEDEBE_RULES,
+    detectPII,
+    maskText,
+    computeLiveReplacement,
+    restorePlaceholders,
+    createPlaceholderToken,
+    escapeForRegex,
+    isValidIpv4,
+    isLikelyCreditCard,
+    isLikelyPhoneNumber
   };
 }

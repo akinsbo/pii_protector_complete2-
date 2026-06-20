@@ -12,6 +12,7 @@
       <div class="popup-kicker">Ledebe Browser Protector</div>
       <h1>Protect prompts before they leave the page.</h1>
       <p>Scan text fields in ChatGPT, Gmail, forms, and other browser tools without leaving your workflow.</p>
+      <div class="version-chip" id="extension-version">v1.0.1</div>
     </section>
 
     <section class="popup-panel">
@@ -48,6 +49,61 @@
         </span>
         <input type="checkbox" id="paste-toggle">
       </label>
+      <label class="toggle-row">
+        <span>
+          <strong>Auto-protect prompts on AI sites</strong>
+          <small>Protect text automatically before send on ChatGPT, Claude, Gemini, and similar tools.</small>
+        </span>
+        <input type="checkbox" id="auto-protect-ai-toggle">
+      </label>
+    </section>
+
+    <section class="popup-panel">
+      <label class="toggle-row">
+        <span>
+          <strong>Reveal in AI responses</strong>
+          <small>Restore your real values where the AI echoes placeholders.</small>
+        </span>
+        <input type="checkbox" id="restore-responses-toggle">
+      </label>
+      <label class="toggle-row">
+        <span>
+          <strong>Reveal style</strong>
+          <small>How restored values appear in the answer.</small>
+        </span>
+        <select id="reveal-mode-select">
+          <option value="panel">Tray</option>
+          <option value="inline">Instant inline</option>
+          <option value="hover">On hover</option>
+        </select>
+      </label>
+      <label class="toggle-row" id="tray-mode-row">
+        <span>
+          <strong>Tray type</strong>
+          <small>How the answer tray opens.</small>
+        </span>
+        <select id="tray-mode-select">
+          <option value="sidepanel-icon">Side panel (icon opens)</option>
+          <option value="sidepanel-popup">Side panel (popup opens)</option>
+          <option value="inpage">In-page tray</option>
+        </select>
+      </label>
+      <label class="toggle-row" id="auto-open-restored-row">
+        <span>
+          <strong>Auto-open restored answers</strong>
+          <small>Open the answer tray automatically when an AI reply with restored values arrives.</small>
+        </span>
+        <input type="checkbox" id="auto-open-restored-toggle">
+      </label>
+      <label class="toggle-row">
+        <span>
+          <strong>Remember across restarts</strong>
+          <small>Keep restoring older chats after Chrome closes. Mapping stays on this device only.</small>
+        </span>
+        <input type="checkbox" id="persist-toggle">
+      </label>
+      <button class="btn btn-secondary" id="open-tray-btn" style="width:100%;margin-top:10px;">Open answer tray ▸</button>
+      <button class="btn btn-secondary" id="clear-data-btn" style="width:100%;margin-top:8px;">Clear saved data</button>
     </section>
 
     <section class="popup-actions">

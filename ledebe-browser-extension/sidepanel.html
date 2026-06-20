@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ledebe</title>
+  <link rel="stylesheet" href="popup.css">
+  <link rel="stylesheet" href="sidepanel.css">
+</head>
+<body class="sidepanel-body">
+  <main class="sidepanel-shell">
+    <section class="popup-hero">
+      <div class="popup-kicker">Ledebe Protector</div>
+      <h1>Restored answers</h1>
+      <p>Your protected values are revealed here when the AI's reply repeats them.</p>
+      <div class="version-chip" id="extension-version">v1.0.1</div>
+    </section>
+
+    <section class="popup-panel restored-panel">
+      <div class="restored-head">
+        <div class="status-row">
+          <span class="status-label">Latest from</span>
+          <strong id="restored-host">—</strong>
+        </div>
+        <button class="btn btn-secondary btn-sm" id="copy-restored" disabled>Copy</button>
+      </div>
+      <div class="restored-warning" id="restored-warning" hidden>⚠ Some placeholders had no saved mapping (protected in a different session, or cleared). They're shown as <code>[LDB_…]</code>.</div>
+      <pre class="restored-body" id="restored-body">No restored answer yet. Protect a prompt, send it, and the AI's reply will appear here with your real values restored.</pre>
+    </section>
+
+    <details class="popup-panel settings-disclosure">
+      <summary>Settings</summary>
+
+      <div class="status-row">
+        <span class="status-label">Current site</span>
+        <strong id="current-host">Loading...</strong>
+      </div>
+      <div class="status-row">
+        <span class="status-label">Detected right now</span>
+        <strong id="finding-count">0 items</strong>
+      </div>
+
+      <label class="toggle-row">
+        <span><strong>Realtime protection</strong><small>Show warnings while typing.</small></span>
+        <input type="checkbox" id="enabled-toggle">
+      </label>
+      <label class="toggle-row">
+        <span><strong>Auto-protect prompts on AI sites</strong><small>Protect prompts automatically before send on ChatGPT, Claude, Gemini, and similar tools.</small></span>
+        <input type="checkbox" id="auto-protect-ai-toggle">
+      </label>
+      <label class="toggle-row">
+        <span><strong>Reveal in AI responses</strong><small>Restore your real values in the AI's reply.</small></span>
+        <input type="checkbox" id="restore-responses-toggle">
+      </label>
+      <label class="toggle-row">
+        <span><strong>Reveal style</strong><small>How restored values appear.</small></span>
+        <select id="reveal-mode-select">
+          <option value="panel">Tray</option>
+          <option value="inline">Instant inline</option>
+          <option value="hover">On hover</option>
+        </select>
+      </label>
+      <label class="toggle-row">
+        <span><strong>Tray type</strong><small>How the tray opens.</small></span>
+        <select id="tray-mode-select">
+          <option value="sidepanel-icon">Side panel (icon opens)</option>
+          <option value="sidepanel-popup">Side panel (popup opens)</option>
+          <option value="inpage">In-page tray</option>
+        </select>
+      </label>
+      <label class="toggle-row" id="auto-open-restored-row">
+        <span><strong>Auto-open restored answers</strong><small>Open the answer tray automatically when an AI reply with restored values arrives.</small></span>
+        <input type="checkbox" id="auto-open-restored-toggle">
+      </label>
+      <label class="toggle-row">
+        <span><strong>Remember across restarts</strong><small>Keep restoring older chats after Chrome closes. Mapping stays on this device only.</small></span>
+        <input type="checkbox" id="persist-toggle">
+      </label>
+
+      <div class="popup-actions">
+        <button class="btn btn-primary" id="protect-btn">Protect active field</button>
+        <button class="btn btn-secondary" id="pause-btn">Pause on this site</button>
+        <button class="btn btn-secondary" id="clear-data-btn">Clear saved data</button>
+      </div>
+    </details>
+  </main>
+  <script src="sidepanel.js"></script>
+</body>
+</html>

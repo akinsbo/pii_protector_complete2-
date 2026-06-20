@@ -67,8 +67,8 @@ A complete checklist of everything needed to take a software product from idea t
 - [ ] Crash reporting (in place — needs consent dialog for MAS)
 
 ### App Store Submission
-- [ ] Apple notarisation (removes Gatekeeper warning on Mac)
-- [ ] Mac App Store submission ($99/year Apple Developer Program)
+- [x] Mac App Store submission ($99/year Apple Developer Program) — submitted 17 Jun 2026, build 1.0.1 (universal), in review ✅
+- [ ] Apple notarisation of website DMG (removes Gatekeeper warning on direct download) — needs Developer ID Application cert + notarization
 - [ ] Microsoft Store submission ($19 one-time fee)
 - [ ] Linux Snap Store (snapcraft.io — free)
 - [ ] Homebrew Cask formula (for developers on Mac)

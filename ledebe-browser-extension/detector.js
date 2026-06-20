@@ -9,13 +9,15 @@ const LEDEBE_RULES = [
     name: "IP",
     label: "IP Address",
     regex: /\b(?:\d{1,3}\.){3}\d{1,3}\b/g,
-    prefix: "LDB_IP"
+    prefix: "LDB_IP",
+    validate: isValidIpv4
   },
   {
     name: "CC",
     label: "Credit Card",
     regex: /\b(?:\d[ \-]*?){13,19}\b/g,
-    prefix: "LDB_CC"
+    prefix: "LDB_CC",
+    validate: isLikelyCreditCard
   },
   {
     name: "NINO",
@@ -33,7 +35,8 @@ const LEDEBE_RULES = [
     name: "PHONE",
     label: "Phone Number",
     regex: /\b(?:\+?\d[\d\s().\-]{7,}\d)\b/g,
-    prefix: "LDB_PHONE"
+    prefix: "LDB_PHONE",
+    validate: isLikelyPhoneNumber
   },
   {
     name: "APIKEY",
@@ -43,8 +46,89 @@ const LEDEBE_RULES = [
   }
 ];
 
+const FINDING_PRIORITY = {
+  CUSTOM: 100,
+  APIKEY: 90,
+  EMAIL: 80,
+  CC: 70,
+  PHONE: 60,
+  IP: 50,
+  ID: 40,
+  NINO: 30
+};
+
 function escapeForRegex(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function normalizeDigits(value) {
+  return value.replace(/\D/g, "");
+}
+
+function isValidIpv4(value) {
+  const parts = value.split(".");
+  return parts.length === 4 && parts.every((part) => {
+    if (!/^\d{1,3}$/.test(part)) {
+      return false;
+    }
+
+    const octet = Number(part);
+    return octet >= 0 && octet <= 255;
+  });
+}
+
+function passesLuhnCheck(value) {
+  const digits = normalizeDigits(value);
+  let sum = 0;
+  let shouldDouble = false;
+
+  for (let index = digits.length - 1; index >= 0; index -= 1) {
+    let digit = Number(digits[index]);
+
+    if (shouldDouble) {
+      digit *= 2;
+      if (digit > 9) {
+        digit -= 9;
+      }
+    }
+
+    sum += digit;
+    shouldDouble = !shouldDouble;
+  }
+
+  return sum % 10 === 0;
+}
+
+function isLikelyCreditCard(value) {
+  const digits = normalizeDigits(value);
+  if (digits.length < 13 || digits.length > 19) {
+    return false;
+  }
+
+  return passesLuhnCheck(digits);
+}
+
+function isLikelyPhoneNumber(value) {
+  const trimmed = value.trim();
+  const digits = normalizeDigits(trimmed);
+
+  if (digits.length < 10 || digits.length > 15) {
+    return false;
+  }
+
+  if (!/[+\s().-]/.test(trimmed)) {
+    return false;
+  }
+
+  if (/^\d{3}[- ]?\d{2}[- ]?\d{4}$/.test(trimmed)) {
+    return false;
+  }
+
+  if (/^(?:\d{1,3}\.){3}\d{1,3}$/.test(trimmed)) {
+    return false;
+  }
+
+  return true;
 }
 
 function findExistingToken(map, value) {
@@ -54,6 +138,55 @@ function findExistingToken(map, value) {
     }
   }
   return undefined;
+}
+
+function createPlaceholderToken(prefix, namespace, count) {
+  if (!namespace) {
+    return `[${prefix}_${count}]`;
+  }
+
+  return `[${prefix}_${namespace}_${count}]`;
+}
+
+function createFinding(type, label, prefix, value, index) {
+  return {
+    type,
+    label,
+    prefix,
+    value,
+    index,
+    end: index + value.length
+  };
+}
+
+function findingScore(finding) {
+  const priority = FINDING_PRIORITY[finding.type] || 0;
+  return (priority * 1000) + (finding.end - finding.index);
+}
+
+function dedupeOverlappingFindings(findings) {
+  const sorted = [...findings].sort((a, b) => {
+    if (a.index !== b.index) {
+      return a.index - b.index;
+    }
+
+    return findingScore(b) - findingScore(a);
+  });
+  const result = [];
+
+  for (const finding of sorted) {
+    const previous = result[result.length - 1];
+    if (!previous || finding.index >= previous.end) {
+      result.push(finding);
+      continue;
+    }
+
+    if (findingScore(finding) > findingScore(previous)) {
+      result[result.length - 1] = finding;
+    }
+  }
+
+  return result;
 }
 
 function detectPII(input, customTerms = []) {
@@ -67,12 +200,7 @@ function detectPII(input, customTerms = []) {
     const regex = new RegExp(escapeForRegex(term), "gi");
     let match;
     while ((match = regex.exec(input)) !== null) {
-      findings.push({
-        type: "CUSTOM",
-        label: "Custom Term",
-        value: match[0],
-        index: match.index
-      });
+      findings.push(createFinding("CUSTOM", "Custom Term", "LDB_CUSTOM", match[0], match.index));
     }
   }
 
@@ -80,60 +208,42 @@ function detectPII(input, customTerms = []) {
     const regex = new RegExp(rule.regex.source, rule.regex.flags);
     let match;
     while ((match = regex.exec(input)) !== null) {
-      findings.push({
-        type: rule.name,
-        label: rule.label,
-        value: match[0],
-        index: match.index
-      });
+      if (typeof rule.validate === "function" && !rule.validate(match[0])) {
+        continue;
+      }
+
+      findings.push(createFinding(rule.name, rule.label, rule.prefix, match[0], match.index));
     }
   }
 
-  return findings.sort((a, b) => a.index - b.index);
+  return dedupeOverlappingFindings(findings);
 }
 
-function maskText(input, customTerms = []) {
+function maskText(input, customTerms = [], options = {}) {
   const map = new Map();
   const counters = new Map();
+  const namespace = options.namespace || "";
+  const findings = detectPII(input, customTerms);
   let result = input;
 
-  for (const term of customTerms) {
-    if (!term.trim()) {
+  for (const finding of [...findings].sort((a, b) => b.index - a.index)) {
+    if (finding.value.startsWith("[LDB_")) {
       continue;
     }
 
-    const regex = new RegExp(escapeForRegex(term), "gi");
-    result = result.replace(regex, (match) => {
-      const existing = findExistingToken(map, match);
-      if (existing) {
-        return existing;
-      }
+    const existing = findExistingToken(map, finding.value);
+    const token = existing || createPlaceholderToken(
+      finding.prefix,
+      namespace,
+      (counters.get(finding.type) || 0) + 1
+    );
 
-      const count = (counters.get("CUSTOM") || 0) + 1;
-      counters.set("CUSTOM", count);
-      const token = `[LDB_CUSTOM_${count}]`;
-      map.set(token, match);
-      return token;
-    });
-  }
+    if (!existing) {
+      counters.set(finding.type, (counters.get(finding.type) || 0) + 1);
+      map.set(token, finding.value);
+    }
 
-  for (const rule of LEDEBE_RULES) {
-    result = result.replace(rule.regex, (match) => {
-      if (match.startsWith("[LDB_")) {
-        return match;
-      }
-
-      const existing = findExistingToken(map, match);
-      if (existing) {
-        return existing;
-      }
-
-      const count = (counters.get(rule.name) || 0) + 1;
-      counters.set(rule.name, count);
-      const token = `[${rule.prefix}_${count}]`;
-      map.set(token, match);
-      return token;
-    });
+    result = `${result.slice(0, finding.index)}${token}${result.slice(finding.end)}`;
   }
 
   return {

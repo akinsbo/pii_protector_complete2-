@@ -179,16 +179,15 @@ class CrashReporter {
       metadata
     };
 
-    // Save crash report locally
+    // Save crash report locally only. Crash data is never transmitted off the
+    // device automatically — this preserves Ledebe's "your data never leaves
+    // your device" guarantee and keeps the App Store privacy declaration as
+    // "no data collected". If a user reports a problem to support, they can be
+    // asked to manually send the saved crash log. Remote transmission
+    // (sendCrashReport / sendCrashNotification) is intentionally not called.
     await this.saveCrashReport(crashReport);
 
-    // Send to remote endpoint
-    await this.sendCrashReport(crashReport);
-
-    // Send immediate notification
-    await this.sendCrashNotification(crashReport);
-
-    console.error(`Crash reported: ${crashReport.id}`, error);
+    console.error(`Crash reported locally: ${crashReport.id}`, error);
   }
 
   private async saveCrashReport(report: CrashReport): Promise<void> {

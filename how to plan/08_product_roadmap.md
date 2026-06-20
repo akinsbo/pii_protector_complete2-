@@ -16,6 +16,24 @@
 
 ---
 
+## Recently Shipped — June 2026
+
+### Mac App Store submission ✅ (submitted 17 Jun 2026 — in review)
+- Apple Developer Program active (Team ID 7HCPW48PVN)
+- Bundle ID `com.ledebe.protector` registered
+- Mac App Distribution + Mac Installer Distribution certs + WWDR G3 intermediate installed
+- Mac App Store provisioning profile created (`build/embedded.provisionprofile`)
+- Universal (Apple Silicon + Intel) signed `.pkg` built via `npm run dist:mas` and uploaded via Transporter (build 1.0.1)
+- App Store metadata complete: 7 screenshots, description, keywords, Age 4+, Productivity category, Free pricing
+- Privacy: crash reporting changed to local-only (no silent transmission) → App Privacy declared "Data Not Collected"
+- Export compliance declared (HTTPS-only, exempt) via `ITSAppUsesNonExemptEncryption: false`
+
+### Still pending
+- Notarized DMG for direct website download (removes Gatekeeper warning) — needs Developer ID Application cert + notarization
+- v1.1: opt-in, sanitized crash telemetry (consent dialog) to regain crash visibility without collecting PII
+
+---
+
 ## Short Term (1-3 months)
 
 ### HTTPS on ledebe.com
@@ -67,7 +85,8 @@
 ## Long Term (6-12 months)
 
 ### Apple App Store / Notarisation
-- Removes Gatekeeper warning on Mac
+- Mac App Store submission — DONE (submitted 17 Jun 2026, see "Recently Shipped")
+- Notarised DMG for website download (Gatekeeper warning) — still pending (needs Developer ID Application cert + notarization)
 - Required for serious enterprise adoption
 
 ### Audit log

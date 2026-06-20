@@ -24,7 +24,7 @@
     "dist:win-portable": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false npm run build && electron-builder --win portable",
     "dist:win-msix": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false npm run build && electron-builder --win appx --x64",
     "dist:all": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false npm run build && electron-builder --mac --win --linux",
-    "dist:mas": "npm run build && electron-builder --mac mas",
+    "dist:mas": "npm run build && electron-builder --mac mas --universal",
     "dist:publish": "npm run build && electron-builder --publish always",
     "package": "electron-forge package",
     "make": "electron-forge make",
@@ -82,6 +82,7 @@
   "build": {
     "appId": "com.ledebe.protector",
     "productName": "Ledebe Protector",
+    "buildVersion": "1.0.1",
     "copyright": "Copyright © 2026 Ledebe. All rights reserved.",
     "files": [
       "dist/**/*",
@@ -103,6 +104,9 @@
       "category": "public.app-category.productivity",
       "notarize": false,
       "hardenedRuntime": true,
+      "extendInfo": {
+        "ITSAppUsesNonExemptEncryption": false
+      },
       "gatekeeperAssess": false,
       "entitlements": "build/entitlements.mac.plist",
       "entitlementsInherit": "build/entitlements.mac.plist",
@@ -126,7 +130,16 @@
     "mas": {
       "entitlements": "build/entitlements.mas.plist",
       "entitlementsInherit": "build/entitlements.mas.inherit.plist",
-      "hardenedRuntime": false
+      "hardenedRuntime": false,
+      "provisioningProfile": "build/embedded.provisionprofile",
+      "target": [
+        {
+          "target": "pkg",
+          "arch": [
+            "universal"
+          ]
+        }
+      ]
     },
     "dmg": {
       "title": "Install Ledebe Protector",

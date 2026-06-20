@@ -17,9 +17,9 @@ reply** — so your PII never actually leaves the page.
   **protect** an exposed one — a live toggle.
 - **Keeps placeholders on send.** Because replacement happens while you type, the
   text already carries placeholders by the time you press Enter.
-- **Reveals in the reply.** When the AI echoes a placeholder, the real value is
-  restored in place inside the answer (only in the assistant's turn, never your
-  echoed prompt).
+- **Reveals replies in the panel.** When the AI echoes a placeholder, the reply
+  is shown with your real values **in the side panel only** (with a Copy button).
+  The page DOM is never modified, so nothing can re-enter the site's data flow.
 - **Right-click `Protect with Ledebe`** and a popup **Protect active field**
   button for manual, on-demand masking on any site.
 

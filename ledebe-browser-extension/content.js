@@ -679,7 +679,7 @@
     }
 
     if (latestRestoredText) {
-      body.appendChild(sectionEl("Restored from AI reply"));
+      body.appendChild(sectionEl("AI reply, restored (shown only here)"));
       const pre = document.createElement("pre");
       pre.className = "ledebe-drawer__restored";
       pre.textContent = latestRestoredText;
@@ -742,11 +742,13 @@
   }
 
   // ---- AI response restoration --------------------------------------------
-  // Watch the page for our placeholders appearing in the AI's reply and reveal
-  // the real value in place. Provider-agnostic; only restores inside assistant
-  // turns on chat UIs that label turns, never the user's echoed prompt.
+  // Watch for our placeholders appearing in the AI's reply and reveal the real
+  // values — but ONLY in our own side panel. We deliberately never write the
+  // real values back into the page DOM: that would flicker against the site's
+  // re-render, and (defensively) avoids any chance of the values re-entering an
+  // app that serialises its next request from the DOM. The page keeps showing
+  // placeholders; the panel shows the restored reply with a Copy button.
 
-  const TOKEN_REGEX = /\[LDB_[A-Z0-9_]+\]/g;
   const ASSISTANT_SELECTORS =
     '[data-message-author-role="assistant"], [data-message-author="assistant"], '
     + '.model-response-text, message-content, [data-testid="model-response"], '
@@ -758,7 +760,6 @@
   let responseObserver = null;
   let settleTimer = null;
   const dirtyRoots = new Set();
-  let applyingRestore = false;
   let usesTurnRoles = null;
 
   function restoreActive() {
@@ -777,60 +778,10 @@
     const el = node instanceof HTMLElement ? node : node?.parentElement;
     if (!el) return true;
     if (isInsideLedebeUi(el)) return true;
-    if (el.closest(".ledebe-restored, .ledebe-toast, .ledebe-drawer")) return true;
+    if (el.closest(".ledebe-toast, .ledebe-drawer")) return true;
     if (el.closest('input, textarea, [contenteditable=""], [contenteditable="true"], [role="textbox"]')) return true;
     if (pageUsesTurnRoles() && !el.closest(ASSISTANT_SELECTORS)) return true;
     return false;
-  }
-
-  function buildRestoredSpan(token, original) {
-    const span = document.createElement("span");
-    span.className = "ledebe-restored";
-    span.dataset.ledebeToken = token;
-    span.textContent = original;
-    span.title = `Ledebe restored — was ${token}`;
-    return span;
-  }
-
-  function restoreTextNode(node, created) {
-    const text = node.textContent;
-    if (!text || text.indexOf("[LDB_") === -1) return;
-    TOKEN_REGEX.lastIndex = 0;
-    const fragment = document.createDocumentFragment();
-    const spans = [];
-    let last = 0;
-    let match;
-    while ((match = TOKEN_REGEX.exec(text)) !== null) {
-      const original = placeholderMap.get(match[0]);
-      if (original === undefined) continue;
-      if (match.index > last) fragment.appendChild(document.createTextNode(text.slice(last, match.index)));
-      const span = buildRestoredSpan(match[0], original);
-      fragment.appendChild(span);
-      spans.push(span);
-      last = match.index + match[0].length;
-    }
-    if (!spans.length) return;
-    if (last < text.length) fragment.appendChild(document.createTextNode(text.slice(last)));
-    node.parentNode?.replaceChild(fragment, node);
-    created.push(...spans);
-  }
-
-  function restoreRoot(root, created) {
-    if (!(root instanceof HTMLElement) || !root.isConnected || isExcludedRegion(root)) return;
-    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
-      acceptNode(node) {
-        if (!node.textContent || node.textContent.indexOf("[LDB_") === -1) return NodeFilter.FILTER_REJECT;
-        if (isExcludedRegion(node.parentElement)) return NodeFilter.FILTER_REJECT;
-        return NodeFilter.FILTER_ACCEPT;
-      }
-    });
-    const targets = [];
-    let current = walker.nextNode();
-    while (current) {
-      targets.push(current);
-      current = walker.nextNode();
-    }
-    for (const node of targets) restoreTextNode(node, created);
   }
 
   // Build the fully-restored text for a container from its combined innerText.
@@ -868,22 +819,9 @@
     const roots = Array.from(dirtyRoots);
     dirtyRoots.clear();
 
-    applyingRestore = true;
-    const created = [];
-    try {
-      for (const root of roots) restoreRoot(root, created);
-    } finally {
-      applyingRestore = false;
-    }
-
-    // Candidate containers: where we created inline spans, plus any dirty root
-    // that still holds a token (fragmented across nodes — inline restore missed
-    // it, but the panel can reassemble and reveal it from innerText).
+    // Read-only: find the assistant turns that hold a token and reassemble their
+    // restored text for the panel. The page DOM is never modified.
     const containers = new Set();
-    for (const span of created) {
-      const container = span.closest(ASSISTANT_SELECTORS) || span.closest("p, li, article, div");
-      if (container && container !== document.body) containers.add(container);
-    }
     for (const root of roots) {
       if (!(root instanceof HTMLElement) || !root.isConnected) continue;
       const container = root.closest(ASSISTANT_SELECTORS) || root;
@@ -906,7 +844,7 @@
   }
 
   function onResponseMutations(records) {
-    if (applyingRestore || !restoreActive()) return;
+    if (!restoreActive()) return;
     let queued = false;
     for (const record of records) {
       if (record.type === "characterData") {

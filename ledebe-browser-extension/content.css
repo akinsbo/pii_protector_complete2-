@@ -121,9 +121,9 @@
 
 /* Home tab: mirrored chat */
 .ledebe-msg {
-  border: 1px solid rgba(15, 23, 42, 0.1);
-  border-radius: 12px;
-  padding: 10px 12px;
+  border: 1px solid rgba(15, 23, 42, 0.07);
+  border-radius: 16px;
+  padding: 12px 14px;
   margin-bottom: 10px;
 }
 
@@ -131,8 +131,10 @@
   background: #eef2ff;
 }
 
+/* The assistant reply mirrors ChatGPT's editable block: a rounded card in a
+   lighter shade of grey than the surrounding panel. */
 .ledebe-msg--assistant {
-  background: #f8fafc;
+  background: #f4f4f5;
 }
 
 .ledebe-msg__role {
@@ -431,7 +433,7 @@
     border-color: rgba(148, 163, 184, 0.18);
   }
   .ledebe-msg--user { background: #21304d; }
-  .ledebe-msg--assistant { background: #1e293b; }
+  .ledebe-msg--assistant { background: #232a39; }
   .ledebe-msg__role { color: #cdd9f4; }
   .ledebe-words__input {
     background: #1e293b;

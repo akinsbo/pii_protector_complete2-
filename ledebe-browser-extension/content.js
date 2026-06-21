@@ -493,11 +493,11 @@
     afterProtect(element);
   }
 
-  function unprotectToken(token) {
+  // Reveal a value: swap every token that maps to it back to the real text, in
+  // the active field. Grouped by value, so one click reveals all its copies.
+  function unprotectValue(value) {
     const element = activeEditable;
     if (!element) return;
-    const original = placeholderMap.get(token);
-    if (typeof original !== "string") return;
 
     // Never write a real value into a surface the AI app syncs (Canvas, artifact,
     // message). The value stays visible in this panel only.
@@ -507,23 +507,29 @@
       return;
     }
 
-    const current = getFieldText(element);
-    if (!current.includes(token)) {
+    let current = getFieldText(element);
+    let changed = false;
+    for (const [token, val] of placeholderMap.entries()) {
+      if (val !== value || !current.includes(token)) continue;
+      current = current.split(token).join(value);
+      changed = true;
+    }
+    if (!changed) {
       refreshDrawer();
       return;
     }
-    const next = current.replace(new RegExp(escapeRegExp(token), "g"), original);
-    unprotected.add(original.toLowerCase()); // don't immediately re-mask it
-    applyFieldText(element, next);
+    unprotected.add(value.toLowerCase()); // don't immediately re-mask it
+    applyFieldText(element, current);
     afterProtect(element);
   }
 
-  // Drop a mapping from the session map (it's no longer in any field). Stops it
-  // being restored in future replies; does not touch the page.
-  function forgetToken(token) {
-    const value = placeholderMap.get(token);
-    placeholderMap.delete(token);
-    if (typeof value === "string") unprotected.delete(value.toLowerCase());
+  // Drop every mapping for a value from the session map. Stops it being restored
+  // in future replies; does not touch the page.
+  function forgetValue(value) {
+    for (const [token, val] of [...placeholderMap.entries()]) {
+      if (val === value) placeholderMap.delete(token);
+    }
+    unprotected.delete(value.toLowerCase());
     mappingSet();
     refreshDrawer();
   }
@@ -576,36 +582,50 @@
     openDrawer();
   }
 
-  // ---- detection (for the "exposed" list + counts) ------------------------
+  // ---- detection, grouped by value with occurrence counts -----------------
+  // Each value appears once; `count` is how many times it occurs, so the panel
+  // shows "email ×3" instead of three identical rows.
 
+  // Detected-but-still-plaintext PII in the field.
   function exposedItems(text) {
     if (!text) return [];
-    const seen = new Set();
-    const items = [];
+    const groups = new Map();
     for (const finding of detectPII(text, settings.customTerms)) {
       if (finding.value.startsWith("[LDB_")) continue;
       const key = finding.value.toLowerCase();
-      if (seen.has(key)) continue;
-      seen.add(key);
-      items.push({ value: finding.value, label: finding.label });
+      const g = groups.get(key) || { value: finding.value, label: finding.label, count: 0 };
+      g.count += 1;
+      groups.set(key, g);
     }
-    return items;
+    return [...groups.values()];
   }
 
+  // Placeholders present in the field, grouped back to their real value.
   function protectedItems(text) {
     if (!text) return [];
-    const seen = new Set();
-    const items = [];
+    const groups = new Map();
     const regex = /\[LDB_[A-Z0-9_]+\]/g;
     let match;
     while ((match = regex.exec(text)) !== null) {
-      const token = match[0];
-      if (seen.has(token)) continue;
-      seen.add(token);
-      const original = placeholderMap.get(token);
-      if (typeof original === "string") items.push({ token, value: original });
+      const value = placeholderMap.get(match[0]);
+      if (typeof value !== "string") continue;
+      const g = groups.get(value) || { value, count: 0 };
+      g.count += 1;
+      groups.set(value, g);
     }
-    return items;
+    return [...groups.values()];
+  }
+
+  // Session mappings whose value isn't currently in the field, grouped by value.
+  function sessionItems(fieldValues) {
+    const groups = new Map();
+    for (const value of placeholderMap.values()) {
+      if (fieldValues.has(value)) continue;
+      const g = groups.get(value) || { value, count: 0 };
+      g.count += 1;
+      groups.set(value, g);
+    }
+    return [...groups.values()];
   }
 
   // ---- slide-in side panel (drawer) ---------------------------------------
@@ -616,6 +636,9 @@
   let nativePanelOpen = false; // true while the native side panel is showing
   let latestRestoredText = "";
   let activeTab = "field"; // "home" | "words" | "field"
+  let autoHideTimer = null;
+  let drawerHovered = false;
+  const AUTO_HIDE_MS = 5000;
 
   function escapeHtml(value) {
     return String(value).replace(/[&<>"']/g, (ch) => (
@@ -641,7 +664,7 @@
       <nav class="ledebe-tabs">
         <button type="button" class="ledebe-tab" data-tab="home">Home</button>
         <button type="button" class="ledebe-tab" data-tab="words">Custom words</button>
-        <button type="button" class="ledebe-tab" data-tab="field">This field</button>
+        <button type="button" class="ledebe-tab" data-tab="field">Protected words</button>
       </nav>
       <div class="ledebe-drawer__body"></div>
     `;
@@ -657,6 +680,15 @@
     drawer.querySelectorAll(".ledebe-tab").forEach((btn) => {
       btn.addEventListener("click", () => setActiveTab(btn.dataset.tab));
     });
+    // Pause the auto-hide while the user is interacting; resume on leave.
+    drawer.addEventListener("mouseenter", () => {
+      drawerHovered = true;
+      if (autoHideTimer) { clearTimeout(autoHideTimer); autoHideTimer = null; }
+    });
+    drawer.addEventListener("mouseleave", () => {
+      drawerHovered = false;
+      scheduleAutoHide();
+    });
 
     document.documentElement.appendChild(drawer);
     return drawer;
@@ -665,6 +697,15 @@
   function setActiveTab(tab) {
     activeTab = tab;
     refreshDrawer();
+  }
+
+  // Auto-open overlay slides out 5s after the last activity (unless hovered).
+  function scheduleAutoHide() {
+    if (autoHideTimer) clearTimeout(autoHideTimer);
+    autoHideTimer = window.setTimeout(() => {
+      autoHideTimer = null;
+      if (drawerOpen && !drawerHovered) closeDrawer();
+    }, AUTO_HIDE_MS);
   }
 
   function sectionEl(title) {
@@ -845,37 +886,42 @@
 
   // ---- This-field tab: live protected / exposed list -----------------------
 
+  function timesLabel(count) {
+    return count > 1 ? `${count}×` : "";
+  }
+
   function renderFieldPane(body) {
     const text = getFieldText(activeEditable);
     const prot = protectedItems(text);
     const exposed = exposedItems(text);
+    const fieldValues = new Set(prot.map((item) => item.value));
+    const session = sessionItems(fieldValues);
 
     if (exposed.length) {
       body.appendChild(sectionEl(`Exposed (${exposed.length})`));
       for (const item of exposed) {
-        body.appendChild(rowEl("exposed", item.value, `${item.label} · protecting…`, "Protect",
-          () => protectValue(item.value)));
+        const meta = [item.label, timesLabel(item.count)].filter(Boolean).join(" · ");
+        body.appendChild(rowEl("exposed", item.value, meta, "Protect", () => protectValue(item.value)));
       }
     }
 
     if (prot.length) {
       body.appendChild(sectionEl(`Protected (${prot.length})`));
       for (const item of prot) {
-        body.appendChild(rowEl("protected", item.value, item.token, "Unprotect",
-          () => unprotectToken(item.token)));
+        const meta = item.count > 1 ? `protected · ${item.count}×` : "protected";
+        body.appendChild(rowEl("protected", item.value, meta, "Unprotect", () => unprotectValue(item.value)));
       }
     }
 
-    const fieldTokens = new Set(prot.map((item) => item.token));
-    const sessionEntries = [...placeholderMap.entries()].filter(([token]) => !fieldTokens.has(token));
-    if (sessionEntries.length) {
-      body.appendChild(sectionEl(`Protected this session (${sessionEntries.length})`));
-      for (const [token, value] of sessionEntries) {
-        body.appendChild(rowEl("protected", value, token, "Forget", () => forgetToken(token)));
+    if (session.length) {
+      body.appendChild(sectionEl(`Protected this session (${session.length})`));
+      for (const item of session) {
+        const meta = item.count > 1 ? `${item.count} placeholders` : "1 placeholder";
+        body.appendChild(rowEl("protected", item.value, meta, "Forget", () => forgetValue(item.value)));
       }
     }
 
-    if (!prot.length && !exposed.length && !sessionEntries.length) {
+    if (!prot.length && !exposed.length && !session.length) {
       body.appendChild(emptyEl("No sensitive data detected in this field."));
     }
   }
@@ -891,6 +937,7 @@
     if (activeTab === "home") renderHomePane(body);
     else if (activeTab === "words") renderWordsPane(body);
     else renderFieldPane(body);
+    if (drawerOpen && !drawerHovered) scheduleAutoHide(); // reset 5s on each activity
   }
 
   // Shift the page over so the docked panel doesn't cover the chat.
@@ -910,10 +957,12 @@
     void el.offsetWidth;
     el.classList.add("is-open");
     applyPagePush(el.offsetWidth);
+    scheduleAutoHide();
   }
 
   function closeDrawer() {
     drawerOpen = false;
+    if (autoHideTimer) { clearTimeout(autoHideTimer); autoHideTimer = null; }
     if (drawer) drawer.classList.remove("is-open");
     applyPagePush(0);
   }
@@ -1225,10 +1274,7 @@
   function buildPageState() {
     const text = getFieldText(activeEditable);
     const prot = protectedItems(text);
-    const fieldTokens = new Set(prot.map((p) => p.token));
-    const session = [...placeholderMap.entries()]
-      .filter(([token]) => !fieldTokens.has(token))
-      .map(([token, value]) => ({ token, value }));
+    const fieldValues = new Set(prot.map((p) => p.value));
     return {
       host: getHost(),
       paused: isPaused(),
@@ -1236,7 +1282,7 @@
       sessionCount: placeholderMap.size,
       exposed: exposedItems(text),
       protected: prot,
-      session,
+      session: sessionItems(fieldValues),
       transcript: settings.restoreResponses ? collectRestoredTranscript() : [],
       latestRestored: settings.restoreResponses ? latestRestoredText : "",
       customTerms: settings.customTerms || []
@@ -1355,12 +1401,12 @@
           if (message.value) protectValue(message.value);
           sendResponse(buildPageState());
           return true;
-        case "UNPROTECT_TOKEN":
-          if (message.token) unprotectToken(message.token);
+        case "UNPROTECT_VALUE":
+          if (message.value) unprotectValue(message.value);
           sendResponse(buildPageState());
           return true;
-        case "FORGET_TOKEN":
-          if (message.token) forgetToken(message.token);
+        case "FORGET_VALUE":
+          if (message.value) forgetValue(message.value);
           sendResponse(buildPageState());
           return true;
         case "ADD_TERM":

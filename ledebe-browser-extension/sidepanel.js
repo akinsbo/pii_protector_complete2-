@@ -154,6 +154,10 @@ function renderWords() {
   }
 }
 
+function times(count) {
+  return count > 1 ? `${count}×` : "";
+}
+
 function renderField() {
   const exposed = state.exposed || [];
   const prot = state.protected || [];
@@ -162,22 +166,25 @@ function renderField() {
   if (exposed.length) {
     body.append(el("div", "section", `Exposed (${exposed.length})`));
     for (const item of exposed) {
-      body.append(row("exposed", item.value, `${item.label} · protecting…`, "Protect",
+      const meta = [item.label, times(item.count)].filter(Boolean).join(" · ");
+      body.append(row("exposed", item.value, meta, "Protect",
         () => act({ type: "PROTECT_VALUE", value: item.value })));
     }
   }
   if (prot.length) {
     body.append(el("div", "section", `Protected (${prot.length})`));
     for (const item of prot) {
-      body.append(row("protected", item.value, item.token, "Unprotect",
-        () => act({ type: "UNPROTECT_TOKEN", token: item.token })));
+      const meta = item.count > 1 ? `protected · ${item.count}×` : "protected";
+      body.append(row("protected", item.value, meta, "Unprotect",
+        () => act({ type: "UNPROTECT_VALUE", value: item.value })));
     }
   }
   if (session.length) {
     body.append(el("div", "section", `Protected this session (${session.length})`));
     for (const item of session) {
-      body.append(row("protected", item.value, item.token, "Forget",
-        () => act({ type: "FORGET_TOKEN", token: item.token })));
+      const meta = item.count > 1 ? `${item.count} placeholders` : "1 placeholder";
+      body.append(row("protected", item.value, meta, "Forget",
+        () => act({ type: "FORGET_VALUE", value: item.value })));
     }
   }
   if (!exposed.length && !prot.length && !session.length) {

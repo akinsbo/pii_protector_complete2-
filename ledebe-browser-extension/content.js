@@ -814,9 +814,30 @@
     return out.trim();
   }
 
+  function restoredText(raw) {
+    return stripRetainNote(restorePlaceholders((raw || "").trim(), placeholderMap).restored);
+  }
+
+  // Split a turn into blocks: the prose, plus each code block (e.g. ChatGPT's
+  // fenced "Email" block) as its own segment — so each gets its own Copy button
+  // that copies only that block, like the AI's native copy control.
+  function restoredBlocksFor(el) {
+    const blocks = [];
+    const pres = Array.from(el.querySelectorAll("pre"));
+    const clone = el.cloneNode(true);
+    clone.querySelectorAll("pre, .ledebe-inline-btn").forEach((n) => n.remove());
+    const prose = restoredText(clone.innerText || clone.textContent || "");
+    if (prose) blocks.push({ kind: "text", text: prose });
+    for (const pre of pres) {
+      const code = restoredText(pre.innerText || pre.textContent || "");
+      if (code) blocks.push({ kind: "code", text: code });
+    }
+    return blocks;
+  }
+
   // Mirror the conversation, restored, across the major assistants. Returns
-  // turns in document order; empty when the page markup isn't recognised (the
-  // Home tab then falls back to the latest restored reply).
+  // turns ({ role, blocks }) in document order; empty when the page markup isn't
+  // recognised (the Home tab then falls back to the latest restored reply).
   function collectRestoredTranscript() {
     const providers = [
       { sel: "[data-message-author-role]", role: (el) => el.getAttribute("data-message-author-role") || "user" },
@@ -830,10 +851,9 @@
       const turns = [];
       for (const el of nodes) {
         if (isInsideLedebeUi(el)) continue;
-        const raw = el.innerText || el.textContent || "";
-        if (!raw.trim()) continue;
-        const text = stripRetainNote(restorePlaceholders(raw, placeholderMap).restored);
-        if (text) turns.push({ role: provider.role(el), text });
+        if (!(el.innerText || el.textContent || "").trim()) continue;
+        const blocks = restoredBlocksFor(el);
+        if (blocks.length) turns.push({ role: provider.role(el), blocks });
       }
       if (turns.length) return turns;
     }
@@ -860,21 +880,28 @@
     for (const turn of turns) {
       const msg = document.createElement("div");
       msg.className = `ledebe-msg ledebe-msg--${turn.role === "assistant" ? "assistant" : "user"}`;
-      const head = document.createElement("div");
-      head.className = "ledebe-msg__head";
       const who = document.createElement("div");
       who.className = "ledebe-msg__role";
       who.textContent = turn.role === "assistant" ? "Assistant" : "You";
-      head.append(who, msgCopyButton(turn.text));
-      const text = document.createElement("div");
-      text.className = "ledebe-msg__text";
-      text.textContent = turn.text;
-      msg.append(head, text);
+      msg.append(who);
+
+      for (const block of turn.blocks) {
+        const blk = document.createElement("div");
+        blk.className = "ledebe-msg__block" + (block.kind === "code" ? " is-code" : "");
+        const bhead = document.createElement("div");
+        bhead.className = "ledebe-msg__bhead";
+        bhead.appendChild(msgCopyButton(block.text)); // copies just this block
+        const text = document.createElement("div");
+        text.className = "ledebe-msg__text";
+        text.textContent = block.text;
+        blk.append(bhead, text);
+        msg.appendChild(blk);
+      }
       body.appendChild(msg);
     }
 
     body.appendChild(copyButton("Copy whole transcript", () =>
-      turns.map((t) => `${t.role === "assistant" ? "Assistant" : "You"}:\n${t.text}`).join("\n\n")));
+      turns.map((t) => `${t.role === "assistant" ? "Assistant" : "You"}:\n${t.blocks.map((b) => b.text).join("\n\n")}`).join("\n\n")));
   }
 
   // ---- Custom words tab ----------------------------------------------------

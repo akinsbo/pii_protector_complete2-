@@ -154,15 +154,18 @@ function renderHome() {
   }
   for (const turn of turns) {
     const msg = el("div", `msg msg--${turn.role === "assistant" ? "assistant" : "user"}`);
-    const head = el("div", "msg__head");
-    head.append(el("div", "msg__role", turn.role === "assistant" ? "Assistant" : "You"));
-    head.append(msgCopyButton(turn.text));
-    msg.append(head);
-    msg.append(el("div", "msg__text", turn.text));
+    msg.append(el("div", "msg__role", turn.role === "assistant" ? "Assistant" : "You"));
+    for (const block of turn.blocks || []) {
+      const blk = el("div", "msg__block" + (block.kind === "code" ? " is-code" : ""));
+      const bhead = el("div", "msg__bhead");
+      bhead.append(msgCopyButton(block.text)); // copies just this block
+      blk.append(bhead, el("div", "msg__text", block.text));
+      msg.append(blk);
+    }
     body.append(msg);
   }
   body.append(copyButton("Copy whole transcript", () =>
-    turns.map((t) => `${t.role === "assistant" ? "Assistant" : "You"}:\n${t.text}`).join("\n\n")));
+    turns.map((t) => `${t.role === "assistant" ? "Assistant" : "You"}:\n${(t.blocks || []).map((b) => b.text).join("\n\n")}`).join("\n\n")));
 }
 
 function renderWords() {

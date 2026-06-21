@@ -28,14 +28,13 @@
     pausedHosts: []
   };
 
-  // Appended to a prompt on send (once, only when it contains placeholders) so
-  // the model echoes the tokens verbatim and we can restore them in the reply.
+  // Prepended to a prompt on send (once, only when it contains placeholders) so
+  // the model sees the instruction first and echoes the tokens verbatim.
   const RETAIN_MARKER = "[Ledebe note to the assistant:";
   const RETAIN_NOTE =
-    "\n\n" + RETAIN_MARKER + " the bracketed tokens like [LDB_EMAIL_1] are"
-    + " placeholders for redacted personal data. Keep every [LDB_…] token exactly"
-    + " as written — do not alter, remove, translate, expand, or invent values"
-    + " for them.]";
+    RETAIN_MARKER + " the bracketed tokens like [LDB_EMAIL_1] are placeholders for"
+    + " redacted personal data. Keep every such [LDB_...] token exactly as written —"
+    + " do not alter, remove, translate, expand, or invent values for them.]";
 
   let settings = { ...DEFAULTS };
   let activeEditable = null;
@@ -724,19 +723,41 @@
 
   // ---- Home tab: the chat, mirrored with real values restored -------------
 
-  function collectRestoredTranscript() {
-    const turns = [];
-    for (const el of document.querySelectorAll("[data-message-author-role]")) {
-      if (isInsideLedebeUi(el)) continue;
-      const raw = el.innerText || el.textContent || "";
-      if (!raw.trim()) continue;
-      let text = restorePlaceholders(raw, placeholderMap).restored;
-      const note = text.indexOf(RETAIN_MARKER); // hide our injected on-send note
-      if (note !== -1) text = text.slice(0, note).trim();
-      if (!text) continue;
-      turns.push({ role: el.getAttribute("data-message-author-role") || "user", text });
+  function stripRetainNote(text) {
+    // Hide our injected on-send note from the mirror (it sits at the top).
+    let out = text.split(RETAIN_NOTE).join("");
+    const start = out.indexOf(RETAIN_MARKER);
+    if (start !== -1) {
+      const end = out.indexOf("for them.]", start);
+      if (end !== -1) out = out.slice(0, start) + out.slice(end + "for them.]".length);
     }
-    return turns;
+    return out.trim();
+  }
+
+  // Mirror the conversation, restored, across the major assistants. Returns
+  // turns in document order; empty when the page markup isn't recognised (the
+  // Home tab then falls back to the latest restored reply).
+  function collectRestoredTranscript() {
+    const providers = [
+      { sel: "[data-message-author-role]", role: (el) => el.getAttribute("data-message-author-role") || "user" },
+      { sel: '[data-testid="user-message"], .font-claude-message', role: (el) => el.matches('[data-testid="user-message"]') ? "user" : "assistant" },
+      { sel: "user-query, model-response", role: (el) => el.tagName.toLowerCase() === "user-query" ? "user" : "assistant" }
+    ];
+
+    for (const provider of providers) {
+      const nodes = document.querySelectorAll(provider.sel);
+      if (!nodes.length) continue;
+      const turns = [];
+      for (const el of nodes) {
+        if (isInsideLedebeUi(el)) continue;
+        const raw = el.innerText || el.textContent || "";
+        if (!raw.trim()) continue;
+        const text = stripRetainNote(restorePlaceholders(raw, placeholderMap).restored);
+        if (text) turns.push({ role: provider.role(el), text });
+      }
+      if (turns.length) return turns;
+    }
+    return [];
   }
 
   function renderHomePane(body) {
@@ -1105,14 +1126,16 @@
   }
 
   function onPaste(event) {
-    if (selfEdit || !settings.scanOnPaste) return;
-    const target = trackTarget(event);
+    if (!settings.scanOnPaste) return;
+    const target = trackTarget(event) || resolveEditable(document.activeElement) || activeEditable;
     if (!target) return;
-    // Let the paste land first, then scan + auto-protect the resulting text.
+    activeEditable = target;
+    // After the pasted text lands, force-protect it directly. We don't gate this
+    // on selfEdit or the caret guard, so every paste (not just the first) masks.
     window.setTimeout(() => {
-      scheduleScan(target, 40);
-      scheduleIdleProtect(target);
-    }, 10);
+      try { liveReplace(target, true); } catch (error) { console.debug("[Ledebe]", error); }
+      maybeOpenDrawer();
+    }, 60);
   }
 
   // Right before send (Enter / send button), force-mask anything still exposed.
@@ -1121,36 +1144,38 @@
     if (!target) return;
     activeEditable = target;
     liveReplace(target, true);
-    appendRetainInstruction(target);
+    addRetainInstruction(target);
   }
 
-  // Append the "keep the placeholders" note to the prompt, once, and only when
+  // Prepend the "keep the placeholders" note to the prompt, once, and only when
   // the prompt actually contains placeholders. Goes into the composer text so it
-  // is sent to the AI alongside the masked prompt.
-  function appendRetainInstruction(element) {
+  // is sent to the AI at the top of the masked prompt.
+  function addRetainInstruction(element) {
     if (!settings.appendInstruction || !element) return;
     if (!isPlainField(element) && !element.isContentEditable && !getComposer(element)) return;
     const text = getFieldText(element);
     if (!text.includes("[LDB_") || text.includes(RETAIN_MARKER)) return;
 
+    const note = RETAIN_NOTE + "\n\n";
     selfEdit = true;
     try {
       if (isPlainField(element)) {
-        setPlainValue(element, text + RETAIN_NOTE);
-        element.selectionStart = element.selectionEnd = element.value.length;
+        setPlainValue(element, note + text);
+        const end = element.value.length;
+        element.selectionStart = element.selectionEnd = end;
       } else {
         const box = getComposer(element) || element;
         box.focus();
         const sel = window.getSelection();
         const range = document.createRange();
         range.selectNodeContents(box);
-        range.collapse(false); // caret to end
+        range.collapse(true); // caret to the START — note goes on top
         sel.removeAllRanges();
         sel.addRange(range);
-        if (!document.execCommand("insertText", false, RETAIN_NOTE)) {
-          box.textContent = text + RETAIN_NOTE;
+        if (!document.execCommand("insertText", false, note)) {
+          box.textContent = note + text;
         }
-        box.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: RETAIN_NOTE }));
+        box.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: note }));
       }
     } finally {
       window.setTimeout(() => { selfEdit = false; }, 0);
@@ -1218,38 +1243,28 @@
     };
   }
 
-  // Ask the background to open the native side panel (a real viewport push).
-  // Chrome only allows a programmatic open from a toolbar/context-menu gesture,
-  // so when it refuses an in-page-triggered open we fall back to the overlay.
-  function requestTruePush() {
-    let settled = false;
-    const fallback = () => {
-      if (settled) return;
-      settled = true;
+  // Toggle the in-page overlay open/closed. The in-page icon controls the
+  // overlay (reliable, slides both ways); the toolbar icon does the true push,
+  // which Chrome reserves for a genuine browser gesture.
+  function toggleOverlay() {
+    if (drawerOpen) {
+      drawerDismissed = true;
+      closeDrawer();
+    } else {
       nativePanelOpen = false;
       drawerDismissed = false;
       openDrawer();
-    };
-    try {
-      chrome.runtime.sendMessage({ type: "OPEN_SIDE_PANEL" }, (resp) => {
-        if (chrome.runtime.lastError || !resp || !resp.ok) fallback();
-        else settled = true;
-      });
-      // If the background never answers (no gesture), guarantee something opens.
-      window.setTimeout(fallback, 400);
-    } catch (error) {
-      fallback();
     }
   }
 
-  // ---- inject a Ledebe button into ChatGPT's per-message action rows -------
+  // ---- inject a Ledebe button into per-message action rows -----------------
 
   function makeInlineButton() {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "ledebe-inline-btn";
-    btn.title = "Open Ledebe Protector";
-    btn.setAttribute("aria-label", "Open Ledebe Protector");
+    btn.title = "Toggle Ledebe panel";
+    btn.setAttribute("aria-label", "Toggle Ledebe panel");
     const url = runtimeUrl("ledebe-icon.png");
     if (url) {
       const img = document.createElement("img");
@@ -1262,7 +1277,7 @@
     btn.addEventListener("click", (event) => {
       event.preventDefault();
       event.stopPropagation();
-      requestTruePush();
+      toggleOverlay();
     });
     return btn;
   }
@@ -1272,8 +1287,12 @@
   // data flag on the toolbar, re-added if the row is rebuilt).
   function injectInlineButtons() {
     if (!isAiHost()) return;
+    // Anchor next to the per-message "Copy" control across the major assistants.
     const copyButtons = document.querySelectorAll(
-      '[data-testid="copy-turn-action-button"], [data-testid="copy-button"], button[aria-label="Copy"]'
+      '[data-testid="copy-turn-action-button"], [data-testid="copy-button"], '
+      + '[data-testid="action-bar-copy"], button[aria-label="Copy"], '
+      + 'button[aria-label="Copy message" i], button[aria-label="Copy to clipboard" i], '
+      + 'button[aria-label="Copy response" i], button[aria-label="Copy code" i]'
     );
     for (const copyBtn of copyButtons) {
       const bar = copyBtn.parentElement;

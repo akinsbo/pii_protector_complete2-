@@ -818,19 +818,39 @@
     return stripRetainNote(restorePlaceholders((raw || "").trim(), placeholderMap).restored);
   }
 
-  // Split a turn into blocks: the prose, plus each code block (e.g. ChatGPT's
-  // fenced "Email" block) as its own segment — so each gets its own Copy button
-  // that copies only that block, like the AI's native copy control.
+  // Split a turn into blocks in document order: prose, plus each code block
+  // (e.g. ChatGPT's fenced "Email" block) as its own segment with its own Copy.
+  // We read innerText from the LIVE, in-document nodes — innerText only honours
+  // line breaks for rendered elements, so a detached clone would flatten the
+  // reply into one wall of text and lose the headings/bullets/blank lines.
   function restoredBlocksFor(el) {
+    const root = el.querySelector(".markdown, .prose") || el;
+    const children = root.children.length ? Array.from(root.children) : [el];
     const blocks = [];
-    const pres = Array.from(el.querySelectorAll("pre"));
-    const clone = el.cloneNode(true);
-    clone.querySelectorAll("pre, .ledebe-inline-btn").forEach((n) => n.remove());
-    const prose = restoredText(clone.innerText || clone.textContent || "");
-    if (prose) blocks.push({ kind: "text", text: prose });
-    for (const pre of pres) {
-      const code = restoredText(pre.innerText || pre.textContent || "");
-      if (code) blocks.push({ kind: "code", text: code });
+    let prose = [];
+    const flush = () => {
+      const text = restoredText(prose.join("\n\n"));
+      if (text) blocks.push({ kind: "text", text });
+      prose = [];
+    };
+
+    for (const child of children) {
+      if (child.classList && child.classList.contains("ledebe-inline-btn")) continue;
+      if (child.tagName === "PRE") {
+        flush();
+        const codeEl = child.querySelector("code") || child; // skip the lang/copy header
+        const code = restoredText(codeEl.innerText || codeEl.textContent || "");
+        if (code) blocks.push({ kind: "code", text: code });
+      } else {
+        const part = child.innerText || child.textContent || "";
+        if (part.trim()) prose.push(part);
+      }
+    }
+    flush();
+
+    if (!blocks.length) {
+      const all = restoredText(el.innerText || el.textContent || "");
+      if (all) blocks.push({ kind: "text", text: all });
     }
     return blocks;
   }

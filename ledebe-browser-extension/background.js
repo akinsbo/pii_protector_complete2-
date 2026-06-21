@@ -63,6 +63,15 @@ chrome.runtime.onStartup?.addListener(() => {
   void enablePanelOnIconClick();
 });
 
+// Backup for the toolbar icon: if setPanelBehavior didn't take effect, this
+// fires on click (a valid gesture) and opens the native panel directly. When
+// openPanelOnActionClick is active Chrome opens it itself and this won't fire.
+chrome.action.onClicked.addListener((tab) => {
+  if (tab?.id) {
+    try { chrome.sidePanel.open({ tabId: tab.id }); } catch (error) { /* ignore */ }
+  }
+});
+
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === CONTEXT_MENU_ID && tab?.id) {
     chrome.tabs.sendMessage(tab.id, { type: "PROTECT_ACTIVE_FIELD" });

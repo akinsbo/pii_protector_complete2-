@@ -89,6 +89,22 @@ function copyButton(label, getText) {
   return btn;
 }
 
+// Small per-message copy button, like the one on ChatGPT's reply blocks.
+function msgCopyButton(getTextOrString) {
+  const btn = el("button", "msg__copy", "Copy");
+  btn.type = "button";
+  btn.title = "Copy this message";
+  btn.addEventListener("click", async () => {
+    const text = typeof getTextOrString === "function" ? getTextOrString() : getTextOrString;
+    try {
+      await navigator.clipboard.writeText(text);
+      btn.textContent = "Copied";
+      setTimeout(() => { btn.textContent = "Copy"; }, 1200);
+    } catch (error) { /* clipboard blocked */ }
+  });
+  return btn;
+}
+
 // ---- render --------------------------------------------------------------
 
 function renderNoPage() {
@@ -138,11 +154,14 @@ function renderHome() {
   }
   for (const turn of turns) {
     const msg = el("div", `msg msg--${turn.role === "assistant" ? "assistant" : "user"}`);
-    msg.append(el("div", "msg__role", turn.role === "assistant" ? "Assistant" : "You"));
+    const head = el("div", "msg__head");
+    head.append(el("div", "msg__role", turn.role === "assistant" ? "Assistant" : "You"));
+    head.append(msgCopyButton(turn.text));
+    msg.append(head);
     msg.append(el("div", "msg__text", turn.text));
     body.append(msg);
   }
-  body.append(copyButton("Copy restored transcript", () =>
+  body.append(copyButton("Copy whole transcript", () =>
     turns.map((t) => `${t.role === "assistant" ? "Assistant" : "You"}:\n${t.text}`).join("\n\n")));
 }
 

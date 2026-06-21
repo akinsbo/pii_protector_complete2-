@@ -782,6 +782,25 @@
     return btn;
   }
 
+  // Per-message copy button, like the one on ChatGPT's reply blocks.
+  function msgCopyButton(text) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "ledebe-msg__copy";
+    btn.title = "Copy this message";
+    btn.textContent = "Copy";
+    btn.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(text);
+        btn.textContent = "Copied";
+        setTimeout(() => { btn.textContent = "Copy"; }, 1200);
+      } catch (error) {
+        /* clipboard blocked */
+      }
+    });
+    return btn;
+  }
+
   // ---- Home tab: the chat, mirrored with real values restored -------------
 
   function stripRetainNote(text) {
@@ -841,17 +860,20 @@
     for (const turn of turns) {
       const msg = document.createElement("div");
       msg.className = `ledebe-msg ledebe-msg--${turn.role === "assistant" ? "assistant" : "user"}`;
+      const head = document.createElement("div");
+      head.className = "ledebe-msg__head";
       const who = document.createElement("div");
       who.className = "ledebe-msg__role";
       who.textContent = turn.role === "assistant" ? "Assistant" : "You";
+      head.append(who, msgCopyButton(turn.text));
       const text = document.createElement("div");
       text.className = "ledebe-msg__text";
       text.textContent = turn.text;
-      msg.append(who, text);
+      msg.append(head, text);
       body.appendChild(msg);
     }
 
-    body.appendChild(copyButton("Copy restored transcript", () =>
+    body.appendChild(copyButton("Copy whole transcript", () =>
       turns.map((t) => `${t.role === "assistant" ? "Assistant" : "You"}:\n${t.text}`).join("\n\n")));
   }
 

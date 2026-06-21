@@ -24,9 +24,24 @@
     restoreResponses: true, // reveal real values inside the AI's reply
     persistMappings: true,  // keep token→value map across browser restarts
     appendInstruction: true,// on send, ask the AI to keep [LDB_…] placeholders intact
+    // Advanced: aggressive detection categories (all on by default).
+    detectNames: true,
+    detectNumbers: true,
+    detectAddresses: true,
+    detectCodes: true,
     customTerms: [],
     pausedHosts: []
   };
+
+  // Map the category toggles to the detector rule names to skip when off.
+  function disabledTypes() {
+    const off = [];
+    if (settings.detectNames === false) off.push("NAME");
+    if (settings.detectNumbers === false) off.push("NUMBER");
+    if (settings.detectAddresses === false) off.push("ADDRESS");
+    if (settings.detectCodes === false) off.push("ALNUM");
+    return off;
+  }
 
   // Prepended to a prompt on send (once, only when it contains placeholders) so
   // the model sees the instruction first and echoes the tokens verbatim.
@@ -401,7 +416,8 @@
       exclude: unprotected,
       existingMap: placeholderMap,
       counters,
-      namespace: placeholderNamespace()
+      namespace: placeholderNamespace(),
+      disabledTypes: disabledTypes()
     };
 
     if (isPlainField(element)) {
@@ -572,7 +588,8 @@
     const original = getFieldText(activeEditable);
     const result = maskText(original, settings.customTerms, {
       namespace: placeholderNamespace(),
-      exclude: unprotected
+      exclude: unprotected,
+      disabledTypes: disabledTypes()
     });
     if (!result.replacements.length) {
       toast("Nothing sensitive found in this field.");
@@ -593,7 +610,7 @@
   function exposedItems(text) {
     if (!text) return [];
     const groups = new Map();
-    for (const finding of detectPII(text, settings.customTerms)) {
+    for (const finding of detectPII(text, settings.customTerms, disabledTypes())) {
       if (finding.value.startsWith("[LDB_")) continue;
       const key = finding.value.toLowerCase();
       const g = groups.get(key) || { value: finding.value, label: finding.label, count: 0 };

@@ -214,6 +214,15 @@ test("maskText leaves existing placeholders intact", () => {
   assert.ok(!out.masked.includes("5551234"));
 });
 
+test("respects disabled detection categories", () => {
+  const text = "balance 12345 today";
+  assert.ok(detectPII(text).some((f) => f.type === "NUMBER"));
+  assert.ok(!detectPII(text, [], ["NUMBER"]).some((f) => f.type === "NUMBER"));
+  // maskText + computeLiveReplacement honour the same option
+  assert.equal(maskText(text, [], { disabledTypes: ["NUMBER"] }).replacements.length, 0);
+  assert.equal(computeLiveReplacement(text, 0, { disabledTypes: ["NUMBER"] }).changed, false);
+});
+
 test("createPlaceholderToken formats with and without a namespace", () => {
   assert.equal(createPlaceholderToken("LDB_EMAIL", "", 2), "[LDB_EMAIL_2]");
   assert.equal(createPlaceholderToken("LDB_EMAIL", "NS", 2), "[LDB_EMAIL_NS_2]");

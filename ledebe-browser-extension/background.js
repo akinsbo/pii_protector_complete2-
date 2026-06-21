@@ -11,6 +11,10 @@ const DEFAULT_SETTINGS = {
   restoreResponses: true,
   persistMappings: true,
   appendInstruction: true,
+  detectNames: true,
+  detectNumbers: true,
+  detectAddresses: true,
+  detectCodes: true,
   customTerms: [],
   pausedHosts: []
 };

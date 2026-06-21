@@ -8,6 +8,10 @@ const DEFAULTS = {
   restoreResponses: true,
   persistMappings: true,
   appendInstruction: true,
+  detectNames: true,
+  detectNumbers: true,
+  detectAddresses: true,
+  detectCodes: true,
   customTerms: [],
   pausedHosts: []
 };
@@ -15,6 +19,7 @@ const DEFAULTS = {
 let activeTab = "home";
 let state = null;     // latest GET_STATE snapshot
 let pollTimer = null;
+let advancedOpen = false;
 
 const body = document.getElementById("body");
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -40,7 +45,7 @@ async function refreshState() {
   const next = await sendToTab({ type: "GET_STATE" });
   if (next) {
     state = next;
-    render();
+    render(); // poll: only the live tabs (Home/Protected words) rebuild
   } else if (!state) {
     renderNoPage();
   }
@@ -48,7 +53,7 @@ async function refreshState() {
 
 async function act(message) {
   const next = await sendToTab(message);
-  if (next) { state = next; render(); }
+  if (next) { state = next; render(true); } // force: reflect the action immediately
 }
 
 // ---- helpers -------------------------------------------------------------
@@ -92,22 +97,31 @@ function renderNoPage() {
   body.append(el("p", "empty", "Ledebe is active on AI chat pages. Open one (ChatGPT, Claude, Gemini…) and your protected values will appear here."));
 }
 
+let renderedTab = null;
+
 function setTab(tab) {
   activeTab = tab;
-  document.querySelectorAll(".tab").forEach((b) => b.classList.toggle("is-active", b.dataset.tab === tab));
-  render();
+  render(true);
 }
 
-function render() {
+// Home and "Protected words" are live (rebuilt on each poll). Custom words and
+// Settings hold inputs/collapsibles, so they only rebuild on tab switch or after
+// an action (force) — otherwise polling would steal focus / collapse panels.
+function render(force = false) {
   document.querySelectorAll(".tab").forEach((b) => b.classList.toggle("is-active", b.dataset.tab === activeTab));
-  if (!state) { renderNoPage(); return; }
+  if (!state) { renderNoPage(); renderedTab = null; return; }
   $("#session-count").textContent =
     `${state.sessionCount} value${state.sessionCount === 1 ? "" : "s"} protected this session`;
+
+  const live = activeTab === "home" || activeTab === "field";
+  if (!live && !force && renderedTab === activeTab) return;
+  renderedTab = activeTab;
+
+  if (activeTab === "settings") { renderSettings(); return; }
   body.innerHTML = "";
   if (activeTab === "home") renderHome();
   else if (activeTab === "words") renderWords();
-  else if (activeTab === "field") renderField();
-  else renderSettings();
+  else renderField();
 }
 
 function renderHome() {
@@ -218,12 +232,10 @@ async function renderSettings() {
   line.append(el("strong", null, host || "—"));
   body.append(line);
 
+  // --- the few settings most people touch -----------------------------------
   body.append(toggleRow("enabled", "Protection on", "Master switch for detection and masking.", settings.enabled !== false));
   body.append(toggleRow("autoReplace", "Replace as I type", "Mask each value live, before send.", settings.autoReplace !== false));
-  body.append(toggleRow("scanOnPaste", "Scan on paste", "Mask sensitive data you paste in.", settings.scanOnPaste !== false));
-  body.append(toggleRow("appendInstruction", "Ask AI to keep placeholders", "Append a note on send so tokens stay intact.", settings.appendInstruction !== false));
   body.append(toggleRow("restoreResponses", "Reveal replies here", "Show the reply with real values in this panel.", settings.restoreResponses !== false));
-  body.append(toggleRow("persistMappings", "Remember across restarts", "Keep restoring older chats after the browser closes. Stays on this device.", settings.persistMappings !== false));
 
   const paused = host ? (settings.pausedHosts || []).includes(host) : false;
   const pauseBtn = el("button", "btn btn--secondary", paused ? "Resume on this site" : "Pause on this site");
@@ -243,6 +255,26 @@ async function renderSettings() {
   protectBtn.addEventListener("click", () => act({ type: "PROTECT_ACTIVE_FIELD" }));
   body.append(protectBtn);
 
+  // --- everything else, tucked away -----------------------------------------
+  const adv = document.createElement("details");
+  adv.className = "advanced";
+  adv.open = advancedOpen;
+  adv.addEventListener("toggle", () => { advancedOpen = adv.open; });
+  const summary = document.createElement("summary");
+  summary.textContent = "Advanced settings";
+  adv.append(summary);
+
+  adv.append(toggleRow("scanOnPaste", "Scan on paste", "Mask sensitive data you paste in.", settings.scanOnPaste !== false));
+  adv.append(toggleRow("appendInstruction", "Ask AI to keep placeholders", "Append a note on send so tokens stay intact.", settings.appendInstruction !== false));
+  adv.append(toggleRow("persistMappings", "Remember across restarts", "Keep restoring older chats after the browser closes. Stays on this device.", settings.persistMappings !== false));
+
+  adv.append(el("div", "section", "What to detect"));
+  adv.append(toggleRow("detectNames", "Names", "Two-or-more capitalised words (heuristic).", settings.detectNames !== false));
+  adv.append(toggleRow("detectNumbers", "Numbers", "Any run of 3+ digits.", settings.detectNumbers !== false));
+  adv.append(toggleRow("detectAddresses", "Addresses", "Street addresses.", settings.detectAddresses !== false));
+  adv.append(toggleRow("detectCodes", "Codes / IDs", "Tokens mixing letters and digits.", settings.detectCodes !== false));
+  adv.append(el("p", "lead", "Emails, phone numbers, cards, SSNs, IPs and API keys are always detected."));
+
   const clearBtn = el("button", "btn btn--secondary", "Clear saved data");
   clearBtn.type = "button";
   clearBtn.addEventListener("click", async () => {
@@ -251,7 +283,9 @@ async function renderSettings() {
     clearBtn.textContent = "Cleared";
     setTimeout(() => { clearBtn.textContent = "Clear saved data"; }, 1200);
   });
-  body.append(clearBtn);
+  adv.append(clearBtn);
+
+  body.append(adv);
 }
 
 // ---- lifecycle -----------------------------------------------------------

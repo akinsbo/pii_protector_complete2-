@@ -273,8 +273,9 @@ function dedupeOverlappingFindings(findings) {
   return result;
 }
 
-function detectPII(input, customTerms = []) {
+function detectPII(input, customTerms = [], disabledTypes = []) {
   const findings = [];
+  const disabled = disabledTypes instanceof Set ? disabledTypes : new Set(disabledTypes);
 
   for (const term of customTerms) {
     if (!term.trim()) {
@@ -289,6 +290,9 @@ function detectPII(input, customTerms = []) {
   }
 
   for (const rule of LEDEBE_RULES) {
+    if (disabled.has(rule.name)) {
+      continue;
+    }
     const regex = new RegExp(rule.regex.source, rule.regex.flags);
     let match;
     while ((match = regex.exec(input)) !== null) {
@@ -331,7 +335,7 @@ function maskText(input, customTerms = [], options = {}) {
   const counters = new Map();
   const namespace = options.namespace || "";
   const exclude = toLowerSet(options.exclude);
-  const findings = detectPII(input, customTerms);
+  const findings = detectPII(input, customTerms, options.disabledTypes || []);
   let result = input;
 
   for (const finding of [...findings].sort((a, b) => b.index - a.index)) {
@@ -394,7 +398,7 @@ function computeLiveReplacement(text, caret, options = {}) {
     reverse.set(original, token);
   }
 
-  const eligible = detectPII(text, customTerms)
+  const eligible = detectPII(text, customTerms, options.disabledTypes || [])
     .filter((finding) => !finding.value.startsWith("[LDB_"))
     .filter((finding) => !exclude.has(finding.value.toLowerCase()))
     // Leave the value the caret is sitting in/just after — it may still be

@@ -1243,17 +1243,18 @@
     };
   }
 
-  // Toggle the in-page overlay open/closed. The in-page icon controls the
-  // overlay (reliable, slides both ways); the toolbar icon does the true push,
-  // which Chrome reserves for a genuine browser gesture.
-  function toggleOverlay() {
-    if (drawerOpen) {
-      drawerDismissed = true;
-      closeDrawer();
-    } else {
-      nativePanelOpen = false;
-      drawerDismissed = false;
-      openDrawer();
+  // The in-page icon tries the true push first (native side panel). Chrome only
+  // allows that from a toolbar/context-menu gesture, so when it refuses we tell
+  // the user to use the toolbar icon rather than silently overlapping.
+  function requestTruePush() {
+    try {
+      chrome.runtime.sendMessage({ type: "OPEN_SIDE_PANEL" }, (resp) => {
+        if (chrome.runtime.lastError || !resp || !resp.ok) {
+          toast("To dock & push the page, click the Ledebe icon in Chrome's toolbar (Chrome only allows the push from there).");
+        }
+      });
+    } catch (error) {
+      toast("To dock & push the page, click the Ledebe icon in Chrome's toolbar.");
     }
   }
 
@@ -1277,7 +1278,7 @@
     btn.addEventListener("click", (event) => {
       event.preventDefault();
       event.stopPropagation();
-      toggleOverlay();
+      requestTruePush();
     });
     return btn;
   }

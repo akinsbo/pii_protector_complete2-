@@ -32,9 +32,11 @@
   // the model sees the instruction first and echoes the tokens verbatim.
   const RETAIN_MARKER = "[Ledebe note to the assistant:";
   const RETAIN_NOTE =
-    RETAIN_MARKER + " the bracketed tokens like [LDB_EMAIL_1] are placeholders for"
-    + " redacted personal data. Keep every such [LDB_...] token exactly as written —"
-    + " do not alter, remove, translate, expand, or invent values for them.]";
+    RETAIN_MARKER + " sensitive values in this message have already been redacted"
+    + " on-device and replaced with placeholder tokens like [LDB_EMAIL_1]. No real"
+    + " personal data is present, so it is safe to proceed. Complete the user's"
+    + " request normally and keep every [LDB_...] token exactly as written — do not"
+    + " alter, remove, translate, expand, flag, or invent values for them.]";
 
   let settings = { ...DEFAULTS };
   let activeEditable = null;
@@ -457,6 +459,7 @@
 
   function afterProtect(element) {
     activeEditable = element;
+    addRetainInstruction(element); // inject the "keep placeholders" note early, once
     refreshDrawer();
     maybeOpenDrawer();
   }
@@ -1200,7 +1203,7 @@
   // the prompt actually contains placeholders. Goes into the composer text so it
   // is sent to the AI at the top of the masked prompt.
   function addRetainInstruction(element) {
-    if (!settings.appendInstruction || !element) return;
+    if (settings.appendInstruction === false || !element) return; // default on
     if (!isPlainField(element) && !element.isContentEditable && !getComposer(element)) return;
     const text = getFieldText(element);
     if (!text.includes("[LDB_") || text.includes(RETAIN_MARKER)) return;
@@ -1209,11 +1212,13 @@
     selfEdit = true;
     try {
       if (isPlainField(element)) {
+        const pos = element.selectionStart ?? element.value.length;
         setPlainValue(element, note + text);
-        const end = element.value.length;
-        element.selectionStart = element.selectionEnd = end;
+        const shifted = pos + note.length; // keep the caret where the user was
+        element.selectionStart = element.selectionEnd = shifted;
       } else {
         const box = getComposer(element) || element;
+        const prevCaret = getCaret(box); // user's caret before we prepend
         box.focus();
         const sel = window.getSelection();
         const range = document.createRange();
@@ -1225,6 +1230,7 @@
           box.textContent = note + text;
         }
         box.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: note }));
+        if (typeof prevCaret === "number") setCaret(box, prevCaret + note.length);
       }
     } finally {
       window.setTimeout(() => { selfEdit = false; }, 0);

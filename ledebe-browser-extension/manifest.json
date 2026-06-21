@@ -5,7 +5,8 @@
   "description": "Catches and masks sensitive data as you type or paste into AI chats, and reveals your real values in the reply.",
   "permissions": [
     "storage",
-    "contextMenus"
+    "contextMenus",
+    "sidePanel"
   ],
   "icons": {
     "16": "icon-16.png",
@@ -20,12 +21,14 @@
     "service_worker": "background.js"
   },
   "action": {
-    "default_title": "Ledebe Browser Protector",
-    "default_popup": "popup.html",
+    "default_title": "Open Ledebe Protector panel",
     "default_icon": {
       "16": "icon-16.png",
       "32": "icon-32.png"
     }
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
   },
   "web_accessible_resources": [
     {

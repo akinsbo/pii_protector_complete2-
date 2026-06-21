@@ -28,6 +28,35 @@
   100% { box-shadow: none; }
 }
 
+/* Ledebe button injected into ChatGPT's per-message action rows. */
+.ledebe-inline-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 4px;
+  margin: 0 2px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  vertical-align: middle;
+  opacity: 0.7;
+}
+
+.ledebe-inline-btn:hover {
+  opacity: 1;
+  background: rgba(127, 127, 127, 0.18);
+}
+
+.ledebe-inline-btn img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  display: block;
+}
+
 /* ---- slide-in side panel (drawer) -------------------------------------- */
 
 .ledebe-drawer {

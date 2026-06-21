@@ -37,10 +37,22 @@ function createContextMenu() {
   }
 }
 
+// Clicking the toolbar icon opens the native side panel (a real viewport push).
+// This is a genuine user gesture, which Chrome requires for sidePanel.open.
+async function enablePanelOnIconClick() {
+  try {
+    await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
+  } catch (error) {
+    /* older Chrome without sidePanel — ignore */
+  }
+}
+
 void ensureSessionAccess();
+void enablePanelOnIconClick();
 
 chrome.runtime.onInstalled.addListener(async () => {
   await ensureSessionAccess();
+  await enablePanelOnIconClick();
   createContextMenu();
   const existing = await chrome.storage.sync.get(DEFAULT_SETTINGS);
   await chrome.storage.sync.set({ ...DEFAULT_SETTINGS, ...existing });
@@ -48,13 +60,31 @@ chrome.runtime.onInstalled.addListener(async () => {
 
 chrome.runtime.onStartup?.addListener(() => {
   void ensureSessionAccess();
+  void enablePanelOnIconClick();
 });
-
-// Toolbar icon opens the popup (manifest default_popup), so no action handler
-// is needed here.
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === CONTEXT_MENU_ID && tab?.id) {
     chrome.tabs.sendMessage(tab.id, { type: "PROTECT_ACTIVE_FIELD" });
+    // A context-menu click is a valid gesture — open the panel too.
+    try { chrome.sidePanel.open({ tabId: tab.id }); } catch (error) { /* ignore */ }
   }
+});
+
+// In-page Ledebe icons ask to open the native panel. Chrome usually rejects a
+// programmatic open outside a toolbar/context-menu gesture; we try anyway and
+// report success so the content script can fall back to its overlay if not.
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message?.type === "OPEN_SIDE_PANEL" && sender.tab?.id) {
+    (async () => {
+      try {
+        await chrome.sidePanel.open({ tabId: sender.tab.id });
+        sendResponse({ ok: true });
+      } catch (error) {
+        sendResponse({ ok: false });
+      }
+    })();
+    return true; // async response
+  }
+  return false;
 });

@@ -614,6 +614,7 @@
   let drawer = null;
   let drawerOpen = false;
   let drawerDismissed = false;
+  let nativePanelOpen = false; // true while the native side panel is showing
   let latestRestoredText = "";
   let activeTab = "field"; // "home" | "words" | "field"
 
@@ -897,6 +898,11 @@
   }
 
   function maybeOpenDrawer() {
+    if (nativePanelOpen) {
+      // The native side panel is showing the same thing — don't double up.
+      if (drawerOpen) closeDrawer();
+      return;
+    }
     if (!protectionActive() || !isAiHost() || drawerDismissed) {
       if (drawerOpen) refreshDrawer();
       return;
@@ -1032,6 +1038,7 @@
   }
 
   function onResponseMutations(records) {
+    scheduleInlineInjection(); // keep our per-message button present as turns render
     if (!restoreActive()) return;
     let queued = false;
     for (const record of records) {
@@ -1186,6 +1193,108 @@
     settings = { ...DEFAULTS, ...(await syncGet(DEFAULTS)) };
   }
 
+  // ---- state + actions shared with the native side panel ------------------
+
+  // A full snapshot of what both panels render, computed on demand so the native
+  // side panel can poll the active tab without us writing to storage per key.
+  function buildPageState() {
+    const text = getFieldText(activeEditable);
+    const prot = protectedItems(text);
+    const fieldTokens = new Set(prot.map((p) => p.token));
+    const session = [...placeholderMap.entries()]
+      .filter(([token]) => !fieldTokens.has(token))
+      .map(([token, value]) => ({ token, value }));
+    return {
+      host: getHost(),
+      paused: isPaused(),
+      enabled: settings.enabled,
+      sessionCount: placeholderMap.size,
+      exposed: exposedItems(text),
+      protected: prot,
+      session,
+      transcript: settings.restoreResponses ? collectRestoredTranscript() : [],
+      latestRestored: settings.restoreResponses ? latestRestoredText : "",
+      customTerms: settings.customTerms || []
+    };
+  }
+
+  // Ask the background to open the native side panel (a real viewport push).
+  // Chrome only allows a programmatic open from a toolbar/context-menu gesture,
+  // so when it refuses an in-page-triggered open we fall back to the overlay.
+  function requestTruePush() {
+    let settled = false;
+    const fallback = () => {
+      if (settled) return;
+      settled = true;
+      nativePanelOpen = false;
+      drawerDismissed = false;
+      openDrawer();
+    };
+    try {
+      chrome.runtime.sendMessage({ type: "OPEN_SIDE_PANEL" }, (resp) => {
+        if (chrome.runtime.lastError || !resp || !resp.ok) fallback();
+        else settled = true;
+      });
+      // If the background never answers (no gesture), guarantee something opens.
+      window.setTimeout(fallback, 400);
+    } catch (error) {
+      fallback();
+    }
+  }
+
+  // ---- inject a Ledebe button into ChatGPT's per-message action rows -------
+
+  function makeInlineButton() {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "ledebe-inline-btn";
+    btn.title = "Open Ledebe Protector";
+    btn.setAttribute("aria-label", "Open Ledebe Protector");
+    const url = runtimeUrl("ledebe-icon.png");
+    if (url) {
+      const img = document.createElement("img");
+      img.src = url;
+      img.alt = "";
+      btn.appendChild(img);
+    } else {
+      btn.textContent = "🛡";
+    }
+    btn.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      requestTruePush();
+    });
+    return btn;
+  }
+
+  // Find each message's action toolbar (the row with Copy etc.) and drop our
+  // button in once. Best-effort + resilient to ChatGPT re-renders (keyed off a
+  // data flag on the toolbar, re-added if the row is rebuilt).
+  function injectInlineButtons() {
+    if (!isAiHost()) return;
+    const copyButtons = document.querySelectorAll(
+      '[data-testid="copy-turn-action-button"], [data-testid="copy-button"], button[aria-label="Copy"]'
+    );
+    for (const copyBtn of copyButtons) {
+      const bar = copyBtn.parentElement;
+      if (!bar || bar.querySelector(".ledebe-inline-btn")) continue;
+      bar.appendChild(makeInlineButton());
+    }
+  }
+
+  let inlineInjectTimer = null;
+  function scheduleInlineInjection() {
+    if (inlineInjectTimer) return;
+    inlineInjectTimer = window.setTimeout(() => {
+      inlineInjectTimer = null;
+      try {
+        injectInlineButtons();
+      } catch (error) {
+        /* DOM shape changed — ignore */
+      }
+    }, 400);
+  }
+
   function wireRuntime() {
     if (!hasContext()) return;
 
@@ -1219,6 +1328,34 @@
           });
           return true;
         }
+        case "GET_STATE":
+          sendResponse(buildPageState());
+          return true;
+        case "PROTECT_VALUE":
+          if (message.value) protectValue(message.value);
+          sendResponse(buildPageState());
+          return true;
+        case "UNPROTECT_TOKEN":
+          if (message.token) unprotectToken(message.token);
+          sendResponse(buildPageState());
+          return true;
+        case "FORGET_TOKEN":
+          if (message.token) forgetToken(message.token);
+          sendResponse(buildPageState());
+          return true;
+        case "ADD_TERM":
+          if (message.term) addCustomTerm(message.term);
+          sendResponse(buildPageState());
+          return true;
+        case "REMOVE_TERM":
+          if (message.term) removeCustomTerm(message.term);
+          sendResponse(buildPageState());
+          return true;
+        case "PANEL_VISIBLE":
+          nativePanelOpen = Boolean(message.visible);
+          if (nativePanelOpen && drawerOpen) closeDrawer();
+          sendResponse({ ok: true });
+          return true;
         case "PROTECT_ACTIVE_FIELD":
           protectActiveField();
           sendResponse({ ok: true });
@@ -1253,5 +1390,8 @@
       document.addEventListener("pointerdown", onPointerDown, true);
       document.addEventListener("submit", onSubmit, true);
       startResponseObserver();
+      scheduleInlineInjection();
+      setTimeout(scheduleInlineInjection, 1500);
+      setTimeout(scheduleInlineInjection, 3500);
     });
 })();

@@ -43,6 +43,37 @@ const LEDEBE_RULES = [
     label: "API Key",
     regex: /\b(?:sk|pk|api|key|token|secret|bearer)[_\-]?[A-Za-z0-9]{20,}\b/gi,
     prefix: "LDB_APIKEY"
+  },
+  {
+    name: "ADDRESS",
+    label: "Address",
+    // House number + street words + a street type, optionally a unit and city/ST/ZIP.
+    regex: /\b\d{1,6}\s+(?:[A-Za-z0-9.'-]+\s+){0,5}(?:Street|St|Avenue|Ave|Boulevard|Blvd|Road|Rd|Lane|Ln|Drive|Dr|Court|Ct|Way|Place|Pl|Terrace|Ter|Circle|Cir|Square|Sq|Parkway|Pkwy|Highway|Hwy|Trail|Trl|Close|Crescent|Cres)\b\.?(?:\s+(?:NE|NW|SE|SW|N|S|E|W))?(?:,?\s+(?:Apt|Apartment|Suite|Ste|Unit|Floor|Fl|Penthouse|#)\.?\s*[A-Za-z0-9-]+)?(?:,\s*[A-Za-z][A-Za-z.\s]+,\s*[A-Z]{2}\s+\d{5}(?:-\d{4})?)?/gi,
+    prefix: "LDB_ADDR"
+  },
+  {
+    name: "NAME",
+    label: "Name",
+    // Two-plus consecutive capitalised words; filtered against common non-name words.
+    regex: /\b[A-Z][a-z]+(?:\s+[A-Z][a-z'.-]+){1,3}\b/g,
+    prefix: "LDB_NAME",
+    validate: isLikelyName
+  },
+  {
+    name: "ALNUM",
+    label: "Code / ID",
+    // Any token mixing letters and digits (IDs, policy numbers, plate-like codes).
+    regex: /[A-Za-z0-9][A-Za-z0-9\-_.\/]*[A-Za-z0-9]/g,
+    prefix: "LDB_CODE",
+    validate: isLikelyCode
+  },
+  {
+    name: "NUMBER",
+    label: "Number",
+    // Any run of 3+ digits, with or without spaces/hyphens/dots/parens/slashes.
+    regex: /\d[\d \t.()\-\/]*\d/g,
+    prefix: "LDB_NUM",
+    validate: isLikelyNumberRun
   }
 ];
 
@@ -51,10 +82,14 @@ const FINDING_PRIORITY = {
   APIKEY: 90,
   EMAIL: 80,
   CC: 70,
+  ADDRESS: 65,
   PHONE: 60,
   IP: 50,
+  NAME: 45,
   ID: 40,
-  NINO: 30
+  NINO: 30,
+  ALNUM: 25,
+  NUMBER: 10
 };
 
 function escapeForRegex(value) {
@@ -129,6 +164,55 @@ function isLikelyPhoneNumber(value) {
   }
 
   return true;
+}
+
+// Capitalised words that commonly appear in business/email text but aren't
+// names — used to reject false-positive NAME matches like "Global Mobility".
+const NAME_STOPWORDS = new Set([
+  "dear", "subject", "regards", "sincerely", "best", "thanks", "thank", "please",
+  "kindly", "warm", "hello", "hi", "attn", "the", "this", "that", "from", "to", "re",
+  "full", "name", "first", "last", "middle", "date", "birth", "social", "security",
+  "number", "passport", "national", "insurance", "residential", "current", "address",
+  "primary", "secondary", "direct", "mobile", "phone", "line", "email", "alias",
+  "encrypted", "corporate", "banking", "bank", "salary", "routing", "transit",
+  "checking", "savings", "account", "financial", "institution", "capital",
+  "distribution", "legal", "identity", "executive", "validation", "verification",
+  "emergency", "contact", "alternative", "medical", "directive", "clinical",
+  "logistics", "mandate", "healthcare", "health", "network", "plan", "global",
+  "mobility", "finance", "treasury", "operations", "department", "university",
+  "college", "senior", "junior", "vice", "president", "director", "manager",
+  "officer", "enterprises", "enterprise", "inc", "llc", "ltd", "corp", "company",
+  "group", "team", "office", "secure", "privileged", "confidential", "monday",
+  "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday", "january",
+  "february", "march", "april", "may", "june", "july", "august", "september",
+  "october", "november", "december"
+]);
+
+function isLikelyName(value) {
+  const words = value.trim().split(/\s+/);
+  if (words.length < 2) {
+    return false;
+  }
+  for (const word of words) {
+    if (NAME_STOPWORDS.has(word.toLowerCase())) {
+      return false;
+    }
+    // Each word should look like a name token: a capital then lowercase letters.
+    if (!/^[A-Z][a-zA-Z'.-]+$/.test(word)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function isLikelyCode(value) {
+  const core = value.replace(/[^A-Za-z0-9]/g, "");
+  // Mixed letters AND digits, at least 3 chars: IDs, policy/plate codes, tokens.
+  return core.length >= 3 && /[A-Za-z]/.test(core) && /\d/.test(core);
+}
+
+function isLikelyNumberRun(value) {
+  return normalizeDigits(value).length >= 3;
 }
 
 function findExistingToken(map, value) {
@@ -216,7 +300,20 @@ function detectPII(input, customTerms = []) {
     }
   }
 
-  return dedupeOverlappingFindings(findings);
+  // Never re-detect inside an existing placeholder token — the broad NUMBER /
+  // ALNUM rules would otherwise match a token's internals (e.g. the namespace in
+  // [LDB_EMAIL_MQ8_1]) and corrupt it on the next pass.
+  const placeholderSpans = [];
+  const placeholderRegex = /\[LDB_[A-Z0-9_]+\]/g;
+  let ph;
+  while ((ph = placeholderRegex.exec(input)) !== null) {
+    placeholderSpans.push([ph.index, ph.index + ph[0].length]);
+  }
+  const cleaned = placeholderSpans.length
+    ? findings.filter((f) => !placeholderSpans.some(([s, e]) => f.index < e && f.end > s))
+    : findings;
+
+  return dedupeOverlappingFindings(cleaned);
 }
 
 function toLowerSet(input) {

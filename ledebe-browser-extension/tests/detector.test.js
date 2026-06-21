@@ -169,6 +169,51 @@ test("detectPII finds an email and a custom term", () => {
   assert.ok(types.includes("CUSTOM"));
 });
 
+// ---------------------------------------------------------------------------
+// Expanded detection: numbers, alphanumerics, names, addresses
+// ---------------------------------------------------------------------------
+
+test("detects any run of 3+ digits (with or without separators)", () => {
+  assert.ok(detectPII("balance 12345 today").some((f) => f.type === "NUMBER" && f.value === "12345"));
+  assert.ok(detectPII("ref 404-555-0147 call").some((f) => f.type === "NUMBER" || f.type === "PHONE"));
+});
+
+test("ignores number runs shorter than 3 digits", () => {
+  assert.ok(!detectPII("aged 25 years").some((f) => f.type === "NUMBER"));
+});
+
+test("detects mixed letter+digit codes (ALNUM)", () => {
+  const findings = detectPII("passport US-Z9876543 issued");
+  assert.ok(findings.some((f) => f.type === "ALNUM" && f.value.includes("Z9876543")));
+});
+
+test("does not treat a plain word as a code", () => {
+  assert.ok(!detectPII("hello world").some((f) => f.type === "ALNUM"));
+});
+
+test("detects a multi-word name, but not common capitalised phrases", () => {
+  assert.ok(detectPII("from Harrison Vance Caldwell today").some((f) => f.type === "NAME" && f.value === "Harrison Vance Caldwell"));
+  assert.ok(!detectPII("Global Mobility and Payroll Team").some((f) => f.type === "NAME"));
+});
+
+test("detects a street address", () => {
+  const findings = detectPII("mail to 1420 Peachtree St NE, Atlanta");
+  assert.ok(findings.some((f) => f.type === "ADDRESS" && f.value.includes("Peachtree")));
+});
+
+test("never re-detects inside an existing placeholder token", () => {
+  const existingMap = new Map([["[LDB_EMAIL_AB12_1]", "x@y.com"]]);
+  const result = computeLiveReplacement("[LDB_EMAIL_AB12_1] then call 4045550199", 0, { existingMap });
+  assert.ok(result.text.includes("[LDB_EMAIL_AB12_1]")); // placeholder untouched
+  assert.ok(!result.text.includes("4045550199"));         // the number is masked
+});
+
+test("maskText leaves existing placeholders intact", () => {
+  const out = maskText("ref [LDB_EMAIL_AB12_1] and code 5551234", []);
+  assert.ok(out.masked.includes("[LDB_EMAIL_AB12_1]"));
+  assert.ok(!out.masked.includes("5551234"));
+});
+
 test("createPlaceholderToken formats with and without a namespace", () => {
   assert.equal(createPlaceholderToken("LDB_EMAIL", "", 2), "[LDB_EMAIL_2]");
   assert.equal(createPlaceholderToken("LDB_EMAIL", "NS", 2), "[LDB_EMAIL_NS_2]");

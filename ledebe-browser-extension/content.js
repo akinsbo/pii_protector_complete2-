@@ -1381,18 +1381,17 @@
     };
   }
 
-  // The in-page icon tries the true push first (native side panel). Chrome only
-  // allows that from a toolbar/context-menu gesture, so when it refuses we tell
-  // the user to use the toolbar icon rather than silently overlapping.
-  function requestTruePush() {
-    try {
-      chrome.runtime.sendMessage({ type: "OPEN_SIDE_PANEL" }, (resp) => {
-        if (chrome.runtime.lastError || !resp || !resp.ok) {
-          toast("To dock & push the page, click the Ledebe icon in Chrome's toolbar (Chrome only allows the push from there).");
-        }
-      });
-    } catch (error) {
-      toast("To dock & push the page, click the Ledebe icon in Chrome's toolbar.");
+  // The in-page icon opens/closes the in-page tray (reliable, both directions).
+  // The toolbar icon handles the true page-pushing native panel, which Chrome
+  // reserves for a genuine toolbar/context-menu gesture.
+  function toggleOverlay() {
+    if (drawerOpen) {
+      drawerDismissed = true;
+      closeDrawer();
+    } else {
+      nativePanelOpen = false;
+      drawerDismissed = false;
+      openDrawer();
     }
   }
 
@@ -1402,8 +1401,8 @@
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "ledebe-inline-btn";
-    btn.title = "Toggle Ledebe panel";
-    btn.setAttribute("aria-label", "Toggle Ledebe panel");
+    btn.title = "Open Ledebe panel";
+    btn.setAttribute("aria-label", "Open Ledebe panel");
     const url = runtimeUrl("ledebe-icon.png");
     if (url) {
       const img = document.createElement("img");
@@ -1416,7 +1415,7 @@
     btn.addEventListener("click", (event) => {
       event.preventDefault();
       event.stopPropagation();
-      requestTruePush();
+      toggleOverlay();
     });
     return btn;
   }

@@ -300,8 +300,7 @@ async function renderSettings() {
   const clearBtn = el("button", "btn btn--secondary", "Clear saved data");
   clearBtn.type = "button";
   clearBtn.addEventListener("click", async () => {
-    try { await chrome.storage.local.remove(PLACEHOLDER_STORAGE_KEY); } catch (e) { /* ignore */ }
-    try { await chrome.storage.session.remove([PLACEHOLDER_STORAGE_KEY, LATEST_RESTORED_KEY]); } catch (e) { /* ignore */ }
+    await act({ type: "CLEAR_DATA" }); // clears only the active site's data
     clearBtn.textContent = "Cleared";
     setTimeout(() => { clearBtn.textContent = "Clear saved data"; }, 1200);
   });

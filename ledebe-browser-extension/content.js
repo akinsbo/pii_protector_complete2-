@@ -117,12 +117,19 @@
     return settings.persistMappings ? chrome.storage?.local : chrome.storage?.session;
   }
 
+  // The map is scoped to the current host, so protection on one site never bleeds
+  // into another site or tab, and the panel only shows what concerns this page.
+  function mappingKey() {
+    return `${PLACEHOLDER_STORAGE_KEY}::${getHost()}`;
+  }
+
   async function mappingGet() {
     try {
       const store = mappingStore();
       if (!hasContext() || !store) return {};
-      const data = await store.get(PLACEHOLDER_STORAGE_KEY);
-      return data[PLACEHOLDER_STORAGE_KEY] || {};
+      const key = mappingKey();
+      const data = await store.get(key);
+      return data[key] || {};
     } catch (error) {
       return {};
     }
@@ -132,7 +139,7 @@
     try {
       const store = mappingStore();
       if (hasContext() && store) {
-        void store.set({ [PLACEHOLDER_STORAGE_KEY]: Object.fromEntries(placeholderMap) });
+        void store.set({ [mappingKey()]: Object.fromEntries(placeholderMap) });
       }
     } catch (error) {
       /* ignore */
@@ -1064,9 +1071,12 @@
   }
 
   async function clearSavedData(btn) {
-    try { await chrome.storage.local.remove(PLACEHOLDER_STORAGE_KEY); } catch (e) { /* ignore */ }
-    try { await chrome.storage.session.remove([PLACEHOLDER_STORAGE_KEY, LATEST_RESTORED_KEY]); } catch (e) { /* ignore */ }
+    const key = mappingKey(); // only this site's protected data
+    try { await chrome.storage.local.remove(key); } catch (e) { /* ignore */ }
+    try { await chrome.storage.session.remove([key, LATEST_RESTORED_KEY]); } catch (e) { /* ignore */ }
     placeholderMap.clear();
+    unprotected.clear();
+    if (drawerOpen) refreshDrawer(true);
     if (btn) { btn.textContent = "Cleared"; setTimeout(() => { btn.textContent = "Clear saved data"; }, 1200); }
   }
 
@@ -1516,7 +1526,7 @@
       img.alt = "";
       btn.appendChild(img);
     } else {
-      btn.textContent = "🛡";
+      btn.textContent = "L";
     }
     btn.addEventListener("click", (event) => {
       event.preventDefault();
@@ -1562,10 +1572,10 @@
     if (!hasContext()) return;
 
     chrome.storage.onChanged.addListener((changes, area) => {
-      if ((area === "local" || area === "session") && changes[PLACEHOLDER_STORAGE_KEY]) {
+      if ((area === "local" || area === "session") && changes[mappingKey()]) {
         const expected = settings.persistMappings ? "local" : "session";
         if (area === expected) {
-          loadMap(changes[PLACEHOLDER_STORAGE_KEY].newValue || {});
+          loadMap(changes[mappingKey()].newValue || {});
           sweepResponses();
           if (drawerOpen) refreshDrawer();
         }
@@ -1612,6 +1622,10 @@
           return true;
         case "REMOVE_TERM":
           if (message.term) removeCustomTerm(message.term);
+          sendResponse(buildPageState());
+          return true;
+        case "CLEAR_DATA":
+          clearSavedData();
           sendResponse(buildPageState());
           return true;
         case "PANEL_VISIBLE":

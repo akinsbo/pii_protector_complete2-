@@ -655,7 +655,9 @@
   let drawerDismissed = false;
   let nativePanelOpen = false; // true while the native side panel is showing
   let latestRestoredText = "";
-  let activeTab = "field"; // "home" | "words" | "field"
+  let activeTab = "field"; // "home" | "words" | "field" | "settings"
+  let renderedDrawerTab = null; // skip rebuilding words/settings on every poll
+  let advancedOpen = false;     // overlay Settings → Advanced disclosure state
   let autoHideTimer = null;
   let drawerHovered = false;
   const AUTO_HIDE_MS = 5000;
@@ -685,6 +687,7 @@
         <button type="button" class="ledebe-tab" data-tab="home">Home</button>
         <button type="button" class="ledebe-tab" data-tab="words">Custom words</button>
         <button type="button" class="ledebe-tab" data-tab="field">Protected words</button>
+        <button type="button" class="ledebe-tab" data-tab="settings">Settings</button>
       </nav>
       <div class="ledebe-drawer__body"></div>
     `;
@@ -716,12 +719,15 @@
 
   function setActiveTab(tab) {
     activeTab = tab;
-    refreshDrawer();
+    refreshDrawer(true);
   }
 
   // Auto-open overlay slides out 5s after the last activity (unless hovered).
+  // Don't auto-hide on Custom words / Settings — the user navigated there on
+  // purpose and may be reading or editing.
   function scheduleAutoHide() {
     if (autoHideTimer) clearTimeout(autoHideTimer);
+    if (activeTab === "words" || activeTab === "settings") return;
     autoHideTimer = window.setTimeout(() => {
       autoHideTimer = null;
       if (drawerOpen && !drawerHovered) closeDrawer();
@@ -934,13 +940,13 @@
     unprotected.delete(term.toLowerCase());
     void syncSet({ customTerms: terms });
     if (activeEditable) liveReplace(activeEditable, true); // protect it right away
-    refreshDrawer();
+    refreshDrawer(true);
   }
 
   function removeCustomTerm(term) {
     settings.customTerms = (settings.customTerms || []).filter((t) => t.toLowerCase() !== term.toLowerCase());
     void syncSet({ customTerms: settings.customTerms });
-    refreshDrawer();
+    refreshDrawer(true);
   }
 
   function renderWordsPane(body) {
@@ -1015,18 +1021,118 @@
     }
   }
 
-  function refreshDrawer() {
+  // ---- Settings tab (mirrors the native side panel) ------------------------
+
+  function settingsToggle(key, label, hint, checked) {
+    const wrap = document.createElement("label");
+    wrap.className = "ledebe-toggle";
+    const span = document.createElement("span");
+    const strong = document.createElement("strong");
+    strong.textContent = label;
+    const small = document.createElement("small");
+    small.textContent = hint;
+    span.append(strong, small);
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.checked = checked;
+    input.addEventListener("change", async () => {
+      settings[key] = input.checked;
+      await syncSet({ [key]: input.checked });
+      if (activeEditable && settings.autoReplace) liveReplace(activeEditable, true);
+      refreshDrawer(true);
+    });
+    wrap.append(span, input);
+    return wrap;
+  }
+
+  function drawerButton(label, kind, onClick) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = `ledebe-drawer__btn ledebe-drawer__btn--${kind}`;
+    btn.textContent = label;
+    btn.addEventListener("click", onClick);
+    return btn;
+  }
+
+  async function pauseSite() {
+    const host = getHost();
+    const paused = new Set(settings.pausedHosts || []);
+    if (paused.has(host)) paused.delete(host); else paused.add(host);
+    settings.pausedHosts = Array.from(paused);
+    await syncSet({ pausedHosts: settings.pausedHosts });
+    refreshDrawer(true);
+  }
+
+  async function clearSavedData(btn) {
+    try { await chrome.storage.local.remove(PLACEHOLDER_STORAGE_KEY); } catch (e) { /* ignore */ }
+    try { await chrome.storage.session.remove([PLACEHOLDER_STORAGE_KEY, LATEST_RESTORED_KEY]); } catch (e) { /* ignore */ }
+    placeholderMap.clear();
+    if (btn) { btn.textContent = "Cleared"; setTimeout(() => { btn.textContent = "Clear saved data"; }, 1200); }
+  }
+
+  function renderSettingsPane(body) {
+    const host = getHost();
+    const status = document.createElement("div");
+    status.className = "ledebe-status-line";
+    const a = document.createElement("span");
+    a.textContent = "Current site";
+    const b = document.createElement("strong");
+    b.textContent = host || "—";
+    status.append(a, b);
+    body.appendChild(status);
+
+    body.appendChild(settingsToggle("enabled", "Protection on", "Master switch for detection and masking.", settings.enabled !== false));
+    body.appendChild(settingsToggle("autoReplace", "Replace as I type", "Mask each value live, before send.", settings.autoReplace !== false));
+    body.appendChild(settingsToggle("restoreResponses", "Reveal replies here", "Show the reply with real values in this panel.", settings.restoreResponses !== false));
+
+    body.appendChild(drawerButton("Protect active field now", "primary", () => protectActiveField()));
+    const paused = (settings.pausedHosts || []).includes(host);
+    body.appendChild(drawerButton(paused ? "Resume on this site" : "Pause on this site", "secondary", pauseSite));
+
+    const adv = document.createElement("details");
+    adv.className = "ledebe-advanced";
+    adv.open = advancedOpen;
+    adv.addEventListener("toggle", () => { advancedOpen = adv.open; });
+    const summary = document.createElement("summary");
+    summary.textContent = "Advanced settings";
+    adv.appendChild(summary);
+
+    adv.appendChild(settingsToggle("scanOnPaste", "Scan on paste", "Mask sensitive data you paste in.", settings.scanOnPaste !== false));
+    adv.appendChild(settingsToggle("appendInstruction", "Ask AI to keep placeholders", "Append a note on send so tokens stay intact.", settings.appendInstruction !== false));
+    adv.appendChild(settingsToggle("persistMappings", "Remember across restarts", "Keep restoring older chats after the browser closes. Stays on this device.", settings.persistMappings !== false));
+
+    adv.appendChild(sectionEl("What to detect"));
+    adv.appendChild(settingsToggle("detectNames", "Names", "Two-or-more capitalised words (heuristic).", settings.detectNames !== false));
+    adv.appendChild(settingsToggle("detectNumbers", "Numbers", "Any run of 3+ digits.", settings.detectNumbers !== false));
+    adv.appendChild(settingsToggle("detectAddresses", "Addresses", "Street addresses.", settings.detectAddresses !== false));
+    adv.appendChild(settingsToggle("detectCodes", "Codes / IDs", "Tokens mixing letters and digits.", settings.detectCodes !== false));
+    adv.appendChild(leadEl("Emails, phone numbers, cards, SSNs, IPs and API keys are always detected."));
+    const clearBtn = drawerButton("Clear saved data", "secondary", () => clearSavedData(clearBtn));
+    adv.appendChild(clearBtn);
+
+    body.appendChild(adv);
+  }
+
+  function refreshDrawer(force = false) {
     if (!drawerOpen || !drawer) return;
     drawer.querySelector(".ledebe-drawer__sub").textContent =
       `${placeholderMap.size} value${placeholderMap.size === 1 ? "" : "s"} protected this session`;
     drawer.querySelectorAll(".ledebe-tab").forEach((b) => b.classList.toggle("is-active", b.dataset.tab === activeTab));
 
-    const body = drawer.querySelector(".ledebe-drawer__body");
-    body.innerHTML = "";
-    if (activeTab === "home") renderHomePane(body);
-    else if (activeTab === "words") renderWordsPane(body);
-    else renderFieldPane(body);
-    if (drawerOpen && !drawerHovered) scheduleAutoHide(); // reset 5s on each activity
+    // Home / Protected words are live (rebuilt on each poll). Custom words and
+    // Settings hold inputs/disclosures, so only rebuild them on tab switch or an
+    // explicit action — otherwise typing/toggling would be wiped.
+    const live = activeTab === "home" || activeTab === "field";
+    if (live || force || renderedDrawerTab !== activeTab) {
+      renderedDrawerTab = activeTab;
+      const body = drawer.querySelector(".ledebe-drawer__body");
+      body.innerHTML = "";
+      if (activeTab === "home") renderHomePane(body);
+      else if (activeTab === "words") renderWordsPane(body);
+      else if (activeTab === "settings") renderSettingsPane(body);
+      else renderFieldPane(body);
+    }
+    if (drawerOpen && !drawerHovered) scheduleAutoHide();
   }
 
   // Shift the page over so the docked panel doesn't cover the chat.

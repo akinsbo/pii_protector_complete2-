@@ -1,0 +1,69 @@
+ID,Area,Priority,Layer,Preconditions,Steps,Expected
+INS-1,Install & smoke,P1,Manual,Fresh Chrome profile,Load unpacked from ledebe-browser-extension/ at chrome://extensions,Loads with no errors; toolbar icon visible
+INS-2,Install & smoke,P1,Manual,Extension loaded,Click the toolbar icon,Native side panel opens with 4 tabs (Home/Custom words/Protected words/Settings)
+INS-3,Install & smoke,P2,Manual,Extension loaded,Open a non-AI page (e.g. example.com) and a chrome:// page,No crash; fails gracefully; nothing masked
+LIF-1,Permissions & lifecycle,P2,Manual,First install,Inspect chrome.storage.sync after install,Default settings present and correct
+LIF-2,Permissions & lifecycle,P2,Manual,Settings + custom words set,Restart Chrome,Settings and custom words preserved
+LIF-3,Permissions & lifecycle,P3,Manual,Older version installed,Update to this version,Settings/custom words preserved
+LIF-4,Permissions & lifecycle,P2,Manual,Editable field focused,Right-click,Context menu shows 'Protect with Ledebe'
+DET-1,Detection,P1,Auto-L1,-,Run unit suite,Email/phone/CC(Luhn)/SSN/IP/NINO/APIKEY detected; invalid card & out-of-range IP rejected
+DET-2,Detection,P1,Auto-L1,-,Run unit suite,Names (2+ caps w/ stopword filter)/addresses/3+ digit numbers/alnum codes/custom terms detected
+DET-3,Detection,P1,Auto-L1,-,Run unit suite,Repeated value reuses one token; different values get different tokens
+DET-4,Detection,P1,Auto-L1,-,Run unit suite,Existing [LDB_...] placeholders never re-detected
+DET-5,Detection,P2,Auto-L1,-,Run unit suite,Priority: email>inner number; address>house number; CC>generic number
+DET-6,Detection,P2,Auto-L1,-,Run unit suite,Short numbers (<3 digits) and lowercase/stopword phrases not flagged
+TYP-1,Live typing,P1,Auto-L2/L3,AI host,Type a value then move caret past it,Value masked to placeholder
+TYP-2,Live typing,P1,Auto-L2/L3,AI host,Keep caret inside the value being typed,Not masked yet (caret-guard)
+TYP-3,Live typing,P1,Auto-L2,AI host,Stop typing on a complete value ~0.8s,Idle auto-protect masks it
+TYP-4,Live typing,P2,Manual,AI host,Backspace near a placeholder; undo/redo; arrow-key around it,Text not corrupted; sensible behavior
+TYP-5,Live typing,P2,Manual,AI host with IME,Use IME/composition input,No premature masking mid-composition
+PST-1,Paste,P1,Auto-L2/L3,scanOnPaste on,Paste text with one then multiple PII items,All masked (first AND second paste)
+PST-2,Paste,P2,Auto-L2,scanOnPaste off,Paste raw PII,Left unchanged
+PST-3,Paste,P2,Manual,AI host,Paste a 2-3 page document,No freeze; masks; line breaks preserved
+HST-1,Host coverage,P1,Manual,-,On ChatGPT: type/paste PII; send; view reply,Composer masks in place; placeholders survive send; reply restores in panel; no console errors
+HST-2,Host coverage,P1,Manual,-,Repeat HST-1 on Claude,Same behavior
+HST-3,Host coverage,P1,Manual,-,Repeat HST-1 on Gemini,Same behavior
+HST-4,Host coverage,P2,Manual,-,Smoke on Perplexity/Copilot/Poe/DeepSeek/Grok,Injects without errors; composer masks
+HST-5,Host coverage,P2,Manual,Any AI host,Check inline Ledebe icon in the response action row,Icon present next to Copy
+OVL-1,Overlay drawer,P1,Auto-L3,AI host,Type PII,Drawer auto-opens with 4 tabs
+OVL-2,Overlay drawer,P1,Auto-L3,AI host,Click the in-page icon twice,Opens then closes (toggle)
+OVL-3,Overlay drawer,P2,Auto-L3,AI host,Switch to Custom words / Settings tab,Tab content not reset by polling; input focus kept
+OVL-4,Overlay drawer,P2,Manual,AI host,Leave drawer idle ~5s; hover during,Auto-hides after 5s; hover prevents hide; no auto-hide on Words/Settings
+OVL-5,Overlay drawer,P3,Manual,AI host,Observe page-push styling,Host layout not badly broken
+NSP-1,Native side panel,P1,Manual,Extension loaded,Open from toolbar icon,Opens and pushes the page (real viewport resize)
+NSP-2,Native side panel,P1,Manual,Native panel open,Type PII in the page; switch browser tabs,Panel state polls/updates for the active tab
+NSP-3,Native side panel,P2,Manual,Native panel open,Confirm overlay does not also show,Overlay suppressed while native panel visible
+NSP-4,Native side panel,P3,Auto-L3,Extension loaded,Load sidepanel.html directly,Tabs render (markup only; real open path is NSP-1)
+PWT-1,Protected words tab,P1,Auto-L3,Value masked in field,Open Protected words; click Unprotect,Value revealed back in the field
+PWT-2,Protected words tab,P2,Auto-L3,Several values masked,Inspect grouped rows,Repeated values shown once with Nx count
+PWT-3,Protected words tab,P2,Manual,Session values exist,Click Forget,Session mapping removed; counts update
+CWD-1,Custom words tab,P1,Auto-L3,Drawer open,Add a term then type it,Masked immediately as CUSTOM
+CWD-2,Custom words tab,P2,Manual,Term added,Reload tab / restart browser,Term persists (per Remember setting)
+CWD-3,Custom words tab,P2,Manual,-,Add phrase with spaces; duplicate; mixed case; unicode,Handled sensibly; case-insensitive; no broken duplicates
+SET-1,Settings tab,P1,Auto-L3,Drawer open,Turn Numbers off; type a number,Number not masked
+SET-2,Settings tab,P1,Manual,Drawer/native panel,Toggle Protection off,All masking stops
+SET-3,Settings tab,P2,Manual,-,Toggle Replace-as-I-type / Reveal-replies / Scan-on-paste / Keep-placeholders,Each behaves per label
+SET-4,Settings tab,P2,Manual,-,Toggle Remember-across-restarts on/off,Mapping in local (on) vs session (off)
+SET-5,Settings tab,P2,Manual,On an AI host,Pause then Resume on this site,Behavior disabled only for this host then restored
+SET-6,Settings tab,P2,Manual,Data present,Click Clear saved data,Clears only the current site's data
+CTX-1,Context menu,P2,Manual,Editable AI field,Right-click selection > Protect with Ledebe,Selection masked
+CTX-2,Context menu,P3,Manual,Non-editable text,Right-click,No misbehavior
+RST-1,Restore,P1,Auto-L3,Value masked,Assistant reply echoes the token,Panel shows real value; page DOM keeps placeholder (never injected)
+RST-2,Restore,P2,Auto-L1,-,Run unit suite,Multiple/long/multi-line tokens restore; unknown left unchanged; round-trip
+RST-3,Restore,P2,Manual,Reply has a fenced code block,Use per-block Copy,Copies only that block; formatting (headings/bullets) preserved
+SCP-1,Scoping,P1,Auto-L2/L3,Two AI hosts,Protect on host A; open host B,Host B panel does not show host A values
+SCP-2,Scoping,P1,Auto-L2,chatgpt.com,Inspect storage key,Mapping stored under per-host key; no global key
+STO-1,Storage,P2,Manual,-,Inspect storage.sync,Contains settings only; no raw protected values
+STO-2,Storage,P2,Manual,Persistence on/off,Inspect storage.local vs session,Mapping in local (persist) or session (not)
+SEC-1,Security & privacy,P1,Manual,DevTools Network open,Type/paste/send PII; watch network,No raw value sent by the extension; nothing transmitted
+SEC-2,Security & privacy,P1,Auto-L3,Drawer open,Add a custom term containing HTML/JS,Rendered escaped; no script executes
+SEC-3,Security & privacy,P2,Manual,-,Check reply-restore path,No raw value written into host page DOM
+A11Y-1,Accessibility,P2,Auto-L3,Drawer open,Inspect tabs and inline icon,Tabs are buttons & focusable; inline icon has aria-label
+A11Y-2,Accessibility,P3,Manual,Panel open,Operate with keyboard only; check contrast light+dark,Usable without mouse; acceptable contrast
+PRF-1,Performance,P2,Manual,Long conversation,Type/paste in a long chat,Responsive; no bad lag; no duplicated inline buttons on rerenders
+PRF-2,Performance,P3,Manual,Many mappings,Protect many values; rapid tab switching,Stable; panel state does not desync; no leak symptoms
+BRW-1,Browser matrix,P2,Manual,-,Repeat install + smoke on Chrome mac/win/linux,Works on each
+BRW-2,Browser matrix,P3,Manual,-,Repeat on Edge and Brave,Works (or documented limitation)
+REG-1,Regression,P1,Auto-L1,-,Run unit suite,Placeholder token format stable; same value->same token in session
+REG-2,Regression,P2,Manual,Paused host,Reload page,Stays paused
+REG-3,Regression,P2,Manual,AI host with streaming reply,Let response toolbar rerender,Inline button stays/reappears; no duplicate drawer+panel states

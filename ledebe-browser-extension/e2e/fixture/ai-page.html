@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>AI fixture (Ledebe E2E)</title>
+  <style>
+    body { font-family: sans-serif; margin: 24px; max-width: 760px; }
+    #ta, #pm { display: block; width: 100%; min-height: 60px; border: 1px solid #ccc;
+               border-radius: 8px; padding: 8px; margin-bottom: 8px; }
+    [data-message-author-role] { border: 1px solid #eee; border-radius: 8px; padding: 12px; margin-top: 16px; }
+    pre { background: #f4f4f5; padding: 10px; border-radius: 8px; }
+  </style>
+</head>
+<body>
+  <h1>Fixture AI page</h1>
+
+  <!-- A form so the submit/send path is exercised -->
+  <form id="composer-form" onsubmit="return false;">
+    <!-- plain textarea composer -->
+    <textarea id="ta" placeholder="textarea composer"></textarea>
+    <!-- rich contenteditable composer (ProseMirror-like) -->
+    <div id="pm" role="textbox" contenteditable="true" aria-label="Message composer"></div>
+    <button type="button" id="send" data-testid="send-button" aria-label="Send prompt">Send</button>
+  </form>
+
+  <!-- assistant reply region the tests fill to drive restore -->
+  <div id="thread">
+    <div id="assistant" data-message-author-role="assistant">
+      <div class="markdown prose">
+        <p id="reply-prose">Awaiting reply…</p>
+      </div>
+      <!-- action row with a copy button (the inline Ledebe icon anchors here) -->
+      <div class="action-row">
+        <button data-testid="copy-turn-action-button" aria-label="Copy">Copy</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

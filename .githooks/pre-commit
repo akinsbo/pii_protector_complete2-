@@ -1,0 +1,18 @@
+#!/bin/sh
+# Ledebe pre-commit hook — runs the browser extension's FAST tests
+# (L1 unit + L2 jsdom DOM, ~3s) whenever any extension file is staged.
+#
+# E2E (Chromium, ~20s) is intentionally NOT run here — it's too heavy for a
+# commit hook. Run `npm run test:e2e` from ledebe-browser-extension/ before
+# pushing, and the full Release Gate before a Web Store upload (see TESTING.md).
+#
+# Bypass once with:  git commit --no-verify
+set -e
+
+staged=$(git diff --cached --name-only --diff-filter=ACM | grep '^ledebe-browser-extension/' || true)
+[ -z "$staged" ] && exit 0
+
+echo "› pre-commit: running Ledebe extension tests (unit + jsdom DOM)…"
+cd ledebe-browser-extension
+[ -d node_modules/jsdom ] || { echo "  installing test deps (first run)…"; npm install --silent; }
+npm test

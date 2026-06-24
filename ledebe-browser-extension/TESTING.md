@@ -176,19 +176,21 @@ Run on a fresh Chrome profile with the unpacked extension; reload the extension 
 
 ## Running
 
-Commands are labelled by directory (no relative `cd ..`), so they're copy‑paste safe.
+Everything runs from **`ledebe-browser-extension/`**. The E2E scripts delegate to the
+repo-root Playwright (`npm --prefix ..`), so you don't switch directories.
 
-**From `ledebe-browser-extension/` — L1 unit + L2 jsdom DOM:**
 ```bash
-npm install     # adds jsdom (dev)
-npm test        # node --test → tests/detector.test.js + tests/content.dom.test.js
+cd ledebe-browser-extension
+npm install              # adds jsdom (dev)
+
+npm test                 # L1 + L2 → node --test (detector.test.js + content.dom.test.js)
+
+npm run test:e2e:install # one-time: playwright install chromium (delegates to root)
+npm run test:e2e         # L3 → real extension in Chromium against the routed fixture
 ```
 
-**From the repo root — L3 Playwright E2E (reuses the installed Playwright):**
-```bash
-npm run test:install     # one-time: playwright install chromium
-npm run test:ext-e2e     # loads the real extension in Chromium against the routed fixture
-```
+> The root scripts still exist too (`npm run test:ext-e2e` from the repo root) — the
+> extension scripts above just forward to them so you never hit a "wrong directory" error.
 
 Files:
 - L1 unit: `tests/detector.test.js`
@@ -204,7 +206,7 @@ Files:
 
 Run on a **fresh Chrome profile** with the unpacked extension (reload the card + hard‑refresh between checks):
 
-1. **L1 + L2 green** (`npm test`) and **L3 green** (`npm run test:ext-e2e`).
+1. **L1 + L2 green** (`npm test`) and **L3 green** (`npm run test:e2e`).
 2. **Real‑host smoke on ChatGPT, Claude, and Gemini** (the only protection against DOM
    drift): composer masks in place, placeholders survive send, the reply restores in the
    panel, and there are no console errors.

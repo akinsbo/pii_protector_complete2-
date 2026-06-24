@@ -5,7 +5,9 @@
   "description": "Ledebe Browser Protector — masks PII as you type/paste into AI chats and restores it in replies.",
   "type": "commonjs",
   "scripts": {
-    "test": "node --test"
+    "test": "node --test",
+    "test:e2e:install": "npm --prefix .. run test:install",
+    "test:e2e": "npm --prefix .. run test:ext-e2e"
   },
   "devDependencies": {
     "jsdom": "^29.1.1"

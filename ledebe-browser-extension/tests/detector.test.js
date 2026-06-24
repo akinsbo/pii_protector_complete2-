@@ -227,3 +227,91 @@ test("createPlaceholderToken formats with and without a namespace", () => {
   assert.equal(createPlaceholderToken("LDB_EMAIL", "", 2), "[LDB_EMAIL_2]");
   assert.equal(createPlaceholderToken("LDB_EMAIL", "NS", 2), "[LDB_EMAIL_NS_2]");
 });
+
+// ---------------------------------------------------------------------------
+// Core types + rejects (the always-on detectors)
+// ---------------------------------------------------------------------------
+
+test("detects a UK National Insurance number", () => {
+  assert.ok(detectPII("NI: QQ123456C").some((f) => f.type === "NINO"));
+});
+
+test("detects valid IPv4 and rejects out-of-range octets", () => {
+  assert.ok(detectPII("host 192.168.1.24 up").some((f) => f.type === "IP" && f.value === "192.168.1.24"));
+  assert.ok(!detectPII("ver 999.1.1.1 x").some((f) => f.type === "IP"));
+});
+
+test("masks Luhn-valid cards, ignores invalid card-like numbers", () => {
+  assert.ok(detectPII("card 4111 1111 1111 1111").some((f) => f.type === "CC"));
+  assert.ok(!detectPII("card 4111 1111 1111 1112").some((f) => f.type === "CC"));
+});
+
+test("detects formatted phone numbers, not bare digit runs", () => {
+  assert.ok(detectPII("call (415) 555-0182 today").some((f) => f.type === "PHONE"));
+  assert.ok(!detectPII("id 1234567890 x").some((f) => f.type === "PHONE"));
+});
+
+test("detects SSN / ID numbers", () => {
+  assert.ok(detectPII("ssn 123-45-6789 ok").some((f) => f.type === "ID"));
+});
+
+test("detects API keys / tokens", () => {
+  assert.ok(detectPII("my key sk_5fA9Kd2lQ8xZ7Pn3Vt6Rb here").some((f) => f.type === "APIKEY"));
+});
+
+// ---------------------------------------------------------------------------
+// Dedup / priority — the specific type wins over the generic NUMBER/ALNUM
+// ---------------------------------------------------------------------------
+
+test("priority: email wins over a number inside it", () => {
+  const f = detectPII("ping user12345@example.com");
+  assert.ok(f.some((x) => x.type === "EMAIL"));
+  assert.ok(!f.some((x) => x.type === "NUMBER"));
+});
+
+test("priority: address wins over its house number", () => {
+  const f = detectPII("to 1420 Peachtree St NE here");
+  assert.ok(f.some((x) => x.type === "ADDRESS"));
+  assert.ok(!f.some((x) => x.type === "NUMBER"));
+});
+
+test("priority: credit card wins over the generic number rule", () => {
+  const f = detectPII("card 4111 1111 1111 1111");
+  assert.ok(f.some((x) => x.type === "CC"));
+  assert.ok(!f.some((x) => x.type === "NUMBER"));
+});
+
+// ---------------------------------------------------------------------------
+// False positives left alone
+// ---------------------------------------------------------------------------
+
+test("does not flag a single or lowercase word as a name", () => {
+  assert.ok(!detectPII("Hello there friend").some((f) => f.type === "NAME"));
+  assert.ok(!detectPII("The Quick Report").some((f) => f.type === "NAME")); // 'The' is a stopword
+});
+
+test("does not flag a 2-digit number", () => {
+  assert.ok(!detectPII("aged 42 now").some((f) => f.type === "NUMBER"));
+});
+
+// ---------------------------------------------------------------------------
+// maskText reuse + namespace + caret-at-start
+// ---------------------------------------------------------------------------
+
+test("maskText reuses one token for a repeated value", () => {
+  const out = maskText("a@b.com then a@b.com again", []);
+  assert.equal(out.replacements.length, 1);
+  const tok = out.replacements[0].token;
+  assert.equal(out.masked.split(tok).length - 1, 2);
+});
+
+test("maskText emits namespaced tokens", () => {
+  const out = maskText("a@b.com", [], { namespace: "NS" });
+  assert.match(out.replacements[0].token, /^\[LDB_EMAIL_NS_\d+\]$/);
+});
+
+test("masks a value when the caret is at its very start", () => {
+  const r = computeLiveReplacement("john@example.com after", 0, {});
+  assert.equal(r.changed, true);
+  assert.ok(!r.text.includes("john@example.com"));
+});

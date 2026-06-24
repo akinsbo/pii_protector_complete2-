@@ -192,17 +192,21 @@ npm run test:e2e         # L3 → real extension in Chromium against the routed 
 > The root scripts still exist too (`npm run test:ext-e2e` from the repo root) — the
 > extension scripts above just forward to them so you never hit a "wrong directory" error.
 
-### Pre-commit hook (runs L1+L2 on every commit)
+### Git hooks (auto-run the suite)
 
-`.githooks/pre-commit` runs the fast suite automatically whenever any
-`ledebe-browser-extension/` file is staged (~3s). E2E stays out of the commit hook (too
-heavy) — run it before pushing. The hook is enabled via:
+Both hooks live in `.githooks/` and run only when the change touches the extension:
+
+- **`pre-commit`** → L1 + L2 fast suite (`node --test`, ~3s) whenever an extension file is staged.
+- **`pre-push`** → L3 E2E (Playwright/Chromium, ~20s) when the pushed commits touch the
+  extension (ensures Chromium via the idempotent install step first).
+
+Enable once per clone (already set in this repo):
 
 ```bash
-git config core.hooksPath .githooks   # one-time per clone (already set in this repo)
+git config core.hooksPath .githooks
 ```
 
-Bypass a single commit with `git commit --no-verify`.
+Bypass: `git commit --no-verify` / `git push --no-verify`.
 
 Files:
 - L1 unit: `tests/detector.test.js`

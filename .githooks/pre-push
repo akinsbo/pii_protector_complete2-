@@ -1,0 +1,35 @@
+#!/bin/sh
+# Ledebe pre-push hook — runs the browser extension's E2E (Playwright/Chromium)
+# before a push, but only when the commits being pushed touch the extension.
+#
+# Chromium is ensured via the (idempotent) install step. First run downloads it
+# (~150MB); later runs are fast.
+#
+# Bypass once with:  git push --no-verify
+set -e
+
+zero="0000000000000000000000000000000000000000"
+run=0
+
+while read local_ref local_sha remote_ref remote_sha; do
+  [ "$local_sha" = "$zero" ] && continue   # deleting a ref
+  if [ "$remote_sha" = "$zero" ]; then
+    commits=$(git rev-list "$local_sha" --not --remotes)   # new branch: only the new commits
+  else
+    commits=$(git rev-list "$remote_sha..$local_sha")
+  fi
+  for c in $commits; do
+    if git diff-tree --no-commit-id --name-only -r "$c" | grep -q '^ledebe-browser-extension/'; then
+      run=1
+      break
+    fi
+  done
+  [ "$run" -eq 1 ] && break
+done
+
+[ "$run" -eq 0 ] && exit 0
+
+echo "› pre-push: running Ledebe extension E2E (Playwright)…"
+cd ledebe-browser-extension
+npm run --silent test:e2e:install   # ensure Chromium (idempotent)
+npm run --silent test:e2e

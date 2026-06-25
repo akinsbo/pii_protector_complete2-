@@ -1,10 +1,8 @@
-import { test, expect, openHost, S } from './helpers';
+import { test, expect, openHost, openOverlay, S } from './helpers';
 
 test('a11y: tabs are <button>s and keyboard-focusable', async ({ context }) => {
   const page = await openHost(context);
-  await page.click(S.ta);
-  await page.keyboard.type('email a@b.com ');
-  await expect(page.locator(S.drawerOpen)).toBeVisible();
+  await openOverlay(page);
 
   const tabs = page.locator(S.tabs);
   await expect(tabs).toHaveCount(4);
@@ -22,8 +20,7 @@ test('xss: HTML in a protected value is escaped, never executed', async ({ conte
   const page = await openHost(context);
   await page.evaluate(() => { (window as any).__xss = false; });
 
-  await expect(page.locator(S.inlineBtn)).toBeVisible();
-  await page.click(S.inlineBtn);
+  await openOverlay(page);
   await page.click(S.tab('words'));
 
   const payload = '<img src=x onerror="window.__xss=true">';

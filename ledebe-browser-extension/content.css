@@ -57,6 +57,16 @@
   display: block;
 }
 
+html.ledebe-page-pushed,
+html.ledebe-page-pushed body {
+  overflow-x: clip !important;
+}
+
+html.ledebe-page-pushed body > :not(.ledebe-drawer):not(.ledebe-toast) {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
 /* ---- slide-in side panel (drawer) -------------------------------------- */
 
 .ledebe-drawer {

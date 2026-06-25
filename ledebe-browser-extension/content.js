@@ -668,6 +668,8 @@
   let autoHideTimer = null;
   let drawerHovered = false;
   const AUTO_HIDE_MS = 5000;
+  const PAGE_PUSH_CLASS = "ledebe-page-pushed";
+  const PAGE_PUSH_VAR = "--ledebe-panel-offset";
 
   function escapeHtml(value) {
     return String(value).replace(/[&<>"']/g, (ch) => (
@@ -1148,8 +1150,19 @@
   // Shift the page over so the docked panel doesn't cover the chat.
   function applyPagePush(width) {
     const html = document.documentElement;
-    html.style.transition = "margin-right 0.26s cubic-bezier(0.22, 1, 0.36, 1)";
-    html.style.marginRight = width ? `${width}px` : "";
+    const body = document.body;
+    const offset = width ? `${width}px` : "";
+    const transition = "margin-right 0.26s cubic-bezier(0.22, 1, 0.36, 1), width 0.26s cubic-bezier(0.22, 1, 0.36, 1), max-width 0.26s cubic-bezier(0.22, 1, 0.36, 1)";
+    html.style.setProperty(PAGE_PUSH_VAR, offset || "0px");
+    html.style.transition = transition;
+    html.style.marginRight = offset;
+    html.classList.toggle(PAGE_PUSH_CLASS, Boolean(width));
+    if (!body) return;
+    body.style.transition = transition;
+    body.style.marginRight = offset;
+    body.style.width = offset ? `calc(100vw - ${offset})` : "";
+    body.style.maxWidth = offset ? `calc(100vw - ${offset})` : "";
+    body.style.overflowX = offset ? "clip" : "";
   }
 
   function openDrawer() {
@@ -1161,7 +1174,8 @@
     // inserted node can be collapsed by the browser, skipping the transition.
     void el.offsetWidth;
     el.classList.add("is-open");
-    applyPagePush(el.offsetWidth);
+    const drawerWidth = el.offsetWidth || el.getBoundingClientRect().width || 360;
+    applyPagePush(drawerWidth);
     scheduleAutoHide();
   }
 
@@ -1497,18 +1511,55 @@
     };
   }
 
-  // The in-page icon opens/closes the in-page tray (reliable, both directions).
-  // The toolbar icon handles the true page-pushing native panel, which Chrome
-  // reserves for a genuine toolbar/context-menu gesture.
-  function toggleOverlay() {
+  async function requestNativeSidePanelOpen() {
+    if (!hasContext() || typeof chrome.runtime?.sendMessage !== "function") return false;
+    return new Promise((resolve) => {
+      let settled = false;
+      const finish = (ok) => {
+        if (settled) return;
+        settled = true;
+        resolve(Boolean(ok));
+      };
+      const timer = window.setTimeout(() => finish(false), 180);
+      try {
+        chrome.runtime.sendMessage({ type: "OPEN_SIDE_PANEL" }, (response) => {
+          window.clearTimeout(timer);
+          try {
+            if (chrome.runtime?.lastError) {
+              finish(false);
+              return;
+            }
+          } catch (error) {
+            /* ignore */
+          }
+          finish(response?.ok);
+        });
+      } catch (error) {
+        window.clearTimeout(timer);
+        finish(false);
+      }
+    });
+  }
+
+  // The in-page icon prefers the real Chrome side panel so the browser resizes
+  // ChatGPT/Claude itself; if Chrome rejects that open, we fall back to our own
+  // drawer and reserve the viewport space locally.
+  async function toggleOverlay() {
+    if (nativePanelOpen) return;
     if (drawerOpen) {
       drawerDismissed = true;
       closeDrawer();
-    } else {
-      nativePanelOpen = false;
-      drawerDismissed = false;
-      openDrawer();
+      return;
     }
+    const nativeOpened = await requestNativeSidePanelOpen();
+    if (nativeOpened) {
+      nativePanelOpen = true;
+      if (drawerOpen) closeDrawer();
+      return;
+    }
+    nativePanelOpen = false;
+    drawerDismissed = false;
+    openDrawer();
   }
 
   // ---- inject a Ledebe button into per-message action rows -----------------

@@ -38,6 +38,15 @@ export async function openHost(context: BrowserContext, host = 'chatgpt.com'): P
   return page;
 }
 
+// Trigger the content-script drawer via the normal detection path. This keeps
+// overlay-only assertions independent from whether the inline button opened the
+// browser's native side panel or fell back to the in-page drawer.
+export async function openOverlay(page: Page): Promise<void> {
+  await page.click(S.ta);
+  await page.keyboard.type('email a@b.com ');
+  await expect(page.locator(S.drawerOpen)).toBeVisible();
+}
+
 // Simulate a paste of `text` into a plain field (sets value then fires `paste`).
 export async function pasteInto(page: Page, selector: string, text: string) {
   await page.evaluate(({ selector, text }) => {

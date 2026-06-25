@@ -126,3 +126,15 @@ test("GET_STATE returns the grouped panel shape", async () => {
     assert.equal(typeof state.sessionCount, "number");
   } finally { await h.close(); }
 });
+
+test("OPEN_PANEL reserves viewport space for the in-page drawer", async () => {
+  const h = await createHarness();
+  try {
+    await h.send({ type: "OPEN_PANEL" });
+    await h.tick(20);
+    const html = h.window.document.documentElement;
+    assert.ok(html.classList.contains("ledebe-page-pushed"));
+    assert.match(html.style.marginRight, /\d+px/);
+    assert.match(h.window.document.body.style.width, /calc\(100vw - \d+px\)/);
+  } finally { await h.close(); }
+});

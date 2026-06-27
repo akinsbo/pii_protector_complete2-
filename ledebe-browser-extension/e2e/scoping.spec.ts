@@ -1,4 +1,4 @@
-import { test, expect, openHost, S } from './helpers';
+import { test, expect, openHost, openOverlay, S } from './helpers';
 
 test('per-host isolation: one site never shows another site\'s protected values', async ({ context }) => {
   // Protect on chatgpt.com
@@ -14,7 +14,7 @@ test('per-host isolation: one site never shows another site\'s protected values'
   await expect.poll(() => claude.inputValue(S.ta)).toMatch(/\[LDB_EMAIL_/);
 
   // Claude's panel shows its own value, not chatgpt's.
-  await expect(claude.locator(S.drawerOpen)).toBeVisible();
+  await openOverlay(claude);
   await claude.click(S.tab('field'));
   await expect(claude.locator(S.drawer)).toContainText('z@z.com');
   await expect(claude.locator(S.drawer)).not.toContainText('a@b.com');

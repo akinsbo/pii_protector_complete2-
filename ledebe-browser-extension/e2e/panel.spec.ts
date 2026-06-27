@@ -1,8 +1,18 @@
 import { test, expect, openHost, openOverlay, S } from './helpers';
 
-test('overlay auto-opens on detection with the four tabs', async ({ context }) => {
+test('detection shows the notice and the full panel opens from the inline icon', async ({ context }) => {
   const page = await openHost(context);
-  await openOverlay(page);
+  await page.click(S.ta);
+  await page.keyboard.type('email a@b.com ');
+  await expect(page.locator(S.noticeVisible)).toBeVisible();
+  const sw = context.serviceWorkers()[0];
+  if (!sw) throw new Error('Extension service worker not available');
+  await sw.evaluate(async (pageUrl) => {
+    const [tab] = await chrome.tabs.query({ url: pageUrl });
+    if (!tab?.id) throw new Error(`No tab found for ${pageUrl}`);
+    await chrome.tabs.sendMessage(tab.id, { type: 'OPEN_PANEL' });
+  }, page.url());
+  await expect(page.locator(S.drawerOpen)).toBeVisible();
   await expect(page.locator(S.tabs)).toHaveCount(4);
   for (const t of ['home', 'words', 'field', 'settings']) {
     await expect(page.locator(S.tab(t))).toBeVisible();
@@ -22,6 +32,7 @@ test('Protected words: Unprotect reveals the value back into the field', async (
   await page.click(S.ta);
   await page.keyboard.type('email a@b.com ');
   await expect.poll(() => page.inputValue(S.ta)).toMatch(/\[LDB_EMAIL_/);
+  await openOverlay(page);
   await page.click(S.tab('field'));
   await page.locator(`${S.protectedRow}`, { hasText: 'a@b.com' }).click();
   await expect.poll(() => page.inputValue(S.ta)).toContain('a@b.com');

@@ -1,4 +1,4 @@
-import { test, expect, openHost, S } from './helpers';
+import { test, expect, openHost, openOverlay, S } from './helpers';
 
 test('restore: real value shows in the panel; the page keeps the placeholder', async ({ context }) => {
   const page = await openHost(context);
@@ -15,8 +15,7 @@ test('restore: real value shows in the panel; the page keeps the placeholder', a
     document.querySelector('#reply-prose')!.textContent = `Sure — ${tok} is noted.`;
   }, token);
 
-  // Drawer auto-opened on detection; view the Home (chat-mirror) tab.
-  await expect(page.locator(S.drawerOpen)).toBeVisible();
+  await openOverlay(page);
   await page.click(S.tab('home'));
 
   // The panel reveals the real value...

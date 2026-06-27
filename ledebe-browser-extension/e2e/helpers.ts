@@ -38,12 +38,22 @@ export async function openHost(context: BrowserContext, host = 'chatgpt.com'): P
   return page;
 }
 
-// Trigger the content-script drawer via the normal detection path. This keeps
-// overlay-only assertions independent from whether the inline button opened the
-// browser's native side panel or fell back to the in-page drawer.
+// Trigger the content-script notice via the normal detection path, then open
+// the full panel from the inline Ledebe icon the same way a user would.
 export async function openOverlay(page: Page): Promise<void> {
-  await page.click(S.ta);
-  await page.keyboard.type('email a@b.com ');
+  if (!(await page.locator(S.noticeVisible).isVisible().catch(() => false))) {
+    await page.click(S.ta);
+    await page.keyboard.type('email a@b.com ');
+    await expect(page.locator(S.noticeVisible)).toBeVisible();
+  }
+  await expect(page.locator(S.inlineBtn).first()).toBeVisible();
+  const sw = page.context().serviceWorkers()[0];
+  if (!sw) throw new Error('Extension service worker not available');
+  await sw.evaluate(async (pageUrl) => {
+    const [tab] = await chrome.tabs.query({ url: pageUrl });
+    if (!tab?.id) throw new Error(`No tab found for ${pageUrl}`);
+    await chrome.tabs.sendMessage(tab.id, { type: 'OPEN_PANEL' });
+  }, page.url());
   await expect(page.locator(S.drawerOpen)).toBeVisible();
 }
 
@@ -64,6 +74,8 @@ export const S = {
   send: '#send',
   drawer: '.ledebe-drawer',
   drawerOpen: '.ledebe-drawer.is-open',
+  notice: '.ledebe-notice',
+  noticeVisible: '.ledebe-notice.is-visible',
   tab: (t: string) => `.ledebe-tab[data-tab="${t}"]`,
   tabs: '.ledebe-tab',
   inlineBtn: '.ledebe-inline-btn',

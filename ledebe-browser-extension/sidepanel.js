@@ -19,6 +19,7 @@ const DEFAULTS = {
 };
 
 const COMPANY_API_BASE = "https://m9ur273451.execute-api.us-east-2.amazonaws.com";
+const FEEDBACK_ENDPOINT = "https://formspree.io/f/xdkogqpv";
 const COMPANY_TERMS_STORAGE_KEY = "ledebeCompanyTerms";
 const COMPANY_STATE_STORAGE_KEY = "ledebeCompanyState";
 const PERSONAL_TERM_LIMITS = {
@@ -120,6 +121,12 @@ function showFlash(message, kind = "info") {
   flashTimer = setTimeout(() => {
     if (node) node.remove();
   }, 2400);
+}
+
+function feedbackCategoryForHost(host) {
+  if (host?.includes("gemini")) return "gemini-extension";
+  if (host?.includes("claude")) return "claude-extension";
+  return "browser-extension";
 }
 
 function normalizeTerms(terms) {
@@ -306,6 +313,23 @@ async function joinCompany(joinCode, email) {
 async function leaveCompany() {
   await chrome.storage.local.remove([COMPANY_STATE_STORAGE_KEY, COMPANY_TERMS_STORAGE_KEY]);
   await refreshStateIfAvailable();
+}
+
+async function submitFeedback({ message, email, host, category }) {
+  const response = await fetch(FEEDBACK_ENDPOINT, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      source: "browser-extension",
+      category,
+      host: host || "unknown",
+      email: email || "anonymous",
+      message
+    })
+  });
+  if (!response.ok) {
+    throw new Error("Could not send feedback");
+  }
 }
 
 // Small per-message copy button, like the one on ChatGPT's reply blocks.
@@ -614,6 +638,71 @@ async function renderSettings() {
     companyCard.append(joinCode, email, joinBtn);
   }
   body.append(companyCard);
+
+  const feedbackCard = el("div", "card");
+  feedbackCard.append(el("div", "section", t("settings.feedback", "Feedback")));
+  feedbackCard.append(el("p", "lead", t("settings.feedbackLead", "Tell us what worked or what broke. Please do not paste sensitive data.")));
+  const feedbackMessage = document.createElement("textarea");
+  feedbackMessage.className = "words-input";
+  feedbackMessage.rows = 4;
+  feedbackMessage.placeholder = host && /claude|gemini/.test(host)
+    ? t("settings.feedbackPlaceholderHost", "Describe what happened on {host}...", { host })
+    : t("settings.feedbackPlaceholder", "Describe what happened...");
+  const feedbackEmail = el("input", "words-input");
+  feedbackEmail.type = "email";
+  feedbackEmail.placeholder = t("settings.feedbackEmail", "Email (optional)");
+  const feedbackRow = el("div", "stack");
+  const goodBtn = el("button", "btn btn--secondary", t("settings.feedbackGood", "Works well"));
+  goodBtn.type = "button";
+  goodBtn.addEventListener("click", () => {
+    feedbackMessage.value = host
+      ? t("settings.feedbackGoodFillHost", "Ledebe worked well on {host}.", { host })
+      : t("settings.feedbackGoodFill", "Ledebe worked well for me.");
+  });
+  const issueBtn = el(
+    "button",
+    "btn btn--secondary",
+    host?.includes("gemini")
+      ? t("settings.feedbackGemini", "Report Gemini issue")
+      : host?.includes("claude")
+        ? t("settings.feedbackClaude", "Report Claude issue")
+        : t("settings.feedbackIssue", "Report issue")
+  );
+  issueBtn.type = "button";
+  issueBtn.addEventListener("click", () => {
+    feedbackMessage.value = host
+      ? t("settings.feedbackIssueFillHost", "I hit a problem on {host}: ", { host })
+      : t("settings.feedbackIssueFill", "I hit a problem: ");
+    feedbackMessage.focus();
+  });
+  feedbackRow.append(goodBtn, issueBtn);
+  const sendFeedbackBtn = el("button", "btn btn--primary", t("settings.feedbackSend", "Send feedback"));
+  sendFeedbackBtn.type = "button";
+  sendFeedbackBtn.addEventListener("click", async () => {
+    const message = feedbackMessage.value.trim();
+    if (!message) {
+      showFlash(t("settings.feedbackMissing", "Enter a short message first."), "warn");
+      return;
+    }
+    sendFeedbackBtn.disabled = true;
+    try {
+      await submitFeedback({
+        message,
+        email: feedbackEmail.value.trim(),
+        host,
+        category: feedbackCategoryForHost(host)
+      });
+      feedbackMessage.value = "";
+      feedbackEmail.value = "";
+      showFlash(t("settings.feedbackSent", "Feedback sent. Thank you."), "ok");
+    } catch (error) {
+      showFlash(error instanceof Error ? error.message : t("settings.feedbackFailed", "Could not send feedback"), "warn");
+    } finally {
+      sendFeedbackBtn.disabled = false;
+    }
+  });
+  feedbackCard.append(feedbackMessage, feedbackEmail, feedbackRow, sendFeedbackBtn);
+  body.append(feedbackCard);
 
   // --- the few settings most people touch -----------------------------------
   body.append(toggleRow("enabled", t("settings.protectionOn", "Protection on"), t("settings.protectionHint", "Master switch for detection and masking."), settings.enabled !== false));

@@ -1001,9 +1001,29 @@
   // recognised (the Home tab then falls back to the latest restored reply).
   function collectRestoredTranscript() {
     const providers = [
-      { sel: "[data-message-author-role]", role: (el) => el.getAttribute("data-message-author-role") || "user" },
-      { sel: '[data-testid="user-message"], .font-claude-message', role: (el) => el.matches('[data-testid="user-message"]') ? "user" : "assistant" },
-      { sel: "user-query, model-response", role: (el) => el.tagName.toLowerCase() === "user-query" ? "user" : "assistant" }
+      {
+        sel: "[data-message-author-role], [data-message-author]",
+        role: (el) => el.getAttribute("data-message-author-role") || el.getAttribute("data-message-author") || "user"
+      },
+      {
+        sel: '[data-testid="user-message"], [data-testid="assistant-message"], [data-testid="conversation-turn-user"], [data-testid="conversation-turn-assistant"], .font-user-message, .font-claude-message, [data-message-role="user"], [data-message-role="assistant"]',
+        role: (el) => {
+          if (
+            el.matches('[data-testid="user-message"], [data-testid="conversation-turn-user"], .font-user-message, [data-message-role="user"]')
+          ) return "user";
+          return "assistant";
+        }
+      },
+      {
+        sel: "user-query, model-response, [data-test-id='message-user'], [data-test-id='message-assistant'], [data-message-type='user'], [data-message-type='model']",
+        role: (el) => {
+          const tag = el.tagName.toLowerCase();
+          const type = el.getAttribute("data-message-type");
+          return tag === "user-query" || el.getAttribute("data-test-id") === "message-user" || type === "user"
+            ? "user"
+            : "assistant";
+        }
+      }
     ];
 
     for (const provider of providers) {
@@ -1012,6 +1032,8 @@
       const turns = [];
       for (const el of nodes) {
         if (isInsideLedebeUi(el)) continue;
+        const parentTurn = el.parentElement?.closest(provider.sel);
+        if (parentTurn) continue;
         if (!(el.innerText || el.textContent || "").trim()) continue;
         const blocks = restoredBlocksFor(el);
         if (blocks.length) turns.push({ role: provider.role(el), blocks });
@@ -1390,10 +1412,15 @@
 
   const ASSISTANT_SELECTORS =
     '[data-message-author-role="assistant"], [data-message-author="assistant"], '
-    + '.model-response-text, message-content, [data-testid="model-response"], '
-    + 'div.agent-turn, .markdown.prose';
+    + '[data-testid="assistant-message"], [data-testid="conversation-turn-assistant"], '
+    + '[data-test-id="message-assistant"], [data-message-role="assistant"], [data-message-type="model"], '
+    + '.model-response-text, message-content, model-response, [data-testid="model-response"], '
+    + 'div.agent-turn, .font-claude-message, .markdown.prose';
   const TURN_MARKERS =
-    '[data-message-author-role], [data-message-author], message-content, .model-response-text';
+    '[data-message-author-role], [data-message-author], [data-testid="assistant-message"], [data-testid="user-message"], '
+    + '[data-testid="conversation-turn-assistant"], [data-testid="conversation-turn-user"], '
+    + '[data-test-id="message-assistant"], [data-test-id="message-user"], '
+    + '[data-message-role], [data-message-type], message-content, model-response, .model-response-text';
   const SETTLE_MS = 350;
 
   let responseObserver = null;

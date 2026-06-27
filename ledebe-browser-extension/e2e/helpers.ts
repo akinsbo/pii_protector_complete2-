@@ -5,6 +5,58 @@ import fs from 'node:fs';
 const EXT_DIR = path.resolve(__dirname, '..');        // ledebe-browser-extension/
 const FIXTURE = fs.readFileSync(path.join(__dirname, 'fixture', 'ai-page.html'), 'utf8');
 
+function assistantMarkup(host: string) {
+  if (host.includes('claude')) {
+    return `
+      <div id="claude-user" data-testid="user-message"><div id="reply-user">User turn</div></div>
+      <div id="claude-assistant" data-testid="assistant-message">
+        <div class="font-claude-message">
+          <p id="reply-prose">Awaiting reply…</p>
+        </div>
+        <div class="action-row">
+          <button data-testid="copy-turn-action-button" aria-label="Copy">Copy</button>
+        </div>
+      </div>
+    `;
+  }
+
+  if (host.includes('gemini')) {
+    return `
+      <user-query id="gemini-user">
+        <div id="reply-user">User turn</div>
+      </user-query>
+      <model-response id="gemini-assistant">
+        <message-content>
+          <div class="model-response-text">
+            <p id="reply-prose">Awaiting reply…</p>
+          </div>
+        </message-content>
+        <div class="action-row">
+          <button data-testid="copy-turn-action-button" aria-label="Copy">Copy</button>
+        </div>
+      </model-response>
+    `;
+  }
+
+  return `
+    <div id="assistant" data-message-author-role="assistant">
+      <div class="markdown prose">
+        <p id="reply-prose">Awaiting reply…</p>
+      </div>
+      <div class="action-row">
+        <button data-testid="copy-turn-action-button" aria-label="Copy">Copy</button>
+      </div>
+    </div>
+  `;
+}
+
+function buildFixture(host: string) {
+  return FIXTURE.replace(
+    /<div id="thread">[\s\S]*<\/div>\s*<\/body>/,
+    `<div id="thread">${assistantMarkup(host)}</div>\n</body>`
+  );
+}
+
 // A fresh persistent context (with the unpacked extension) per test → isolation.
 export const test = base.extend<{ context: BrowserContext; extensionId: string }>({
   context: async ({}, use) => {
@@ -32,7 +84,7 @@ export { expect };
 export async function openHost(context: BrowserContext, host = 'chatgpt.com'): Promise<Page> {
   const page = await context.newPage();
   await page.route(`https://${host}/**`, (route) =>
-    route.fulfill({ contentType: 'text/html', body: FIXTURE }));
+    route.fulfill({ contentType: 'text/html', body: buildFixture(host) }));
   await page.goto(`https://${host}/c/test`);
   await page.waitForSelector('#ta');
   return page;
@@ -66,6 +118,12 @@ export async function pasteInto(page: Page, selector: string, text: string) {
     el.selectionStart = el.selectionEnd = text.length;
     el.dispatchEvent(new Event('paste', { bubbles: true }));
   }, { selector, text });
+}
+
+export async function seedAssistantReply(page: Page, text: string) {
+  await page.locator('#reply-prose').evaluate((node, value) => {
+    node.textContent = value;
+  }, text);
 }
 
 export const S = {

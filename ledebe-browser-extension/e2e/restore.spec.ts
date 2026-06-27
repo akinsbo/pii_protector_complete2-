@@ -1,4 +1,4 @@
-import { test, expect, openHost, openOverlay, S } from './helpers';
+import { test, expect, openHost, openOverlay, seedAssistantReply, S } from './helpers';
 
 test('restore: real value shows in the panel; the page keeps the placeholder', async ({ context }) => {
   const page = await openHost(context);
@@ -11,9 +11,7 @@ test('restore: real value shows in the panel; the page keeps the placeholder', a
   const token = (await page.inputValue(S.ta)).match(/\[LDB_EMAIL_[A-Z0-9]+_\d+\]/)![0];
 
   // Simulate the assistant echoing the placeholder in its reply.
-  await page.evaluate((tok) => {
-    document.querySelector('#reply-prose')!.textContent = `Sure — ${tok} is noted.`;
-  }, token);
+  await seedAssistantReply(page, `Sure - ${token} is noted.`);
 
   await openOverlay(page);
   await page.click(S.tab('home'));

@@ -395,15 +395,15 @@
   }
 
   // Auto-protect: after a short pause in typing, mask everything still detected
-  // — including the value the caret is sitting on, which the live scan leaves
-  // alone so it isn't clobbered mid-keystroke. This is what makes protection
-  // hands-off: no need to click "Protect" or even reach the send button.
+  // except the value the caret is still sitting in. Final protection still
+  // happens on send, but the idle pass should not grab an email or token the
+  // user is still finishing in place.
   function scheduleIdleProtect(element) {
     if (idleProtectTimer) clearTimeout(idleProtectTimer);
     idleProtectTimer = window.setTimeout(() => {
       idleProtectTimer = null;
       try {
-        liveReplace(element, true);
+        liveReplace(element, false);
       } catch (error) {
         console.debug("[Ledebe]", error);
       }
@@ -670,6 +670,9 @@
   const AUTO_HIDE_MS = 5000;
   const PAGE_PUSH_CLASS = "ledebe-page-pushed";
   const PAGE_PUSH_VAR = "--ledebe-panel-offset";
+  let notice = null;
+  let noticeTimer = null;
+  const NOTICE_HIDE_MS = 3000;
 
   function escapeHtml(value) {
     return String(value).replace(/[&<>"']/g, (ch) => (
@@ -724,6 +727,77 @@
 
     document.documentElement.appendChild(drawer);
     return drawer;
+  }
+
+  function ensureNotice() {
+    if (notice && document.documentElement.contains(notice)) return notice;
+    notice = document.createElement("div");
+    notice.className = "ledebe-notice";
+    notice.innerHTML = `
+      <div class="ledebe-notice__card" role="status" aria-live="polite">
+        <span class="ledebe-notice__text">Now protecting. Click icon for full conversation.</span>
+        <button type="button" class="ledebe-notice__icon" aria-label="Open Ledebe conversation panel"></button>
+      </div>
+    `;
+    const iconButton = notice.querySelector(".ledebe-notice__icon");
+    const iconUrl = runtimeUrl("ledebe-icon.png");
+    if (iconButton) {
+      if (iconUrl) {
+        iconButton.innerHTML = `<img src="${iconUrl}" alt="" />`;
+      } else {
+        iconButton.textContent = "L";
+      }
+      iconButton.addEventListener("click", async (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        hideNotice(true);
+        await toggleOverlay();
+      });
+    }
+    document.documentElement.appendChild(notice);
+    return notice;
+  }
+
+  function hideNotice(immediate = false) {
+    if (noticeTimer) {
+      clearTimeout(noticeTimer);
+      noticeTimer = null;
+    }
+    document.querySelectorAll(".ledebe-inline-btn, .ledebe-inline-tray").forEach((node) => {
+      node.classList.remove("ledebe-guided-target");
+    });
+    if (!notice) return;
+    if (immediate) {
+      notice.classList.remove("is-visible");
+      notice.remove();
+      notice = null;
+      return;
+    }
+    notice.classList.remove("is-visible");
+    const current = notice;
+    window.setTimeout(() => {
+      if (notice === current && !current.classList.contains("is-visible")) {
+        current.remove();
+        notice = null;
+      }
+    }, 260);
+  }
+
+  function showNotice() {
+    if (nativePanelOpen || drawerOpen) return;
+    const el = ensureNotice();
+    document.querySelectorAll(".ledebe-inline-btn").forEach((button) => {
+      button.classList.add("ledebe-guided-target");
+      button.parentElement?.classList.add("ledebe-inline-tray");
+      button.parentElement?.classList.add("ledebe-guided-target");
+    });
+    if (noticeTimer) clearTimeout(noticeTimer);
+    void el.offsetWidth;
+    el.classList.add("is-visible");
+    noticeTimer = window.setTimeout(() => {
+      noticeTimer = null;
+      hideNotice();
+    }, NOTICE_HIDE_MS);
   }
 
   function setActiveTab(tab) {
@@ -1167,6 +1241,7 @@
 
   function openDrawer() {
     const el = ensureDrawer();
+    hideNotice(true);
     drawerOpen = true;
     refreshDrawer();
     // Commit the off-screen start state (translateX) before flipping to open, so
@@ -1190,10 +1265,12 @@
     if (nativePanelOpen) {
       // The native side panel is showing the same thing — don't double up.
       if (drawerOpen) closeDrawer();
+      hideNotice(true);
       return;
     }
     if (!protectionActive() || !isAiHost() || drawerDismissed) {
       if (drawerOpen) refreshDrawer();
+      hideNotice(true);
       return;
     }
     const text = getFieldText(activeEditable);
@@ -1202,10 +1279,11 @@
         refreshDrawer();
       } else {
         activeTab = "field";
-        openDrawer();
+        showNotice();
       }
-    } else if (drawerOpen) {
-      refreshDrawer();
+    } else {
+      if (drawerOpen) refreshDrawer();
+      hideNotice(true);
     }
   }
 
@@ -1371,8 +1449,28 @@
 
   // ---- event wiring --------------------------------------------------------
 
+  // Resolve the real editable from an event. Some AI apps (e.g. Gemini) wrap the
+  // composer in a custom element, so event.target can be retargeted away from the
+  // editable — walk the composed path (which pierces shadow boundaries) and fall
+  // back to the focused element.
+  function eventEditable(event) {
+    const path = typeof event.composedPath === "function" ? event.composedPath() : [];
+    for (const node of path) {
+      if (node instanceof HTMLElement) {
+        const editable = resolveEditable(node);
+        if (editable) return editable;
+      }
+    }
+    return resolveEditable(event.target) || resolveEditable(document.activeElement);
+  }
+
+  function eventComposedTarget(event) {
+    const path = typeof event.composedPath === "function" ? event.composedPath() : [];
+    return (path[0] instanceof HTMLElement ? path[0] : null) || event.target;
+  }
+
   function trackTarget(event) {
-    const target = resolveEditable(event.target);
+    const target = eventEditable(event);
     if (target) {
       if (target !== activeEditable) drawerDismissed = false;
       activeEditable = target;
@@ -1395,7 +1493,7 @@
 
   function onPaste(event) {
     if (!settings.scanOnPaste) return;
-    const target = trackTarget(event) || resolveEditable(document.activeElement) || activeEditable;
+    const target = trackTarget(event) || eventEditable(event) || activeEditable;
     if (!target) return;
     activeEditable = target;
     // After the pasted text lands, force-protect it directly. We don't gate this
@@ -1468,7 +1566,7 @@
   }
 
   function onPointerDown(event) {
-    if (isAiHost() && isSendTrigger(event.target)) flushBeforeSend();
+    if (isAiHost() && isSendTrigger(eventComposedTarget(event))) flushBeforeSend();
   }
 
   function onSubmit(event) {
@@ -1721,5 +1819,6 @@
       scheduleInlineInjection();
       setTimeout(scheduleInlineInjection, 1500);
       setTimeout(scheduleInlineInjection, 3500);
+      console.debug("[Ledebe] content script active:", getHost(), "· AI host:", isAiHost());
     });
 })();

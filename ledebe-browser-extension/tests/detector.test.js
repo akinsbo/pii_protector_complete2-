@@ -41,6 +41,15 @@ test("leaves the value alone while the caret is still inside it (mid-typing)", (
   assert.equal(result.text, text);
 });
 
+test("leaves a still-growing email alone when the user pauses mid-domain", () => {
+  const text = "Email me at example@example.co";
+  const caret = text.length; // paused after '.co', but still inside the email
+  const result = computeLiveReplacement(text, caret, {});
+
+  assert.equal(result.changed, false);
+  assert.equal(result.text, text);
+});
+
 test("carries original-text offsets so callers can replace in place", () => {
   const text = "ref john@example.com end";
   const result = computeLiveReplacement(text, 0, {});

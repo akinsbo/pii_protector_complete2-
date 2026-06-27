@@ -57,6 +57,33 @@ body {
 }
 .section:first-child { margin-top: 2px; }
 .empty { color: #64748b; font-size: 13px; padding: 16px 6px; text-align: center; }
+.flash {
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+.flash--info { background: #e0f2fe; color: #075985; }
+.flash--ok { background: #dcfce7; color: #166534; }
+.flash--warn { background: #fef3c7; color: #92400e; }
+.stack { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 12px; }
+.pill {
+  font-size: 11px;
+  font-weight: 700;
+  color: #1e3a8a;
+  background: #eef2ff;
+  border: 1px solid rgba(30, 58, 138, 0.18);
+  border-radius: 999px;
+  padding: 5px 9px;
+}
+.card {
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 12px;
+  background: #f8fafc;
+  padding: 12px;
+  margin-bottom: 12px;
+}
 
 .row {
   display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
@@ -75,6 +102,7 @@ body {
   border: 1px solid rgba(30, 58, 138, 0.3); border-radius: 999px; padding: 3px 9px;
 }
 .row--protected .row__action { color: #b91c1c; border-color: rgba(185, 28, 28, 0.3); }
+.row__action:empty { display: none; }
 
 /* Home: mirrored chat. Assistant reply mirrors ChatGPT's editable block —
    a rounded card in a lighter shade of grey than the panel. */
@@ -126,6 +154,11 @@ body {
   .tab { color: #94a3b8; }
   .tab.is-active, .tab:hover { color: #cdd9f4; border-bottom-color: #cdd9f4; }
   .lead, .section, .empty, .row__meta, .toggle small, .status-line { color: #94a3b8; }
+  .flash--info { background: #0f2740; color: #bfdbfe; }
+  .flash--ok { background: #13311c; color: #bbf7d0; }
+  .flash--warn { background: #3b2a10; color: #fcd34d; }
+  .pill { background: #21304d; color: #cdd9f4; border-color: rgba(148, 163, 184, 0.18); }
+  .card { background: #1e293b; border-color: rgba(148,163,184,0.18); }
   .row { background: #1e293b; border-color: rgba(148,163,184,0.18); }
   .row:hover { background: #243049; }
   .msg--user { background: #21304d; }

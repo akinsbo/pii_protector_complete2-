@@ -30,7 +30,18 @@
     detectAddresses: true,
     detectCodes: true,
     customTerms: [],
-    pausedHosts: []
+    personalTerms: [],
+    pausedHosts: [],
+    subscriptionPlan: "free"
+  };
+
+  const COMPANY_TERMS_STORAGE_KEY = "ledebeCompanyTerms";
+  const COMPANY_STATE_STORAGE_KEY = "ledebeCompanyState";
+  const PERSONAL_TERM_LIMITS = {
+    free: 20,
+    pro: Infinity,
+    team: Infinity,
+    enterprise: Infinity
   };
 
   // Map the category toggles to the detector rule names to skip when off.
@@ -113,6 +124,14 @@
     }
   }
 
+  async function localGet(defaults) {
+    try {
+      return hasContext() ? await chrome.storage.local.get(defaults) : defaults;
+    } catch (error) {
+      return defaults;
+    }
+  }
+
   function mappingStore() {
     return settings.persistMappings ? chrome.storage?.local : chrome.storage?.session;
   }
@@ -183,6 +202,34 @@
 
   function protectionActive() {
     return settings.enabled && !isPaused();
+  }
+
+  function normalizeTerms(terms) {
+    const seen = new Set();
+    return (terms || [])
+      .map((term) => String(term || "").trim())
+      .filter(Boolean)
+      .filter((term) => {
+        const key = term.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+  }
+
+  function effectivePlan() {
+    return settings.companySync?.companyId ? "team" : (settings.subscriptionPlan || "free");
+  }
+
+  function personalTermLimit() {
+    return PERSONAL_TERM_LIMITS[effectivePlan()] ?? PERSONAL_TERM_LIMITS.free;
+  }
+
+  function allCustomTerms() {
+    return normalizeTerms([
+      ...(settings.companyTerms || []),
+      ...(settings.personalTerms || [])
+    ]);
   }
 
   // ---- editable element resolution ----------------------------------------
@@ -419,7 +466,7 @@
 
     const counters = new Map();
     const options = {
-      customTerms: settings.customTerms,
+      customTerms: allCustomTerms(),
       exclude: unprotected,
       existingMap: placeholderMap,
       counters,
@@ -593,7 +640,7 @@
       return;
     }
     const original = getFieldText(activeEditable);
-    const result = maskText(original, settings.customTerms, {
+    const result = maskText(original, allCustomTerms(), {
       namespace: placeholderNamespace(),
       exclude: unprotected,
       disabledTypes: disabledTypes()
@@ -617,7 +664,7 @@
   function exposedItems(text) {
     if (!text) return [];
     const groups = new Map();
-    for (const finding of detectPII(text, settings.customTerms, disabledTypes())) {
+    for (const finding of detectPII(text, allCustomTerms(), disabledTypes())) {
       if (finding.value.startsWith("[LDB_")) continue;
       const key = finding.value.toLowerCase();
       const g = groups.get(key) || { value: finding.value, label: finding.label, count: 0 };
@@ -1016,24 +1063,38 @@
   // ---- Custom words tab ----------------------------------------------------
 
   function addCustomTerm(term) {
-    const terms = [...(settings.customTerms || [])];
-    if (!term || terms.some((t) => t.toLowerCase() === term.toLowerCase())) return;
-    terms.push(term);
-    settings.customTerms = terms;
-    unprotected.delete(term.toLowerCase());
-    void syncSet({ customTerms: terms });
+    const terms = [...(settings.personalTerms || [])];
+    const normalized = String(term || "").trim();
+    if (!normalized || allCustomTerms().some((t) => t.toLowerCase() === normalized.toLowerCase())) {
+      return { ok: false, reason: "duplicate" };
+    }
+    if (terms.length >= personalTermLimit()) {
+      return { ok: false, reason: "limit" };
+    }
+    terms.push(normalized);
+    settings.personalTerms = normalizeTerms(terms);
+    settings.customTerms = settings.personalTerms;
+    unprotected.delete(normalized.toLowerCase());
+    void syncSet({ personalTerms: settings.personalTerms, customTerms: settings.personalTerms });
     if (activeEditable) liveReplace(activeEditable, true); // protect it right away
     refreshDrawer(true);
+    return { ok: true };
   }
 
   function removeCustomTerm(term) {
-    settings.customTerms = (settings.customTerms || []).filter((t) => t.toLowerCase() !== term.toLowerCase());
-    void syncSet({ customTerms: settings.customTerms });
+    settings.personalTerms = (settings.personalTerms || []).filter((t) => t.toLowerCase() !== term.toLowerCase());
+    settings.customTerms = settings.personalTerms;
+    void syncSet({ personalTerms: settings.personalTerms, customTerms: settings.personalTerms });
     refreshDrawer(true);
   }
 
   function renderWordsPane(body) {
-    body.appendChild(leadEl("Always protect these words — names, project codes, client terms. They get masked just like detected PII."));
+    const plan = effectivePlan();
+    const limit = personalTermLimit();
+    const personalTerms = settings.personalTerms || [];
+    const companyTerms = settings.companyTerms || [];
+    const limitLabel = Number.isFinite(limit) ? `${personalTerms.length}/${limit} personal words` : `${personalTerms.length} personal words`;
+    body.appendChild(leadEl(`Always protect these words — names, project codes, client terms. Plan: ${plan}. ${limitLabel}.`));
 
     const add = document.createElement("div");
     add.className = "ledebe-words__add";
@@ -1045,19 +1106,35 @@
     btn.type = "button";
     btn.className = "ledebe-words__btn";
     btn.textContent = "Add";
-    const submit = () => { const v = input.value.trim(); if (v) { addCustomTerm(v); } };
+    const submit = () => {
+      const value = input.value.trim();
+      if (!value) return;
+      const result = addCustomTerm(value);
+      if (result?.ok) {
+        input.value = "";
+      } else if (result?.reason === "limit") {
+        toast(`Your ${plan} plan allows ${limit} personal custom words.`);
+      } else if (result?.reason === "duplicate") {
+        toast("That word is already protected.");
+      }
+    };
     btn.addEventListener("click", submit);
     input.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); submit(); } });
     add.append(input, btn);
     body.appendChild(add);
 
-    const terms = settings.customTerms || [];
-    if (!terms.length) {
+    if (!companyTerms.length && !personalTerms.length) {
       body.appendChild(emptyEl("No custom words yet."));
       return;
     }
-    body.appendChild(sectionEl(`Custom words (${terms.length})`));
-    for (const term of terms) {
+    if (companyTerms.length) {
+      body.appendChild(sectionEl(`Company words (${companyTerms.length})`));
+      for (const term of companyTerms) {
+        body.appendChild(rowEl("protected", term, "company-managed", "Locked", () => {}));
+      }
+    }
+    body.appendChild(sectionEl(`Personal words (${personalTerms.length})`));
+    for (const term of personalTerms) {
       body.appendChild(rowEl("protected", term, "custom word", "Remove", () => removeCustomTerm(term)));
     }
   }
@@ -1584,7 +1661,23 @@
   // ---- settings + messages -------------------------------------------------
 
   async function loadSettings() {
-    settings = { ...DEFAULTS, ...(await syncGet(DEFAULTS)) };
+    const synced = { ...DEFAULTS, ...(await syncGet(DEFAULTS)) };
+    const local = await localGet({
+      [COMPANY_TERMS_STORAGE_KEY]: [],
+      [COMPANY_STATE_STORAGE_KEY]: null
+    });
+    const personalTerms = normalizeTerms(
+      synced.personalTerms && synced.personalTerms.length
+        ? synced.personalTerms
+        : synced.customTerms
+    );
+    settings = {
+      ...synced,
+      customTerms: personalTerms,
+      personalTerms,
+      companyTerms: normalizeTerms(local[COMPANY_TERMS_STORAGE_KEY] || []),
+      companySync: local[COMPANY_STATE_STORAGE_KEY] || null
+    };
   }
 
   // ---- state + actions shared with the native side panel ------------------
@@ -1605,7 +1698,12 @@
       session: sessionItems(fieldValues),
       transcript: settings.restoreResponses ? collectRestoredTranscript() : [],
       latestRestored: settings.restoreResponses ? latestRestoredText : "",
-      customTerms: settings.customTerms || []
+      customTerms: settings.personalTerms || [],
+      personalTerms: settings.personalTerms || [],
+      companyTerms: settings.companyTerms || [],
+      personalTermLimit: personalTermLimit(),
+      effectivePlan: effectivePlan(),
+      companySync: settings.companySync || null
     };
   }
 
@@ -1721,6 +1819,12 @@
     if (!hasContext()) return;
 
     chrome.storage.onChanged.addListener((changes, area) => {
+      if (area === "local" && (changes[COMPANY_TERMS_STORAGE_KEY] || changes[COMPANY_STATE_STORAGE_KEY])) {
+        settings.companyTerms = normalizeTerms(changes[COMPANY_TERMS_STORAGE_KEY]?.newValue || settings.companyTerms || []);
+        settings.companySync = changes[COMPANY_STATE_STORAGE_KEY]?.newValue || settings.companySync || null;
+        if (activeEditable) refreshDrawer();
+        return;
+      }
       if ((area === "local" || area === "session") && changes[mappingKey()]) {
         const expected = settings.persistMappings ? "local" : "session";
         if (area === expected) {
@@ -1732,6 +1836,12 @@
       }
       if (area !== "sync") return;
       for (const [key, value] of Object.entries(changes)) settings[key] = value.newValue;
+      settings.personalTerms = normalizeTerms(
+        settings.personalTerms && settings.personalTerms.length
+          ? settings.personalTerms
+          : settings.customTerms
+      );
+      settings.customTerms = settings.personalTerms;
       if (activeEditable) refreshDrawer();
       startResponseObserver();
       sweepResponses();
@@ -1766,8 +1876,10 @@
           sendResponse(buildPageState());
           return true;
         case "ADD_TERM":
-          if (message.term) addCustomTerm(message.term);
-          sendResponse(buildPageState());
+          sendResponse({
+            ...buildPageState(),
+            actionResult: message.term ? addCustomTerm(message.term) : { ok: false }
+          });
           return true;
         case "REMOVE_TERM":
           if (message.term) removeCustomTerm(message.term);

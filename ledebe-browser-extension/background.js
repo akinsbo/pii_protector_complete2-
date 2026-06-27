@@ -16,7 +16,9 @@ const DEFAULT_SETTINGS = {
   detectAddresses: true,
   detectCodes: true,
   customTerms: [],
-  pausedHosts: []
+  personalTerms: [],
+  pausedHosts: [],
+  subscriptionPlan: "free"
 };
 
 async function ensureSessionAccess() {

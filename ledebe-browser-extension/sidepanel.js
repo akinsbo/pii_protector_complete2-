@@ -13,13 +13,26 @@ const DEFAULTS = {
   detectAddresses: true,
   detectCodes: true,
   customTerms: [],
-  pausedHosts: []
+  personalTerms: [],
+  pausedHosts: [],
+  subscriptionPlan: "free"
+};
+
+const COMPANY_API_BASE = "https://m9ur273451.execute-api.us-east-2.amazonaws.com";
+const COMPANY_TERMS_STORAGE_KEY = "ledebeCompanyTerms";
+const COMPANY_STATE_STORAGE_KEY = "ledebeCompanyState";
+const PERSONAL_TERM_LIMITS = {
+  free: 20,
+  pro: Infinity,
+  team: Infinity,
+  enterprise: Infinity
 };
 
 let activeTab = "home";
 let state = null;     // latest GET_STATE snapshot
 let pollTimer = null;
 let advancedOpen = false;
+let flashTimer = null;
 
 const body = document.getElementById("body");
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -89,6 +102,207 @@ function copyButton(label, getText) {
   return btn;
 }
 
+function showFlash(message, kind = "info") {
+  let node = document.getElementById("flash");
+  if (!node) {
+    node = el("div", "flash");
+    node.id = "flash";
+    body.prepend(node);
+  }
+  node.className = `flash flash--${kind}`;
+  node.textContent = message;
+  clearTimeout(flashTimer);
+  flashTimer = setTimeout(() => {
+    if (node) node.remove();
+  }, 2400);
+}
+
+function normalizeTerms(terms) {
+  const seen = new Set();
+  return (terms || [])
+    .map((term) => String(term || "").trim())
+    .filter(Boolean)
+    .filter((term) => {
+      const key = term.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
+async function getStoredSettings() {
+  const settings = await chrome.storage.sync.get(DEFAULTS);
+  const personalTerms = normalizeTerms(
+    settings.personalTerms && settings.personalTerms.length ? settings.personalTerms : settings.customTerms
+  );
+  return {
+    ...settings,
+    customTerms: personalTerms,
+    personalTerms
+  };
+}
+
+async function getCompanyState() {
+  const result = await chrome.storage.local.get({
+    [COMPANY_STATE_STORAGE_KEY]: null,
+    [COMPANY_TERMS_STORAGE_KEY]: []
+  });
+  return {
+    companySync: result[COMPANY_STATE_STORAGE_KEY],
+    companyTerms: normalizeTerms(result[COMPANY_TERMS_STORAGE_KEY] || [])
+  };
+}
+
+function effectivePlanFromData(settings, companySync) {
+  return companySync?.companyId ? "team" : (settings.subscriptionPlan || "free");
+}
+
+function personalLimitForPlan(plan) {
+  return PERSONAL_TERM_LIMITS[plan] ?? PERSONAL_TERM_LIMITS.free;
+}
+
+function base64ToBuf(b64) {
+  const str = atob(b64);
+  const buf = new Uint8Array(str.length);
+  for (let i = 0; i < str.length; i += 1) buf[i] = str.charCodeAt(i);
+  return buf.buffer;
+}
+
+async function importTeamKey(base64) {
+  return crypto.subtle.importKey(
+    "raw",
+    base64ToBuf(base64),
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["decrypt"]
+  );
+}
+
+async function decryptTerms(encryptedTerms, termsIv, teamKey) {
+  const iv = base64ToBuf(termsIv);
+  const key = await importTeamKey(teamKey);
+  const decrypted = await crypto.subtle.decrypt(
+    { name: "AES-GCM", iv },
+    key,
+    base64ToBuf(encryptedTerms)
+  );
+  return JSON.parse(new TextDecoder().decode(decrypted));
+}
+
+async function decryptTeamKeyWithCode(encryptedTeamKey, salt64, iv64, joinCode) {
+  const enc = new TextEncoder();
+  const salt = base64ToBuf(salt64);
+  const iv = base64ToBuf(iv64);
+  const baseKey = await crypto.subtle.importKey(
+    "raw",
+    enc.encode(joinCode),
+    "PBKDF2",
+    false,
+    ["deriveKey"]
+  );
+  const codeKey = await crypto.subtle.deriveKey(
+    { name: "PBKDF2", salt, iterations: 100000, hash: "SHA-256" },
+    baseKey,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["decrypt"]
+  );
+  const decrypted = await crypto.subtle.decrypt(
+    { name: "AES-GCM", iv },
+    codeKey,
+    base64ToBuf(encryptedTeamKey)
+  );
+  const bytes = new Uint8Array(decrypted);
+  let str = "";
+  for (const byte of bytes) str += String.fromCharCode(byte);
+  return btoa(str);
+}
+
+async function refreshStateIfAvailable() {
+  const next = await sendToTab({ type: "GET_STATE" });
+  if (next) state = next;
+}
+
+async function syncCompanyTerms(force = false) {
+  const { companySync } = await getCompanyState();
+  if (!companySync?.companyId || !companySync.teamKey) {
+    showFlash("Join a company first.", "warn");
+    return null;
+  }
+
+  const response = await fetch(`${COMPANY_API_BASE}/terms/${companySync.companyId}`);
+  if (!response.ok) throw new Error("Could not sync company words");
+  const data = await response.json();
+  if (!data.encryptedTerms) {
+    await chrome.storage.local.set({ [COMPANY_TERMS_STORAGE_KEY]: [] });
+    return [];
+  }
+  if (!force && data.termsVersion <= (companySync.termsVersion || 0)) {
+    return null;
+  }
+
+  const terms = await decryptTerms(data.encryptedTerms, data.termsIv, companySync.teamKey);
+  const nextCompanySync = {
+    ...companySync,
+    termsVersion: data.termsVersion,
+    lastSyncAt: new Date().toISOString()
+  };
+  await chrome.storage.local.set({
+    [COMPANY_TERMS_STORAGE_KEY]: normalizeTerms(terms.map((term) => term.text || term)),
+    [COMPANY_STATE_STORAGE_KEY]: nextCompanySync
+  });
+
+  if (companySync.employeeEmail) {
+    try {
+      await fetch(`${COMPANY_API_BASE}/members/${companySync.companyId}/heartbeat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: companySync.employeeEmail })
+      });
+    } catch (error) {
+      /* ignore heartbeat */
+    }
+  }
+
+  await refreshStateIfAvailable();
+  return terms;
+}
+
+async function joinCompany(joinCode, email) {
+  const response = await fetch(`${COMPANY_API_BASE}/join`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ joinCode: joinCode.toUpperCase(), email })
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || "Could not join company");
+
+  const teamKey = await decryptTeamKeyWithCode(
+    data.encryptedTeamKey,
+    data.teamKeySalt,
+    data.teamKeyIv,
+    joinCode.toUpperCase()
+  );
+
+  await chrome.storage.local.set({
+    [COMPANY_STATE_STORAGE_KEY]: {
+      companyId: data.companyId,
+      companyName: data.companyName,
+      employeeEmail: email,
+      teamKey,
+      termsVersion: 0,
+      joinedAt: new Date().toISOString()
+    }
+  });
+
+  await syncCompanyTerms(true);
+}
+
+async function leaveCompany() {
+  await chrome.storage.local.remove([COMPANY_STATE_STORAGE_KEY, COMPANY_TERMS_STORAGE_KEY]);
+  await refreshStateIfAvailable();
+}
+
 // Small per-message copy button, like the one on ChatGPT's reply blocks.
 function msgCopyButton(getTextOrString) {
   const btn = el("button", "msg__copy", "Copy");
@@ -125,9 +339,14 @@ function setTab(tab) {
 // an action (force) — otherwise polling would steal focus / collapse panels.
 function render(force = false) {
   document.querySelectorAll(".tab").forEach((b) => b.classList.toggle("is-active", b.dataset.tab === activeTab));
-  if (!state) { renderNoPage(); renderedTab = null; return; }
-  $("#session-count").textContent =
-    `${state.sessionCount} value${state.sessionCount === 1 ? "" : "s"} protected this session`;
+  if (!state && activeTab !== "words" && activeTab !== "settings") {
+    renderNoPage();
+    renderedTab = null;
+    return;
+  }
+  $("#session-count").textContent = state
+    ? `${state.sessionCount} value${state.sessionCount === 1 ? "" : "s"} protected this session`
+    : "Manage your settings and custom words";
 
   const live = activeTab === "home" || activeTab === "field";
   if (!live && !force && renderedTab === activeTab) return;
@@ -168,25 +387,83 @@ function renderHome() {
     turns.map((t) => `${t.role === "assistant" ? "Assistant" : "You"}:\n${(t.blocks || []).map((b) => b.text).join("\n\n")}`).join("\n\n")));
 }
 
-function renderWords() {
-  body.append(el("p", "lead", "Always protect these words — names, project codes, client terms. They get masked just like detected PII."));
+async function renderWords() {
+  const settings = await getStoredSettings();
+  const { companySync, companyTerms } = await getCompanyState();
+  const personalTerms = settings.personalTerms || [];
+  const plan = effectivePlanFromData(settings, companySync);
+  const limit = personalLimitForPlan(plan);
+
+  body.innerHTML = "";
+  body.append(el("p", "lead", "Always protect these words — names, project codes, client terms. Company-managed words apply automatically, and your own personal words are added on top."));
+
+  const meta = el("div", "stack");
+  meta.append(
+    el("div", "pill", `Plan: ${plan}`),
+    el("div", "pill", Number.isFinite(limit) ? `${personalTerms.length}/${limit} personal words` : `${personalTerms.length} personal words`)
+  );
+  body.append(meta);
+
   const add = el("div", "words-add");
   const input = el("input", "words-input");
   input.type = "text";
   input.placeholder = "Add a word or phrase…";
   const btn = el("button", "words-btn", "Add");
   btn.type = "button";
-  const submit = () => { const v = input.value.trim(); if (v) act({ type: "ADD_TERM", term: v }); };
+  const submit = async () => {
+    const value = input.value.trim();
+    if (!value) return;
+    const allTerms = normalizeTerms([...companyTerms, ...personalTerms]);
+    if (allTerms.some((term) => term.toLowerCase() === value.toLowerCase())) {
+      showFlash("That word is already protected.", "warn");
+      return;
+    }
+    if (Number.isFinite(limit) && personalTerms.length >= limit) {
+      showFlash(`Your ${plan} plan allows ${limit} personal custom words.`, "warn");
+      return;
+    }
+    const nextPersonalTerms = normalizeTerms([...personalTerms, value]);
+    await chrome.storage.sync.set({
+      personalTerms: nextPersonalTerms,
+      customTerms: nextPersonalTerms
+    });
+    input.value = "";
+    await refreshStateIfAvailable();
+    showFlash("Custom word saved.", "ok");
+    render(true);
+  };
   btn.addEventListener("click", submit);
-  input.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); submit(); } });
+  input.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); void submit(); } });
   add.append(input, btn);
   body.append(add);
 
-  const terms = state.customTerms || [];
-  if (!terms.length) { body.append(el("p", "empty", "No custom words yet.")); return; }
-  body.append(el("div", "section", `Custom words (${terms.length})`));
-  for (const term of terms) {
-    body.append(row("protected", term, "custom word", "Remove", () => act({ type: "REMOVE_TERM", term })));
+  if (companyTerms.length) {
+    body.append(el("div", "section", `Company words (${companyTerms.length})`));
+    body.append(el("p", "lead", companySync?.companyName
+      ? `Managed by ${companySync.companyName}. These do not count against your personal-word limit.`
+      : "Managed by your company admin."));
+    for (const term of companyTerms) {
+      body.append(row("protected", term, "company-managed", "Locked", () => {}));
+    }
+  }
+
+  if (!personalTerms.length) {
+    body.append(el("p", "empty", companyTerms.length ? "No personal custom words yet." : "No custom words yet."));
+    return;
+  }
+
+  body.append(el("div", "section", `Personal words (${personalTerms.length})`));
+  for (const term of personalTerms) {
+    body.append(row("protected", term, "custom word", "Remove", async () => {
+      const nextPersonalTerms = personalTerms.filter((item) => item.toLowerCase() !== term.toLowerCase());
+      await chrome.storage.sync.set({
+        personalTerms: nextPersonalTerms,
+        customTerms: nextPersonalTerms
+      });
+      await refreshStateIfAvailable();
+      showFlash("Custom word removed.", "ok");
+      render(true);
+    }));
   }
 }
 
@@ -243,7 +520,8 @@ function toggleRow(key, label, hint, checked) {
 }
 
 async function renderSettings() {
-  const settings = await chrome.storage.sync.get(DEFAULTS);
+  const settings = await getStoredSettings();
+  const { companySync, companyTerms } = await getCompanyState();
   body.innerHTML = "";
   $("#session-count").textContent =
     `${state ? state.sessionCount : 0} value${(state && state.sessionCount === 1) ? "" : "s"} protected this session`;
@@ -253,6 +531,84 @@ async function renderSettings() {
   line.append(el("span", null, "Current site"));
   line.append(el("strong", null, host || "—"));
   body.append(line);
+
+  const planLine = el("div", "status-line");
+  const plan = effectivePlanFromData(settings, companySync);
+  const limit = personalLimitForPlan(plan);
+  planLine.append(el("span", null, "Subscription"));
+  planLine.append(el("strong", null, Number.isFinite(limit) ? `${plan} · ${settings.personalTerms.length}/${limit} personal words` : `${plan} · unlimited personal words`));
+  body.append(planLine);
+
+  const companyCard = el("div", "card");
+  companyCard.append(el("div", "section", "Company sync"));
+  if (companySync?.companyId) {
+    companyCard.append(el("p", "lead", `${companySync.companyName} is active. ${companyTerms.length} company-managed words are applied automatically.`));
+    const joinedMeta = el("div", "status-line");
+    joinedMeta.append(el("span", null, "Joined as"));
+    joinedMeta.append(el("strong", null, companySync.employeeEmail || "—"));
+    companyCard.append(joinedMeta);
+    if (companySync.lastSyncAt) {
+      const syncedMeta = el("div", "status-line");
+      syncedMeta.append(el("span", null, "Last sync"));
+      syncedMeta.append(el("strong", null, new Date(companySync.lastSyncAt).toLocaleString()));
+      companyCard.append(syncedMeta);
+    }
+
+    const syncBtn = el("button", "btn btn--primary", "Sync company words now");
+    syncBtn.type = "button";
+    syncBtn.addEventListener("click", async () => {
+      syncBtn.disabled = true;
+      try {
+        await syncCompanyTerms(true);
+        showFlash("Company words synced.", "ok");
+        renderSettings();
+      } catch (error) {
+        showFlash(error instanceof Error ? error.message : "Sync failed", "warn");
+      } finally {
+        syncBtn.disabled = false;
+      }
+    });
+    companyCard.append(syncBtn);
+
+    const leaveBtn = el("button", "btn btn--secondary", "Leave company sync");
+    leaveBtn.type = "button";
+    leaveBtn.addEventListener("click", async () => {
+      await leaveCompany();
+      showFlash("Company sync removed from this browser.", "ok");
+      renderSettings();
+    });
+    companyCard.append(leaveBtn);
+  } else {
+    companyCard.append(el("p", "lead", "Join your company to receive admin-managed protected words. Your personal custom words still stay private to you and can be added separately."));
+    const joinCode = el("input", "words-input");
+    joinCode.type = "text";
+    joinCode.placeholder = "Company join code";
+    const email = el("input", "words-input");
+    email.type = "email";
+    email.placeholder = "Work email";
+    const joinBtn = el("button", "btn btn--primary", "Join company");
+    joinBtn.type = "button";
+    joinBtn.addEventListener("click", async () => {
+      const code = joinCode.value.trim();
+      const emailValue = email.value.trim();
+      if (!code || !emailValue) {
+        showFlash("Enter your join code and work email.", "warn");
+        return;
+      }
+      joinBtn.disabled = true;
+      try {
+        await joinCompany(code, emailValue);
+        showFlash("Company sync is active.", "ok");
+        renderSettings();
+      } catch (error) {
+        showFlash(error instanceof Error ? error.message : "Join failed", "warn");
+      } finally {
+        joinBtn.disabled = false;
+      }
+    });
+    companyCard.append(joinCode, email, joinBtn);
+  }
+  body.append(companyCard);
 
   // --- the few settings most people touch -----------------------------------
   body.append(toggleRow("enabled", "Protection on", "Master switch for detection and masking.", settings.enabled !== false));
@@ -338,7 +694,10 @@ chrome.tabs.onActivated.addListener(() => refreshState());
 chrome.tabs.onUpdated.addListener((_, info) => { if (info.status === "complete") refreshState(); });
 
 chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === "sync" && activeTab === "settings") renderSettings();
+  if (area === "sync" && (activeTab === "settings" || activeTab === "words")) render(true);
+  if (area === "local" && (changes[COMPANY_STATE_STORAGE_KEY] || changes[COMPANY_TERMS_STORAGE_KEY])) {
+    if (activeTab === "settings" || activeTab === "words") render(true);
+  }
 });
 
 const logoUrl = chrome.runtime.getURL("ledebe-icon.png");

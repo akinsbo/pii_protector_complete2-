@@ -88,6 +88,12 @@
             padding: 0.15rem 0.55rem;
             margin-left: 0.25rem;
         }
+        .payment-note {
+            margin-top: 0.9rem;
+            font-size: 0.88rem;
+            color: var(--text-gray);
+        }
+        .payment-note strong { color: var(--text-dark); }
 
         /* ── Pricing grid ── */
         .pricing-section {
@@ -380,6 +386,9 @@
         <button class="toggle-label active" id="toggleMonthly" onclick="setBilling('monthly')" data-i18n="pricing.billing.monthly">Monthly</button>
         <button class="toggle-label" id="toggleAnnual" onclick="setBilling('annual')"><span data-i18n="pricing.billing.annual">Annual</span> <span class="save-badge" data-i18n="pricing.billing.save">Save 20%</span></button>
     </div>
+    <div class="payment-note">
+        Secure checkout via <strong id="checkoutProvider">Paddle</strong>. Cards for Pro, invoice or bank transfer for Team and Enterprise.
+    </div>
 </section>
 
 <!-- ── Pricing cards ── -->
@@ -609,6 +618,7 @@
     </div>
 </footer>
 
+<script src="../payment-config.js?v=1"></script>
 <script src="../i18n.js?v=5"></script>
 <script>
     // ── Billing toggle ──
@@ -618,12 +628,17 @@
         team: { monthly: { amount: '£18',  perKey: 'pricing.billing.perUserMonth', noteKey: null },
                 annual:  { amount: '£160', perKey: 'pricing.billing.perUserYear',  noteKey: 'pricing.team.annualNote' } }
     };
-    const ctaLinks = {
-        pro:  'mailto:hello@ledebe.com?subject=Pro%20plan%20enquiry',
-        team: 'mailto:hello@ledebe.com?subject=Team%20plan%20enquiry'
-    };
+    const pricingConfig = window.LEDEBE_PRICING_CONFIG || {};
+    const checkoutLinks = pricingConfig.checkoutLinks || {};
 
     let billing = 'monthly';
+
+    function resolveTierLink(tier, mode) {
+        if (tier === 'enterprise') {
+            return checkoutLinks.enterprise || 'mailto:hello@ledebe.com?subject=Enterprise%20enquiry';
+        }
+        return checkoutLinks?.[tier]?.[mode] || `mailto:hello@ledebe.com?subject=${encodeURIComponent(tier + ' plan enquiry')}`;
+    }
 
     function setBilling(mode) {
         billing = mode;
@@ -637,8 +652,10 @@
                 : p.amount;
             document.getElementById(tier + 'Per').textContent = (typeof t === 'function') ? t(p.perKey) : '';
             document.getElementById(tier + 'AnnualNote').textContent = (p.noteKey && typeof t === 'function') ? t(p.noteKey) : '\u00a0';
-            document.getElementById(tier + 'CtaLink').href = ctaLinks[tier];
+            document.getElementById(tier + 'CtaLink').href = resolveTierLink(tier, mode);
         });
+
+        document.getElementById('checkoutProvider').textContent = pricingConfig.provider || 'Paddle';
     }
 
     // Initial render after i18n.js loads, and re-render whenever language changes

@@ -50,6 +50,7 @@
         "<all_urls>"
       ],
       "js": [
+        "i18n.js",
         "detector.js",
         "content.js"
       ],

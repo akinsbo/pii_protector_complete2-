@@ -43,6 +43,11 @@
     team: Infinity,
     enterprise: Infinity
   };
+  const i18n = globalThis.LEDEBE_I18N || { t: (_key, fallback, values) => {
+    if (!values) return fallback;
+    return String(fallback || "").replace(/\{(\w+)\}/g, (_, key) => values[key] ?? "");
+  } };
+  const t = (key, fallback, values) => i18n.t(key, fallback, values);
 
   // Map the category toggles to the detector rule names to skip when off.
   function disabledTypes() {
@@ -743,10 +748,10 @@
         <button type="button" class="ledebe-drawer__close" aria-label="Close">×</button>
       </header>
       <nav class="ledebe-tabs">
-        <button type="button" class="ledebe-tab" data-tab="home">Home</button>
-        <button type="button" class="ledebe-tab" data-tab="words">Custom words</button>
-        <button type="button" class="ledebe-tab" data-tab="field">Protected words</button>
-        <button type="button" class="ledebe-tab" data-tab="settings">Settings</button>
+        <button type="button" class="ledebe-tab" data-tab="home">${t("tabs.home", "Home")}</button>
+        <button type="button" class="ledebe-tab" data-tab="words">${t("tabs.words", "Custom words")}</button>
+        <button type="button" class="ledebe-tab" data-tab="field">${t("tabs.field", "Protected words")}</button>
+        <button type="button" class="ledebe-tab" data-tab="settings">${t("tabs.settings", "Settings")}</button>
       </nav>
       <div class="ledebe-drawer__body"></div>
     `;
@@ -923,13 +928,13 @@
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "ledebe-msg__copy";
-    btn.title = "Copy this message";
-    btn.textContent = "Copy";
+    btn.title = t("common.copy", "Copy");
+    btn.textContent = t("common.copy", "Copy");
     btn.addEventListener("click", async () => {
       try {
         await navigator.clipboard.writeText(text);
-        btn.textContent = "Copied";
-        setTimeout(() => { btn.textContent = "Copy"; }, 1200);
+        btn.textContent = t("common.copied", "Copied");
+        setTimeout(() => { btn.textContent = t("common.copy", "Copy"); }, 1200);
       } catch (error) {
         /* clipboard blocked */
       }
@@ -1017,7 +1022,7 @@
   }
 
   function renderHomePane(body) {
-    body.appendChild(leadEl("Your chat with real values restored — shown only here. The page itself keeps the placeholders."));
+    body.appendChild(leadEl(t("home.lead", "Your chat with real values restored — shown only here. The page itself keeps the placeholders.")));
 
     const turns = collectRestoredTranscript();
     if (!turns.length) {
@@ -1026,9 +1031,9 @@
         pre.className = "ledebe-drawer__restored";
         pre.textContent = latestRestoredText;
         body.appendChild(pre);
-        body.appendChild(copyButton("Copy restored reply", () => latestRestoredText));
+        body.appendChild(copyButton(t("home.copyReply", "Copy restored reply"), () => latestRestoredText));
       } else {
-        body.appendChild(emptyEl("No restored content yet. Send a protected prompt and the chat will mirror here with your real values."));
+        body.appendChild(emptyEl(t("home.noReply", "No restored content yet. Send a protected prompt and the chat will mirror here with your real values.")));
       }
       return;
     }
@@ -1038,7 +1043,7 @@
       msg.className = `ledebe-msg ledebe-msg--${turn.role === "assistant" ? "assistant" : "user"}`;
       const who = document.createElement("div");
       who.className = "ledebe-msg__role";
-      who.textContent = turn.role === "assistant" ? "Assistant" : "You";
+      who.textContent = turn.role === "assistant" ? t("home.assistant", "Assistant") : t("home.you", "You");
       msg.append(who);
 
       for (const block of turn.blocks) {
@@ -1056,8 +1061,8 @@
       body.appendChild(msg);
     }
 
-    body.appendChild(copyButton("Copy whole transcript", () =>
-      turns.map((t) => `${t.role === "assistant" ? "Assistant" : "You"}:\n${t.blocks.map((b) => b.text).join("\n\n")}`).join("\n\n")));
+    body.appendChild(copyButton(t("home.copyTranscript", "Copy whole transcript"), () =>
+      turns.map((turn) => `${turn.role === "assistant" ? t("home.assistant", "Assistant") : t("home.you", "You")}:\n${turn.blocks.map((b) => b.text).join("\n\n")}`).join("\n\n")));
   }
 
   // ---- Custom words tab ----------------------------------------------------
@@ -1094,18 +1099,18 @@
     const personalTerms = settings.personalTerms || [];
     const companyTerms = settings.companyTerms || [];
     const limitLabel = Number.isFinite(limit) ? `${personalTerms.length}/${limit} personal words` : `${personalTerms.length} personal words`;
-    body.appendChild(leadEl(`Always protect these words — names, project codes, client terms. Plan: ${plan}. ${limitLabel}.`));
+    body.appendChild(leadEl(`${t("words.lead", "Always protect these words — names, project codes, client terms. Company-managed words apply automatically, and your own personal words are added on top.")} Plan: ${plan}. ${limitLabel}.`));
 
     const add = document.createElement("div");
     add.className = "ledebe-words__add";
     const input = document.createElement("input");
     input.type = "text";
     input.className = "ledebe-words__input";
-    input.placeholder = "Add a word or phrase…";
+    input.placeholder = t("words.placeholder", "Add a word or phrase…");
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "ledebe-words__btn";
-    btn.textContent = "Add";
+    btn.textContent = t("words.add", "Add");
     const submit = () => {
       const value = input.value.trim();
       if (!value) return;
@@ -1113,9 +1118,9 @@
       if (result?.ok) {
         input.value = "";
       } else if (result?.reason === "limit") {
-        toast(`Your ${plan} plan allows ${limit} personal custom words.`);
+        toast(t("words.limitWarn", "Your {plan} plan allows {limit} personal custom words.", { plan, limit }));
       } else if (result?.reason === "duplicate") {
-        toast("That word is already protected.");
+        toast(t("words.duplicateWarn", "That word is already protected."));
       }
     };
     btn.addEventListener("click", submit);
@@ -1124,18 +1129,18 @@
     body.appendChild(add);
 
     if (!companyTerms.length && !personalTerms.length) {
-      body.appendChild(emptyEl("No custom words yet."));
+      body.appendChild(emptyEl(t("words.none", "No custom words yet.")));
       return;
     }
     if (companyTerms.length) {
-      body.appendChild(sectionEl(`Company words (${companyTerms.length})`));
+      body.appendChild(sectionEl(t("words.companySection", "Company words ({count})", { count: companyTerms.length })));
       for (const term of companyTerms) {
-        body.appendChild(rowEl("protected", term, "company-managed", "Locked", () => {}));
+        body.appendChild(rowEl("protected", term, t("words.companyManaged", "company-managed"), t("words.locked", "Locked"), () => {}));
       }
     }
-    body.appendChild(sectionEl(`Personal words (${personalTerms.length})`));
+    body.appendChild(sectionEl(t("words.personalSection", "Personal words ({count})", { count: personalTerms.length })));
     for (const term of personalTerms) {
-      body.appendChild(rowEl("protected", term, "custom word", "Remove", () => removeCustomTerm(term)));
+      body.appendChild(rowEl("protected", term, t("words.customWord", "custom word"), t("common.remove", "Remove"), () => removeCustomTerm(term)));
     }
   }
 
@@ -1230,7 +1235,7 @@
     placeholderMap.clear();
     unprotected.clear();
     if (drawerOpen) refreshDrawer(true);
-    if (btn) { btn.textContent = "Cleared"; setTimeout(() => { btn.textContent = "Clear saved data"; }, 1200); }
+    if (btn) { btn.textContent = t("settings.cleared", "Cleared"); setTimeout(() => { btn.textContent = t("settings.clear", "Clear saved data"); }, 1200); }
   }
 
   function renderSettingsPane(body) {
@@ -1238,39 +1243,39 @@
     const status = document.createElement("div");
     status.className = "ledebe-status-line";
     const a = document.createElement("span");
-    a.textContent = "Current site";
+    a.textContent = t("settings.currentSite", "Current site");
     const b = document.createElement("strong");
     b.textContent = host || "—";
     status.append(a, b);
     body.appendChild(status);
 
-    body.appendChild(settingsToggle("enabled", "Protection on", "Master switch for detection and masking.", settings.enabled !== false));
-    body.appendChild(settingsToggle("autoReplace", "Replace as I type", "Mask each value live, before send.", settings.autoReplace !== false));
-    body.appendChild(settingsToggle("restoreResponses", "Reveal replies here", "Show the reply with real values in this panel.", settings.restoreResponses !== false));
+    body.appendChild(settingsToggle("enabled", t("settings.protectionOn", "Protection on"), t("settings.protectionHint", "Master switch for detection and masking."), settings.enabled !== false));
+    body.appendChild(settingsToggle("autoReplace", t("settings.replace", "Replace as I type"), t("settings.replaceHint", "Mask each value live, before send."), settings.autoReplace !== false));
+    body.appendChild(settingsToggle("restoreResponses", t("settings.restore", "Reveal replies here"), t("settings.restoreHint", "Show the reply with real values in this panel."), settings.restoreResponses !== false));
 
-    body.appendChild(drawerButton("Protect active field now", "primary", () => protectActiveField()));
+    body.appendChild(drawerButton(t("settings.protectField", "Protect active field now"), "primary", () => protectActiveField()));
     const paused = (settings.pausedHosts || []).includes(host);
-    body.appendChild(drawerButton(paused ? "Resume on this site" : "Pause on this site", "secondary", pauseSite));
+    body.appendChild(drawerButton(paused ? t("settings.resume", "Resume on this site") : t("settings.pause", "Pause on this site"), "secondary", pauseSite));
 
     const adv = document.createElement("details");
     adv.className = "ledebe-advanced";
     adv.open = advancedOpen;
     adv.addEventListener("toggle", () => { advancedOpen = adv.open; });
     const summary = document.createElement("summary");
-    summary.textContent = "Advanced settings";
+    summary.textContent = t("settings.advanced", "Advanced settings");
     adv.appendChild(summary);
 
-    adv.appendChild(settingsToggle("scanOnPaste", "Scan on paste", "Mask sensitive data you paste in.", settings.scanOnPaste !== false));
-    adv.appendChild(settingsToggle("appendInstruction", "Ask AI to keep placeholders", "Append a note on send so tokens stay intact.", settings.appendInstruction !== false));
-    adv.appendChild(settingsToggle("persistMappings", "Remember across restarts", "Keep restoring older chats after the browser closes. Stays on this device.", settings.persistMappings !== false));
+    adv.appendChild(settingsToggle("scanOnPaste", t("settings.scanPaste", "Scan on paste"), t("settings.scanPasteHint", "Mask sensitive data you paste in."), settings.scanOnPaste !== false));
+    adv.appendChild(settingsToggle("appendInstruction", t("settings.keepTokens", "Ask AI to keep placeholders"), t("settings.keepTokensHint", "Append a note on send so tokens stay intact."), settings.appendInstruction !== false));
+    adv.appendChild(settingsToggle("persistMappings", t("settings.remember", "Remember across restarts"), t("settings.rememberHint", "Keep restoring older chats after the browser closes. Stays on this device."), settings.persistMappings !== false));
 
-    adv.appendChild(sectionEl("What to detect"));
-    adv.appendChild(settingsToggle("detectNames", "Names", "Two-or-more capitalised words (heuristic).", settings.detectNames !== false));
-    adv.appendChild(settingsToggle("detectNumbers", "Numbers", "Any run of 3+ digits.", settings.detectNumbers !== false));
-    adv.appendChild(settingsToggle("detectAddresses", "Addresses", "Street addresses.", settings.detectAddresses !== false));
-    adv.appendChild(settingsToggle("detectCodes", "Codes / IDs", "Tokens mixing letters and digits.", settings.detectCodes !== false));
-    adv.appendChild(leadEl("Emails, phone numbers, cards, SSNs, IPs and API keys are always detected."));
-    const clearBtn = drawerButton("Clear saved data", "secondary", () => clearSavedData(clearBtn));
+    adv.appendChild(sectionEl(t("settings.whatDetect", "What to detect")));
+    adv.appendChild(settingsToggle("detectNames", t("settings.names", "Names"), t("settings.namesHint", "Two-or-more capitalised words (heuristic)."), settings.detectNames !== false));
+    adv.appendChild(settingsToggle("detectNumbers", t("settings.numbers", "Numbers"), t("settings.numbersHint", "Any run of 3+ digits."), settings.detectNumbers !== false));
+    adv.appendChild(settingsToggle("detectAddresses", t("settings.addresses", "Addresses"), t("settings.addressesHint", "Street addresses."), settings.detectAddresses !== false));
+    adv.appendChild(settingsToggle("detectCodes", t("settings.codes", "Codes / IDs"), t("settings.codesHint", "Tokens mixing letters and digits."), settings.detectCodes !== false));
+    adv.appendChild(leadEl(t("settings.alwaysDetected", "Emails, phone numbers, cards, SSNs, IPs and API keys are always detected.")));
+    const clearBtn = drawerButton(t("settings.clear", "Clear saved data"), "secondary", () => clearSavedData(clearBtn));
     adv.appendChild(clearBtn);
 
     body.appendChild(adv);

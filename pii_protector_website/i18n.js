@@ -8,7 +8,7 @@ const translations = {
       bookDemoBtn: "Book a Free Demo →",
       webAppBtn: "Try Web App →"
     },
-    mockup: { yourInput: "Your input", protectedOutput: "Protected output", badge: "🛡️ 3 items protected" },
+    mockup: { yourInput: "Your input", protectedOutput: "Protected output", badge: "3 items protected" },
     proof: {
       works: "Works with ChatGPT, Claude & Gemini",
       local: "100% local — no data sent to servers",
@@ -149,6 +149,7 @@ const translations = {
         t4Title: "Invoices included",   t4Sub: "Automatic receipts for every payment",
         t5Title: "Payments via Paddle", t5Sub: "PCI-compliant, secure checkout"
       },
+      paymentNote: "Secure checkout via {provider}. Cards for Pro, invoice or bank transfer for Team and Enterprise.",
       faq: {
         title: "Frequently asked questions",
         q1: "Is the free plan really free forever?",
@@ -336,8 +337,8 @@ const translations = {
         s6Tip: '<strong>Quick tip:</strong> As you type, Ledebe suggests words to add as custom terms. If a word is already protected, it shows a green <em>"already protected"</em> chip so you never add the same term twice.',
         modeTitle: "Switching between Protect and Ask AI",
         modeIntro: "At the bottom of the screen, just above the text box, you'll see a mode toggle:",
-        modeProtect: "<strong>🛡️ Protect (default)</strong> — masks your text and shows you the safe version to copy. Nothing is sent to any AI. Use this when you just want to sanitise text before pasting it elsewhere.",
-        modeAsk: "<strong>🤖 Ask AI</strong> — sends your message directly to an AI (OpenAI, Anthropic, or Google) with PII already masked. The AI replies, and you see both the AI's response and a re-masked \"Safe to Share\" version. Use this for a full private AI chat experience.",
+        modeProtect: "<strong>Protect (default)</strong> — masks your text and shows you the safe version to copy. Nothing is sent to any AI. Use this when you just want to sanitise text before pasting it elsewhere.",
+        modeAsk: "<strong>Ask AI</strong> — sends your message directly to an AI (OpenAI, Anthropic, or Google) with PII already masked. The AI replies, and you see both the AI's response and a re-masked \"Safe to Share\" version. Use this for a full private AI chat experience.",
         modeTip: "You can switch modes at any time — even mid-conversation. The mode toggle remembers your last choice."
       },
       reqs: {
@@ -397,7 +398,7 @@ const translations = {
         previewTitle: "Document preview",
         previewIntro: "After uploading, click the document card to open the preview modal. It shows two side-by-side views:",
         previewDownload: "From the preview you can <strong>📥 Download</strong> the protected version as a file.",
-        previewHighlight: "You can also highlight text inside the document preview to trigger the <strong>🛡️ Protect</strong> / <strong>🔓 Unprotect</strong> floating button, just like in chat messages."
+        previewHighlight: "You can also highlight text inside the document preview to trigger the <strong>Protect</strong> / <strong>🔓 Unprotect</strong> floating button, just like in chat messages."
       },
       aiChat: {
         title: "AI Chat",
@@ -471,7 +472,7 @@ const translations = {
         desc: "How Ledebe handles your data — and why most of it never leaves your device."
       },
       lastUpdated: "Last updated: April 2026",
-      highlight: "🛡️ The short version: Ledebe masks your sensitive data locally on your device. We do not collect, store, or transmit your personal data or the content you protect. Your data stays yours.",
+      highlight: "The short version: Ledebe masks your sensitive data locally on your device. We do not collect, store, or transmit your personal data or the content you protect. Your data stays yours.",
       s1: {
         title: "1. Who We Are",
         p1: "Ledebe is a privacy tool built by Ledebe Technologies. Our product helps individuals and organisations protect personally identifiable information (PII) before sharing content with AI tools, colleagues, or third parties.",
@@ -640,7 +641,7 @@ const translations = {
       bookDemoBtn: "Reservar Demo Gratis →",
       webAppBtn: "Probar Web App →"
     },
-    mockup: { yourInput: "Tu entrada", protectedOutput: "Salida protegida", badge: "🛡️ 3 elementos protegidos" },
+    mockup: { yourInput: "Tu entrada", protectedOutput: "Salida protegida", badge: "3 elementos protegidos" },
     proof: {
       works: "Compatible con ChatGPT, Claude y Gemini",
       local: "100% local — sin envío de datos a servidores",
@@ -781,6 +782,7 @@ const translations = {
         t4Title: "Facturas incluidas",         t4Sub: "Recibos automáticos por cada pago",
         t5Title: "Pagos con Paddle",           t5Sub: "Pago seguro y compatible con PCI"
       },
+      paymentNote: "Pago seguro con {provider}. Tarjetas para Pro, y transferencia o factura para Team y Enterprise.",
       faq: {
         title: "Preguntas frecuentes",
         q1: "¿El plan gratuito es realmente gratis para siempre?",
@@ -968,8 +970,8 @@ const translations = {
         s6Tip: '<strong>Consejo rápido:</strong> Mientras escribes, Ledebe sugiere palabras para añadir como términos personalizados. Si una palabra ya está protegida, muestra un chip verde <em>"ya protegida"</em> para que no añadas el mismo término dos veces.',
         modeTitle: "Cambiar entre Proteger y Preguntar a la IA",
         modeIntro: "En la parte inferior de la pantalla, justo encima del cuadro de texto, verás un selector de modo:",
-        modeProtect: "<strong>🛡️ Proteger (por defecto)</strong> — enmascara tu texto y te muestra la versión segura para copiar. No se envía nada a ninguna IA. Úsalo cuando solo quieras sanear texto antes de pegarlo.",
-        modeAsk: "<strong>🤖 Preguntar a la IA</strong> — envía tu mensaje directamente a una IA (OpenAI, Anthropic o Google) con el PII ya enmascarado. La IA responde, y ves tanto la respuesta como una versión \"Segura para compartir\" re-enmascarada. Úsalo para una experiencia de chat IA totalmente privada.",
+        modeProtect: "<strong>Proteger (por defecto)</strong> — enmascara tu texto y te muestra la versión segura para copiar. No se envía nada a ninguna IA. Úsalo cuando solo quieras sanear texto antes de pegarlo.",
+        modeAsk: "<strong>Preguntar a la IA</strong> — envía tu mensaje directamente a una IA (OpenAI, Anthropic o Google) con el PII ya enmascarado. La IA responde, y ves tanto la respuesta como una versión \"Segura para compartir\" re-enmascarada. Úsalo para una experiencia de chat IA totalmente privada.",
         modeTip: "Puedes cambiar de modo en cualquier momento — incluso en mitad de la conversación. El selector recuerda tu última elección."
       },
       reqs: {
@@ -1029,7 +1031,7 @@ const translations = {
         previewTitle: "Vista previa del documento",
         previewIntro: "Después de subir, pulsa la tarjeta del documento para abrir el modal de vista previa. Muestra dos vistas en paralelo:",
         previewDownload: "Desde la vista previa puedes <strong>📥 Descargar</strong> la versión protegida como archivo.",
-        previewHighlight: "También puedes seleccionar texto dentro de la vista previa para activar el botón flotante <strong>🛡️ Proteger</strong> / <strong>🔓 Desproteger</strong>, igual que en los mensajes del chat."
+        previewHighlight: "También puedes seleccionar texto dentro de la vista previa para activar el botón flotante <strong>Proteger</strong> / <strong>🔓 Desproteger</strong>, igual que en los mensajes del chat."
       },
       aiChat: {
         title: "Chat IA",
@@ -1103,7 +1105,7 @@ const translations = {
         desc: "Cómo Ledebe gestiona tus datos — y por qué la mayoría nunca sale de tu dispositivo."
       },
       lastUpdated: "Última actualización: abril de 2026",
-      highlight: "🛡️ La versión corta: Ledebe enmascara tus datos sensibles localmente en tu dispositivo. No recopilamos, almacenamos ni transmitimos tus datos personales ni el contenido que proteges. Tus datos son tuyos.",
+      highlight: "La versión corta: Ledebe enmascara tus datos sensibles localmente en tu dispositivo. No recopilamos, almacenamos ni transmitimos tus datos personales ni el contenido que proteges. Tus datos son tuyos.",
       s1: {
         title: "1. Quiénes somos",
         p1: "Ledebe es una herramienta de privacidad creada por Ledebe Technologies. Nuestro producto ayuda a personas y organizaciones a proteger información de identificación personal (PII) antes de compartir contenido con herramientas de IA, colegas o terceros.",
@@ -1272,7 +1274,7 @@ const translations = {
       bookDemoBtn: "Réserver une Démo Gratuite →",
       webAppBtn: "Essayer l'App Web →"
     },
-    mockup: { yourInput: "Votre saisie", protectedOutput: "Sortie protégée", badge: "🛡️ 3 éléments protégés" },
+    mockup: { yourInput: "Votre saisie", protectedOutput: "Sortie protégée", badge: "3 éléments protégés" },
     proof: {
       works: "Compatible avec ChatGPT, Claude et Gemini",
       local: "100% local — aucune donnée envoyée aux serveurs",
@@ -1413,6 +1415,7 @@ const translations = {
         t4Title: "Factures incluses",         t4Sub: "Reçus automatiques pour chaque paiement",
         t5Title: "Paiements via Paddle",      t5Sub: "Conforme PCI, paiement sécurisé"
       },
+      paymentNote: "Paiement sécurisé via {provider}. Cartes pour Pro, virement ou facture pour Team et Enterprise.",
       faq: {
         title: "Questions fréquentes",
         q1: "Le plan gratuit est-il vraiment gratuit pour toujours ?",
@@ -1600,8 +1603,8 @@ const translations = {
         s6Tip: '<strong>Astuce rapide :</strong> Pendant que vous tapez, Ledebe suggère des mots à ajouter comme termes personnalisés. Si un mot est déjà protégé, il affiche une puce verte <em>"déjà protégé"</em> pour ne jamais ajouter le même terme deux fois.',
         modeTitle: "Basculer entre Protéger et Demander à l'IA",
         modeIntro: "En bas de l'écran, juste au-dessus de la zone de texte, vous verrez un sélecteur de mode :",
-        modeProtect: "<strong>🛡️ Protéger (par défaut)</strong> — masque votre texte et vous montre la version sûre à copier. Rien n'est envoyé à aucune IA. Utilisez-le quand vous voulez juste sanitiser le texte avant de le coller ailleurs.",
-        modeAsk: "<strong>🤖 Demander à l'IA</strong> — envoie votre message directement à une IA (OpenAI, Anthropic ou Google) avec le PII déjà masqué. L'IA répond, et vous voyez la réponse ainsi qu'une version \"Sûr à partager\" remasquée. Utilisez-le pour une expérience de chat IA totalement privée.",
+        modeProtect: "<strong>Protéger (par défaut)</strong> — masque votre texte et vous montre la version sûre à copier. Rien n'est envoyé à aucune IA. Utilisez-le quand vous voulez juste sanitiser le texte avant de le coller ailleurs.",
+        modeAsk: "<strong>Demander à l'IA</strong> — envoie votre message directement à une IA (OpenAI, Anthropic ou Google) avec le PII déjà masqué. L'IA répond, et vous voyez la réponse ainsi qu'une version \"Sûr à partager\" remasquée. Utilisez-le pour une expérience de chat IA totalement privée.",
         modeTip: "Vous pouvez changer de mode à tout moment — même en pleine conversation. Le sélecteur mémorise votre dernier choix."
       },
       reqs: {
@@ -1661,7 +1664,7 @@ const translations = {
         previewTitle: "Aperçu du document",
         previewIntro: "Après téléchargement, cliquez sur la carte du document pour ouvrir le modal d'aperçu. Il affiche deux vues côte à côte :",
         previewDownload: "Depuis l'aperçu vous pouvez <strong>📥 Télécharger</strong> la version protégée comme fichier.",
-        previewHighlight: "Vous pouvez aussi sélectionner du texte dans l'aperçu du document pour déclencher le bouton flottant <strong>🛡️ Protéger</strong> / <strong>🔓 Déprotéger</strong>, comme dans les messages du chat."
+        previewHighlight: "Vous pouvez aussi sélectionner du texte dans l'aperçu du document pour déclencher le bouton flottant <strong>Protéger</strong> / <strong>🔓 Déprotéger</strong>, comme dans les messages du chat."
       },
       aiChat: {
         title: "Chat IA",
@@ -1735,7 +1738,7 @@ const translations = {
         desc: "Comment Ledebe gère vos données — et pourquoi la plupart ne quittent jamais votre appareil."
       },
       lastUpdated: "Dernière mise à jour : avril 2026",
-      highlight: "🛡️ La version courte : Ledebe masque vos données sensibles localement sur votre appareil. Nous ne collectons, stockons ni transmettons vos données personnelles ou le contenu que vous protégez. Vos données restent les vôtres.",
+      highlight: "La version courte : Ledebe masque vos données sensibles localement sur votre appareil. Nous ne collectons, stockons ni transmettons vos données personnelles ou le contenu que vous protégez. Vos données restent les vôtres.",
       s1: {
         title: "1. Qui nous sommes",
         p1: "Ledebe est un outil de confidentialité construit par Ledebe Technologies. Notre produit aide les particuliers et les organisations à protéger les informations personnelles identifiables (PII) avant de partager du contenu avec des outils IA, des collègues ou des tiers.",
@@ -1904,7 +1907,7 @@ const translations = {
       bookDemoBtn: "احجز عرضاً مجانياً ←",
       webAppBtn: "جرّب تطبيق الويب ←"
     },
-    mockup: { yourInput: "نصك", protectedOutput: "الناتج المحمي", badge: "🛡️ تمت حماية 3 عناصر" },
+    mockup: { yourInput: "نصك", protectedOutput: "الناتج المحمي", badge: "تمت حماية 3 عناصر" },
     proof: {
       works: "يعمل مع ChatGPT وClaude وGemini",
       local: "100% محلي — لا يُرسل أي بيانات للخوادم",
@@ -2045,6 +2048,7 @@ const translations = {
         t4Title: "الفواتير متضمنة",         t4Sub: "إيصالات تلقائية لكل دفعة",
         t5Title: "الدفع عبر Paddle",        t5Sub: "دفع آمن متوافق مع PCI"
       },
+      paymentNote: "دفع آمن عبر {provider}. البطاقات لخطة Pro، والتحويل البنكي أو الفاتورة لخطتي Team وEnterprise.",
       faq: {
         title: "أسئلة متكررة",
         q1: "هل الخطة المجانية مجانية فعلاً للأبد؟",
@@ -2232,8 +2236,8 @@ const translations = {
         s6Tip: '<strong>نصيحة سريعة:</strong> أثناء الكتابة، يقترح Ledebe كلمات لإضافتها كمصطلحات مخصصة. إذا كانت الكلمة محمية بالفعل، تظهر شارة خضراء <em>"محمي بالفعل"</em> لئلا تضيف نفس المصطلح مرتين.',
         modeTitle: "التبديل بين الحماية وسؤال الذكاء الاصطناعي",
         modeIntro: "في أسفل الشاشة، فوق صندوق النص مباشرةً، سترى مُحوّل وضع:",
-        modeProtect: "<strong>🛡️ حماية (افتراضي)</strong> — يُخفي نصك ويعرض لك النسخة الآمنة للنسخ. لا يُرسل شيء لأي ذكاء اصطناعي. استخدمه عندما تريد فقط تنقية النص قبل لصقه في مكان آخر.",
-        modeAsk: "<strong>🤖 اسأل الذكاء الاصطناعي</strong> — يرسل رسالتك مباشرةً إلى ذكاء اصطناعي (OpenAI أو Anthropic أو Google) مع إخفاء PII مسبقاً. يرد الذكاء الاصطناعي، وترى رده ونسخة \"آمنة للمشاركة\" مُخفاة من جديد. استخدمه لتجربة دردشة ذكاء اصطناعي خاصة بالكامل.",
+        modeProtect: "<strong>حماية (افتراضي)</strong> — يُخفي نصك ويعرض لك النسخة الآمنة للنسخ. لا يُرسل شيء لأي ذكاء اصطناعي. استخدمه عندما تريد فقط تنقية النص قبل لصقه في مكان آخر.",
+        modeAsk: "<strong>اسأل الذكاء الاصطناعي</strong> — يرسل رسالتك مباشرةً إلى ذكاء اصطناعي (OpenAI أو Anthropic أو Google) مع إخفاء PII مسبقاً. يرد الذكاء الاصطناعي، وترى رده ونسخة \"آمنة للمشاركة\" مُخفاة من جديد. استخدمه لتجربة دردشة ذكاء اصطناعي خاصة بالكامل.",
         modeTip: "يمكنك تبديل الأوضاع في أي وقت — حتى أثناء المحادثة. يتذكر المُحوّل آخر اختيار."
       },
       reqs: {
@@ -2293,7 +2297,7 @@ const translations = {
         previewTitle: "معاينة المستند",
         previewIntro: "بعد الرفع، انقر بطاقة المستند لفتح نافذة المعاينة. تعرض عرضين جنباً إلى جنب:",
         previewDownload: "من المعاينة يمكنك <strong>📥 تنزيل</strong> النسخة المحمية كملف.",
-        previewHighlight: "يمكنك أيضاً تحديد النص داخل معاينة المستند لتشغيل زر <strong>🛡️ حماية</strong> / <strong>🔓 إلغاء الحماية</strong> العائم، تماماً كما في رسائل الدردشة."
+        previewHighlight: "يمكنك أيضاً تحديد النص داخل معاينة المستند لتشغيل زر <strong>حماية</strong> / <strong>🔓 إلغاء الحماية</strong> العائم، تماماً كما في رسائل الدردشة."
       },
       aiChat: {
         title: "دردشة الذكاء الاصطناعي",
@@ -2367,7 +2371,7 @@ const translations = {
         desc: "كيف يتعامل Ledebe مع بياناتك — ولماذا معظمها لا يغادر جهازك أبداً."
       },
       lastUpdated: "آخر تحديث: أبريل 2026",
-      highlight: "🛡️ النسخة المختصرة: يُخفي Ledebe بياناتك الحساسة محلياً على جهازك. نحن لا نجمع أو نخزّن أو ننقل بياناتك الشخصية أو المحتوى الذي تحميه. بياناتك تبقى ملكك.",
+      highlight: "النسخة المختصرة: يُخفي Ledebe بياناتك الحساسة محلياً على جهازك. نحن لا نجمع أو نخزّن أو ننقل بياناتك الشخصية أو المحتوى الذي تحميه. بياناتك تبقى ملكك.",
       s1: {
         title: "1. من نحن",
         p1: "Ledebe أداة خصوصية بنتها Ledebe Technologies. منتجنا يساعد الأفراد والمؤسسات على حماية معلومات التعريف الشخصية (PII) قبل مشاركة المحتوى مع أدوات الذكاء الاصطناعي أو الزملاء أو الأطراف الثالثة.",
@@ -2536,7 +2540,7 @@ const translations = {
       bookDemoBtn: "预约免费演示 →",
       webAppBtn: "试用网页版 →"
     },
-    mockup: { yourInput: "您的输入", protectedOutput: "受保护的输出", badge: "🛡️ 已保护3个项目" },
+    mockup: { yourInput: "您的输入", protectedOutput: "受保护的输出", badge: "已保护3个项目" },
     proof: {
       works: "支持 ChatGPT、Claude 和 Gemini",
       local: "100% 本地处理 — 不向服务器发送数据",
@@ -2677,6 +2681,7 @@ const translations = {
         t4Title: "包含发票",            t4Sub: "每次付款自动收据",
         t5Title: "通过 Paddle 支付",    t5Sub: "PCI 合规,安全结算"
       },
+      paymentNote: "通过 {provider} 安全结算。Pro 支持银行卡，Team 和 Enterprise 支持发票或银行转账。",
       faq: {
         title: "常见问题",
         q1: "免费计划真的永久免费吗？",
@@ -2864,8 +2869,8 @@ const translations = {
         s6Tip: '<strong>快速提示:</strong>输入时,Ledebe 会建议添加自定义词语。如果某词已受保护,会显示绿色 <em>"已受保护"</em> 标签,这样您就不会重复添加同一词语。',
         modeTitle: "在保护和问 AI 之间切换",
         modeIntro: "在屏幕底部,文本框上方,您会看到一个模式切换:",
-        modeProtect: "<strong>🛡️ 保护(默认)</strong> — 屏蔽您的文本并向您显示可安全复制的版本。不发送任何内容到任何 AI。当您只想在粘贴到其他地方之前清理文本时使用。",
-        modeAsk: "<strong>🤖 问 AI</strong> — 在 PII 已经屏蔽的情况下,将您的消息直接发送到 AI (OpenAI、Anthropic 或 Google)。AI 回复,您会看到 AI 的回复和重新屏蔽的\"可安全分享\"版本。用于完整的私人 AI 对话体验。",
+        modeProtect: "<strong>保护(默认)</strong> — 屏蔽您的文本并向您显示可安全复制的版本。不发送任何内容到任何 AI。当您只想在粘贴到其他地方之前清理文本时使用。",
+        modeAsk: "<strong>问 AI</strong> — 在 PII 已经屏蔽的情况下,将您的消息直接发送到 AI (OpenAI、Anthropic 或 Google)。AI 回复,您会看到 AI 的回复和重新屏蔽的\"可安全分享\"版本。用于完整的私人 AI 对话体验。",
         modeTip: "您可以随时切换模式 — 即使在对话中。模式切换会记住您的最后选择。"
       },
       reqs: {
@@ -2925,7 +2930,7 @@ const translations = {
         previewTitle: "文档预览",
         previewIntro: "上传后,单击文档卡以打开预览模态框。它显示并排的两个视图:",
         previewDownload: "在预览中,您可以 <strong>📥 下载</strong> 受保护版本作为文件。",
-        previewHighlight: "您也可以在文档预览中高亮文本以触发 <strong>🛡️ 保护</strong> / <strong>🔓 取消保护</strong> 悬浮按钮,就像在聊天消息中一样。"
+        previewHighlight: "您也可以在文档预览中高亮文本以触发 <strong>保护</strong> / <strong>🔓 取消保护</strong> 悬浮按钮,就像在聊天消息中一样。"
       },
       aiChat: {
         title: "AI 对话",
@@ -2999,7 +3004,7 @@ const translations = {
         desc: "Ledebe 如何处理您的数据 — 以及为什么大部分数据永远不会离开您的设备。"
       },
       lastUpdated: "最后更新:2026 年 4 月",
-      highlight: "🛡️ 简短版本:Ledebe 在您的设备上本地屏蔽敏感数据。我们不收集、存储或传输您的个人数据或您保护的内容。您的数据归您所有。",
+      highlight: "简短版本:Ledebe 在您的设备上本地屏蔽敏感数据。我们不收集、存储或传输您的个人数据或您保护的内容。您的数据归您所有。",
       s1: {
         title: "1. 我们是谁",
         p1: "Ledebe 是由 Ledebe Technologies 构建的隐私工具。我们的产品帮助个人和组织在与 AI 工具、同事或第三方共享内容之前保护个人身份信息 (PII)。",

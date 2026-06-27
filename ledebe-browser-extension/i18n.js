@@ -1,0 +1,256 @@
+(function () {
+  "use strict";
+
+  const STRINGS = {
+    en: {
+      "app.title": "Ledebe Protector",
+      "tabs.home": "Home",
+      "tabs.words": "Custom words",
+      "tabs.field": "Protected words",
+      "tabs.settings": "Settings",
+      "panel.openAi": "Open an AI chat to begin",
+      "panel.noPage": "Ledebe is active on AI chat pages. Open one (ChatGPT, Claude, Gemini…) and your protected values will appear here.",
+      "common.copy": "Copy",
+      "common.copied": "Copied",
+      "common.remove": "Remove",
+      "home.lead": "Your chat with real values restored — shown only here. The page itself keeps the placeholders.",
+      "home.copyReply": "Copy restored reply",
+      "home.noReply": "No restored content yet. Send a protected prompt and the chat will mirror here with your real values.",
+      "home.assistant": "Assistant",
+      "home.you": "You",
+      "home.copyTranscript": "Copy whole transcript",
+      "words.lead": "Always protect these words — names, project codes, client terms. Company-managed words apply automatically, and your own personal words are added on top.",
+      "words.placeholder": "Add a word or phrase…",
+      "words.add": "Add",
+      "words.limitWarn": "Your {plan} plan allows {limit} personal custom words.",
+      "words.duplicateWarn": "That word is already protected.",
+      "words.saved": "Custom word saved.",
+      "words.removed": "Custom word removed.",
+      "words.companySection": "Company words ({count})",
+      "words.personalSection": "Personal words ({count})",
+      "words.noPersonal": "No personal custom words yet.",
+      "words.none": "No custom words yet.",
+      "words.companyLead": "Managed by {company}. These do not count against your personal-word limit.",
+      "words.companyLeadFallback": "Managed by your company admin.",
+      "words.companyManaged": "company-managed",
+      "words.customWord": "custom word",
+      "words.locked": "Locked",
+      "settings.currentSite": "Current site",
+      "settings.subscription": "Subscription",
+      "settings.companySync": "Company sync",
+      "settings.companyActive": "{company} is active. {count} company-managed words are applied automatically.",
+      "settings.joinedAs": "Joined as",
+      "settings.lastSync": "Last sync",
+      "settings.syncNow": "Sync company words now",
+      "settings.leaveCompany": "Leave company sync",
+      "settings.joinPrompt": "Join your company to receive admin-managed protected words. Your personal custom words still stay private to you and can be added separately.",
+      "settings.joinCode": "Company join code",
+      "settings.workEmail": "Work email",
+      "settings.joinCompany": "Join company",
+      "settings.joinMissing": "Enter your join code and work email.",
+      "settings.joined": "Company sync is active.",
+      "settings.left": "Company sync removed from this browser.",
+      "settings.syncDone": "Company words synced.",
+      "settings.joinFirst": "Join a company first.",
+      "settings.protectionOn": "Protection on",
+      "settings.protectionHint": "Master switch for detection and masking.",
+      "settings.replace": "Replace as I type",
+      "settings.replaceHint": "Mask each value live, before send.",
+      "settings.restore": "Reveal replies here",
+      "settings.restoreHint": "Show the reply with real values in this panel.",
+      "settings.pause": "Pause on this site",
+      "settings.resume": "Resume on this site",
+      "settings.protectField": "Protect active field now",
+      "settings.advanced": "Advanced settings",
+      "settings.scanPaste": "Scan on paste",
+      "settings.scanPasteHint": "Mask sensitive data you paste in.",
+      "settings.keepTokens": "Ask AI to keep placeholders",
+      "settings.keepTokensHint": "Append a note on send so tokens stay intact.",
+      "settings.remember": "Remember across restarts",
+      "settings.rememberHint": "Keep restoring older chats after the browser closes. Stays on this device.",
+      "settings.whatDetect": "What to detect",
+      "settings.names": "Names",
+      "settings.namesHint": "Two-or-more capitalised words (heuristic).",
+      "settings.numbers": "Numbers",
+      "settings.numbersHint": "Any run of 3+ digits.",
+      "settings.addresses": "Addresses",
+      "settings.addressesHint": "Street addresses.",
+      "settings.codes": "Codes / IDs",
+      "settings.codesHint": "Tokens mixing letters and digits.",
+      "settings.alwaysDetected": "Emails, phone numbers, cards, SSNs, IPs and API keys are always detected.",
+      "settings.clear": "Clear saved data",
+      "settings.cleared": "Cleared",
+      "field.none": "No sensitive data detected in this field.",
+      "field.protect": "Protect",
+      "field.unprotect": "Unprotect",
+      "field.forget": "Forget"
+    },
+    es: {
+      "app.title": "Ledebe Protector",
+      "tabs.home": "Inicio",
+      "tabs.words": "Palabras personalizadas",
+      "tabs.field": "Palabras protegidas",
+      "tabs.settings": "Ajustes",
+      "panel.openAi": "Abre un chat con IA para empezar",
+      "panel.noPage": "Ledebe está activo en páginas de chat con IA. Abre una (ChatGPT, Claude, Gemini…) y tus valores protegidos aparecerán aquí.",
+      "common.copy": "Copiar",
+      "common.copied": "Copiado",
+      "common.remove": "Eliminar",
+      "home.assistant": "Asistente",
+      "home.you": "Tú",
+      "words.add": "Añadir",
+      "words.locked": "Bloqueado",
+      "settings.currentSite": "Sitio actual",
+      "settings.subscription": "Suscripción",
+      "settings.companySync": "Sincronización de empresa",
+      "settings.joinCompany": "Unirse a la empresa",
+      "settings.syncNow": "Sincronizar palabras de empresa",
+      "settings.leaveCompany": "Salir de la sincronización",
+      "settings.pause": "Pausar en este sitio",
+      "settings.resume": "Reanudar en este sitio",
+      "settings.protectField": "Proteger campo activo ahora",
+      "settings.advanced": "Ajustes avanzados",
+      "settings.clear": "Borrar datos guardados"
+    },
+    fr: {
+      "app.title": "Ledebe Protector",
+      "tabs.home": "Accueil",
+      "tabs.words": "Mots personnalisés",
+      "tabs.field": "Mots protégés",
+      "tabs.settings": "Réglages",
+      "panel.openAi": "Ouvrez un chat IA pour commencer",
+      "common.copy": "Copier",
+      "common.copied": "Copié",
+      "common.remove": "Supprimer",
+      "home.assistant": "Assistant",
+      "home.you": "Vous",
+      "words.add": "Ajouter",
+      "words.locked": "Verrouillé",
+      "settings.currentSite": "Site actuel",
+      "settings.subscription": "Abonnement",
+      "settings.companySync": "Synchronisation d'entreprise",
+      "settings.joinCompany": "Rejoindre l'entreprise",
+      "settings.syncNow": "Synchroniser les mots d'entreprise",
+      "settings.leaveCompany": "Quitter la synchronisation",
+      "settings.pause": "Mettre en pause sur ce site",
+      "settings.resume": "Reprendre sur ce site",
+      "settings.protectField": "Protéger le champ actif",
+      "settings.advanced": "Réglages avancés",
+      "settings.clear": "Effacer les données enregistrées"
+    },
+    de: {
+      "app.title": "Ledebe Protector",
+      "tabs.home": "Start",
+      "tabs.words": "Eigene Begriffe",
+      "tabs.field": "Geschützte Begriffe",
+      "tabs.settings": "Einstellungen",
+      "panel.openAi": "Öffne einen KI-Chat zum Starten",
+      "common.copy": "Kopieren",
+      "common.copied": "Kopiert",
+      "common.remove": "Entfernen",
+      "home.assistant": "Assistent",
+      "home.you": "Du",
+      "words.add": "Hinzufügen",
+      "words.locked": "Gesperrt",
+      "settings.currentSite": "Aktuelle Seite",
+      "settings.subscription": "Abo",
+      "settings.companySync": "Unternehmens-Sync",
+      "settings.joinCompany": "Unternehmen beitreten",
+      "settings.syncNow": "Unternehmensbegriffe synchronisieren",
+      "settings.leaveCompany": "Sync verlassen",
+      "settings.pause": "Auf dieser Seite pausieren",
+      "settings.resume": "Auf dieser Seite fortsetzen",
+      "settings.protectField": "Aktives Feld jetzt schützen",
+      "settings.advanced": "Erweiterte Einstellungen",
+      "settings.clear": "Gespeicherte Daten löschen"
+    },
+    pt: {
+      "app.title": "Ledebe Protector",
+      "tabs.home": "Início",
+      "tabs.words": "Palavras personalizadas",
+      "tabs.field": "Palavras protegidas",
+      "tabs.settings": "Definições",
+      "panel.openAi": "Abra um chat de IA para começar",
+      "common.copy": "Copiar",
+      "common.copied": "Copiado",
+      "common.remove": "Remover",
+      "home.assistant": "Assistente",
+      "home.you": "Você",
+      "words.add": "Adicionar",
+      "words.locked": "Bloqueado",
+      "settings.currentSite": "Site atual",
+      "settings.subscription": "Subscrição",
+      "settings.companySync": "Sincronização da empresa",
+      "settings.joinCompany": "Entrar na empresa",
+      "settings.syncNow": "Sincronizar palavras da empresa",
+      "settings.leaveCompany": "Sair da sincronização",
+      "settings.pause": "Pausar neste site",
+      "settings.resume": "Retomar neste site",
+      "settings.protectField": "Proteger campo ativo agora",
+      "settings.advanced": "Definições avançadas",
+      "settings.clear": "Limpar dados guardados"
+    },
+    zh: {
+      "app.title": "Ledebe Protector",
+      "tabs.home": "主页",
+      "tabs.words": "自定义词语",
+      "tabs.field": "受保护词语",
+      "tabs.settings": "设置",
+      "panel.openAi": "打开 AI 聊天即可开始",
+      "common.copy": "复制",
+      "common.copied": "已复制",
+      "common.remove": "移除",
+      "home.assistant": "助手",
+      "home.you": "你",
+      "words.add": "添加",
+      "words.locked": "已锁定",
+      "settings.currentSite": "当前网站",
+      "settings.subscription": "订阅",
+      "settings.companySync": "公司同步",
+      "settings.joinCompany": "加入公司",
+      "settings.syncNow": "立即同步公司词语",
+      "settings.leaveCompany": "退出公司同步",
+      "settings.pause": "在此网站暂停",
+      "settings.resume": "在此网站恢复",
+      "settings.protectField": "立即保护当前输入框",
+      "settings.advanced": "高级设置",
+      "settings.clear": "清除已保存数据"
+    }
+  };
+
+  function normalizeLanguage(value) {
+    const lower = String(value || "en").toLowerCase();
+    if (lower.startsWith("zh")) return "zh";
+    if (lower.startsWith("pt")) return "pt";
+    if (lower.startsWith("es")) return "es";
+    if (lower.startsWith("fr")) return "fr";
+    if (lower.startsWith("de")) return "de";
+    return "en";
+  }
+
+  function getLanguage() {
+    try {
+      if (globalThis.chrome?.i18n?.getUILanguage) {
+        return normalizeLanguage(globalThis.chrome.i18n.getUILanguage());
+      }
+    } catch (error) {
+      /* ignore */
+    }
+    return normalizeLanguage(globalThis.navigator?.language || "en");
+  }
+
+  function interpolate(template, values) {
+    return String(template || "").replace(/\{(\w+)\}/g, (_, key) => values?.[key] ?? "");
+  }
+
+  const api = {
+    lang: getLanguage(),
+    t(key, fallback, values) {
+      const scoped = STRINGS[this.lang] || STRINGS.en;
+      const value = scoped[key] || STRINGS.en[key] || fallback || key;
+      return interpolate(value, values);
+    }
+  };
+
+  globalThis.LEDEBE_I18N = api;
+})();

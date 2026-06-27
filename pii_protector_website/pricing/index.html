@@ -386,8 +386,8 @@
         <button class="toggle-label active" id="toggleMonthly" onclick="setBilling('monthly')" data-i18n="pricing.billing.monthly">Monthly</button>
         <button class="toggle-label" id="toggleAnnual" onclick="setBilling('annual')"><span data-i18n="pricing.billing.annual">Annual</span> <span class="save-badge" data-i18n="pricing.billing.save">Save 20%</span></button>
     </div>
-    <div class="payment-note">
-        Secure checkout via <strong id="checkoutProvider">Paddle</strong>. Cards for Pro, invoice or bank transfer for Team and Enterprise.
+    <div class="payment-note" id="paymentNote">
+        Secure checkout via Paddle. Cards for Pro, invoice or bank transfer for Team and Enterprise.
     </div>
 </section>
 
@@ -655,7 +655,10 @@
             document.getElementById(tier + 'CtaLink').href = resolveTierLink(tier, mode);
         });
 
-        document.getElementById('checkoutProvider').textContent = pricingConfig.provider || 'Paddle';
+        const paymentNote = document.getElementById('paymentNote');
+        if (paymentNote && typeof t === 'function') {
+            paymentNote.textContent = t('pricing.paymentNote').replace('{provider}', pricingConfig.provider || 'Paddle');
+        }
     }
 
     // Initial render after i18n.js loads, and re-render whenever language changes

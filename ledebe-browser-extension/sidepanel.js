@@ -36,6 +36,11 @@ let flashTimer = null;
 
 const body = document.getElementById("body");
 const $ = (sel, root = document) => root.querySelector(sel);
+const i18n = globalThis.LEDEBE_I18N || { t: (_key, fallback, values) => {
+  if (!values) return fallback;
+  return String(fallback || "").replace(/\{(\w+)\}/g, (_, key) => values[key] ?? "");
+} };
+const t = (key, fallback, values) => i18n.t(key, fallback, values);
 
 // ---- messaging -----------------------------------------------------------
 
@@ -95,7 +100,7 @@ function copyButton(label, getText) {
   btn.addEventListener("click", async () => {
     try {
       await navigator.clipboard.writeText(getText());
-      btn.textContent = "Copied";
+      btn.textContent = t("common.copied", "Copied");
       setTimeout(() => { btn.textContent = label; }, 1200);
     } catch (error) { /* clipboard blocked */ }
   });
@@ -305,15 +310,15 @@ async function leaveCompany() {
 
 // Small per-message copy button, like the one on ChatGPT's reply blocks.
 function msgCopyButton(getTextOrString) {
-  const btn = el("button", "msg__copy", "Copy");
+  const btn = el("button", "msg__copy", t("common.copy", "Copy"));
   btn.type = "button";
-  btn.title = "Copy this message";
+  btn.title = t("common.copy", "Copy");
   btn.addEventListener("click", async () => {
     const text = typeof getTextOrString === "function" ? getTextOrString() : getTextOrString;
     try {
       await navigator.clipboard.writeText(text);
-      btn.textContent = "Copied";
-      setTimeout(() => { btn.textContent = "Copy"; }, 1200);
+      btn.textContent = t("common.copied", "Copied");
+      setTimeout(() => { btn.textContent = t("common.copy", "Copy"); }, 1200);
     } catch (error) { /* clipboard blocked */ }
   });
   return btn;
@@ -322,9 +327,9 @@ function msgCopyButton(getTextOrString) {
 // ---- render --------------------------------------------------------------
 
 function renderNoPage() {
-  $("#session-count").textContent = "Open an AI chat to begin";
+  $("#session-count").textContent = t("panel.openAi", "Open an AI chat to begin");
   body.innerHTML = "";
-  body.append(el("p", "empty", "Ledebe is active on AI chat pages. Open one (ChatGPT, Claude, Gemini…) and your protected values will appear here."));
+  body.append(el("p", "empty", t("panel.noPage", "Ledebe is active on AI chat pages. Open one (ChatGPT, Claude, Gemini…) and your protected values will appear here.")));
 }
 
 let renderedTab = null;
@@ -360,20 +365,20 @@ function render(force = false) {
 }
 
 function renderHome() {
-  body.append(el("p", "lead", "Your chat with real values restored — shown only here. The page itself keeps the placeholders."));
+  body.append(el("p", "lead", t("home.lead", "Your chat with real values restored — shown only here. The page itself keeps the placeholders.")));
   const turns = state.transcript || [];
   if (!turns.length) {
     if (state.latestRestored) {
       body.append(el("pre", "restored", state.latestRestored));
-      body.append(copyButton("Copy restored reply", () => state.latestRestored));
+      body.append(copyButton(t("home.copyReply", "Copy restored reply"), () => state.latestRestored));
     } else {
-      body.append(el("p", "empty", "No restored content yet. Send a protected prompt and the chat will mirror here with your real values."));
+      body.append(el("p", "empty", t("home.noReply", "No restored content yet. Send a protected prompt and the chat will mirror here with your real values.")));
     }
     return;
   }
   for (const turn of turns) {
     const msg = el("div", `msg msg--${turn.role === "assistant" ? "assistant" : "user"}`);
-    msg.append(el("div", "msg__role", turn.role === "assistant" ? "Assistant" : "You"));
+    msg.append(el("div", "msg__role", turn.role === "assistant" ? t("home.assistant", "Assistant") : t("home.you", "You")));
     for (const block of turn.blocks || []) {
       const blk = el("div", "msg__block" + (block.kind === "code" ? " is-code" : ""));
       const bhead = el("div", "msg__bhead");
@@ -383,8 +388,8 @@ function renderHome() {
     }
     body.append(msg);
   }
-  body.append(copyButton("Copy whole transcript", () =>
-    turns.map((t) => `${t.role === "assistant" ? "Assistant" : "You"}:\n${(t.blocks || []).map((b) => b.text).join("\n\n")}`).join("\n\n")));
+  body.append(copyButton(t("home.copyTranscript", "Copy whole transcript"), () =>
+    turns.map((turn) => `${turn.role === "assistant" ? t("home.assistant", "Assistant") : t("home.you", "You")}:\n${(turn.blocks || []).map((b) => b.text).join("\n\n")}`).join("\n\n")));
 }
 
 async function renderWords() {
@@ -395,7 +400,7 @@ async function renderWords() {
   const limit = personalLimitForPlan(plan);
 
   body.innerHTML = "";
-  body.append(el("p", "lead", "Always protect these words — names, project codes, client terms. Company-managed words apply automatically, and your own personal words are added on top."));
+  body.append(el("p", "lead", t("words.lead", "Always protect these words — names, project codes, client terms. Company-managed words apply automatically, and your own personal words are added on top.")));
 
   const meta = el("div", "stack");
   meta.append(
@@ -407,19 +412,19 @@ async function renderWords() {
   const add = el("div", "words-add");
   const input = el("input", "words-input");
   input.type = "text";
-  input.placeholder = "Add a word or phrase…";
-  const btn = el("button", "words-btn", "Add");
+  input.placeholder = t("words.placeholder", "Add a word or phrase…");
+  const btn = el("button", "words-btn", t("words.add", "Add"));
   btn.type = "button";
   const submit = async () => {
     const value = input.value.trim();
     if (!value) return;
     const allTerms = normalizeTerms([...companyTerms, ...personalTerms]);
     if (allTerms.some((term) => term.toLowerCase() === value.toLowerCase())) {
-      showFlash("That word is already protected.", "warn");
+      showFlash(t("words.duplicateWarn", "That word is already protected."), "warn");
       return;
     }
     if (Number.isFinite(limit) && personalTerms.length >= limit) {
-      showFlash(`Your ${plan} plan allows ${limit} personal custom words.`, "warn");
+      showFlash(t("words.limitWarn", "Your {plan} plan allows {limit} personal custom words.", { plan, limit }), "warn");
       return;
     }
     const nextPersonalTerms = normalizeTerms([...personalTerms, value]);
@@ -429,7 +434,7 @@ async function renderWords() {
     });
     input.value = "";
     await refreshStateIfAvailable();
-    showFlash("Custom word saved.", "ok");
+    showFlash(t("words.saved", "Custom word saved."), "ok");
     render(true);
   };
   btn.addEventListener("click", submit);
@@ -438,30 +443,30 @@ async function renderWords() {
   body.append(add);
 
   if (companyTerms.length) {
-    body.append(el("div", "section", `Company words (${companyTerms.length})`));
+    body.append(el("div", "section", t("words.companySection", "Company words ({count})", { count: companyTerms.length })));
     body.append(el("p", "lead", companySync?.companyName
-      ? `Managed by ${companySync.companyName}. These do not count against your personal-word limit.`
-      : "Managed by your company admin."));
+      ? t("words.companyLead", "Managed by {company}. These do not count against your personal-word limit.", { company: companySync.companyName })
+      : t("words.companyLeadFallback", "Managed by your company admin.")));
     for (const term of companyTerms) {
-      body.append(row("protected", term, "company-managed", "Locked", () => {}));
+      body.append(row("protected", term, t("words.companyManaged", "company-managed"), t("words.locked", "Locked"), () => {}));
     }
   }
 
   if (!personalTerms.length) {
-    body.append(el("p", "empty", companyTerms.length ? "No personal custom words yet." : "No custom words yet."));
+    body.append(el("p", "empty", companyTerms.length ? t("words.noPersonal", "No personal custom words yet.") : t("words.none", "No custom words yet.")));
     return;
   }
 
-  body.append(el("div", "section", `Personal words (${personalTerms.length})`));
+  body.append(el("div", "section", t("words.personalSection", "Personal words ({count})", { count: personalTerms.length })));
   for (const term of personalTerms) {
-    body.append(row("protected", term, "custom word", "Remove", async () => {
+    body.append(row("protected", term, t("words.customWord", "custom word"), t("common.remove", "Remove"), async () => {
       const nextPersonalTerms = personalTerms.filter((item) => item.toLowerCase() !== term.toLowerCase());
       await chrome.storage.sync.set({
         personalTerms: nextPersonalTerms,
         customTerms: nextPersonalTerms
       });
       await refreshStateIfAvailable();
-      showFlash("Custom word removed.", "ok");
+      showFlash(t("words.removed", "Custom word removed."), "ok");
       render(true);
     }));
   }
@@ -528,39 +533,39 @@ async function renderSettings() {
 
   const host = state?.host;
   const line = el("div", "status-line");
-  line.append(el("span", null, "Current site"));
+  line.append(el("span", null, t("settings.currentSite", "Current site")));
   line.append(el("strong", null, host || "—"));
   body.append(line);
 
   const planLine = el("div", "status-line");
   const plan = effectivePlanFromData(settings, companySync);
   const limit = personalLimitForPlan(plan);
-  planLine.append(el("span", null, "Subscription"));
+  planLine.append(el("span", null, t("settings.subscription", "Subscription")));
   planLine.append(el("strong", null, Number.isFinite(limit) ? `${plan} · ${settings.personalTerms.length}/${limit} personal words` : `${plan} · unlimited personal words`));
   body.append(planLine);
 
   const companyCard = el("div", "card");
-  companyCard.append(el("div", "section", "Company sync"));
+  companyCard.append(el("div", "section", t("settings.companySync", "Company sync")));
   if (companySync?.companyId) {
-    companyCard.append(el("p", "lead", `${companySync.companyName} is active. ${companyTerms.length} company-managed words are applied automatically.`));
+    companyCard.append(el("p", "lead", t("settings.companyActive", "{company} is active. {count} company-managed words are applied automatically.", { company: companySync.companyName, count: companyTerms.length })));
     const joinedMeta = el("div", "status-line");
-    joinedMeta.append(el("span", null, "Joined as"));
+    joinedMeta.append(el("span", null, t("settings.joinedAs", "Joined as")));
     joinedMeta.append(el("strong", null, companySync.employeeEmail || "—"));
     companyCard.append(joinedMeta);
     if (companySync.lastSyncAt) {
       const syncedMeta = el("div", "status-line");
-      syncedMeta.append(el("span", null, "Last sync"));
+      syncedMeta.append(el("span", null, t("settings.lastSync", "Last sync")));
       syncedMeta.append(el("strong", null, new Date(companySync.lastSyncAt).toLocaleString()));
       companyCard.append(syncedMeta);
     }
 
-    const syncBtn = el("button", "btn btn--primary", "Sync company words now");
+    const syncBtn = el("button", "btn btn--primary", t("settings.syncNow", "Sync company words now"));
     syncBtn.type = "button";
     syncBtn.addEventListener("click", async () => {
       syncBtn.disabled = true;
       try {
         await syncCompanyTerms(true);
-        showFlash("Company words synced.", "ok");
+        showFlash(t("settings.syncDone", "Company words synced."), "ok");
         renderSettings();
       } catch (error) {
         showFlash(error instanceof Error ? error.message : "Sync failed", "warn");
@@ -570,35 +575,35 @@ async function renderSettings() {
     });
     companyCard.append(syncBtn);
 
-    const leaveBtn = el("button", "btn btn--secondary", "Leave company sync");
+    const leaveBtn = el("button", "btn btn--secondary", t("settings.leaveCompany", "Leave company sync"));
     leaveBtn.type = "button";
     leaveBtn.addEventListener("click", async () => {
       await leaveCompany();
-      showFlash("Company sync removed from this browser.", "ok");
+      showFlash(t("settings.left", "Company sync removed from this browser."), "ok");
       renderSettings();
     });
     companyCard.append(leaveBtn);
   } else {
-    companyCard.append(el("p", "lead", "Join your company to receive admin-managed protected words. Your personal custom words still stay private to you and can be added separately."));
+    companyCard.append(el("p", "lead", t("settings.joinPrompt", "Join your company to receive admin-managed protected words. Your personal custom words still stay private to you and can be added separately.")));
     const joinCode = el("input", "words-input");
     joinCode.type = "text";
-    joinCode.placeholder = "Company join code";
+    joinCode.placeholder = t("settings.joinCode", "Company join code");
     const email = el("input", "words-input");
     email.type = "email";
-    email.placeholder = "Work email";
-    const joinBtn = el("button", "btn btn--primary", "Join company");
+    email.placeholder = t("settings.workEmail", "Work email");
+    const joinBtn = el("button", "btn btn--primary", t("settings.joinCompany", "Join company"));
     joinBtn.type = "button";
     joinBtn.addEventListener("click", async () => {
       const code = joinCode.value.trim();
       const emailValue = email.value.trim();
       if (!code || !emailValue) {
-        showFlash("Enter your join code and work email.", "warn");
+        showFlash(t("settings.joinMissing", "Enter your join code and work email."), "warn");
         return;
       }
       joinBtn.disabled = true;
       try {
         await joinCompany(code, emailValue);
-        showFlash("Company sync is active.", "ok");
+        showFlash(t("settings.joined", "Company sync is active."), "ok");
         renderSettings();
       } catch (error) {
         showFlash(error instanceof Error ? error.message : "Join failed", "warn");
@@ -611,12 +616,12 @@ async function renderSettings() {
   body.append(companyCard);
 
   // --- the few settings most people touch -----------------------------------
-  body.append(toggleRow("enabled", "Protection on", "Master switch for detection and masking.", settings.enabled !== false));
-  body.append(toggleRow("autoReplace", "Replace as I type", "Mask each value live, before send.", settings.autoReplace !== false));
-  body.append(toggleRow("restoreResponses", "Reveal replies here", "Show the reply with real values in this panel.", settings.restoreResponses !== false));
+  body.append(toggleRow("enabled", t("settings.protectionOn", "Protection on"), t("settings.protectionHint", "Master switch for detection and masking."), settings.enabled !== false));
+  body.append(toggleRow("autoReplace", t("settings.replace", "Replace as I type"), t("settings.replaceHint", "Mask each value live, before send."), settings.autoReplace !== false));
+  body.append(toggleRow("restoreResponses", t("settings.restore", "Reveal replies here"), t("settings.restoreHint", "Show the reply with real values in this panel."), settings.restoreResponses !== false));
 
   const paused = host ? (settings.pausedHosts || []).includes(host) : false;
-  const pauseBtn = el("button", "btn btn--secondary", paused ? "Resume on this site" : "Pause on this site");
+  const pauseBtn = el("button", "btn btn--secondary", paused ? t("settings.resume", "Resume on this site") : t("settings.pause", "Pause on this site"));
   pauseBtn.type = "button";
   pauseBtn.disabled = !host;
   pauseBtn.addEventListener("click", async () => {
@@ -628,7 +633,7 @@ async function renderSettings() {
   });
   body.append(pauseBtn);
 
-  const protectBtn = el("button", "btn btn--primary", "Protect active field now");
+  const protectBtn = el("button", "btn btn--primary", t("settings.protectField", "Protect active field now"));
   protectBtn.type = "button";
   protectBtn.addEventListener("click", () => act({ type: "PROTECT_ACTIVE_FIELD" }));
   body.append(protectBtn);
@@ -639,26 +644,26 @@ async function renderSettings() {
   adv.open = advancedOpen;
   adv.addEventListener("toggle", () => { advancedOpen = adv.open; });
   const summary = document.createElement("summary");
-  summary.textContent = "Advanced settings";
+  summary.textContent = t("settings.advanced", "Advanced settings");
   adv.append(summary);
 
-  adv.append(toggleRow("scanOnPaste", "Scan on paste", "Mask sensitive data you paste in.", settings.scanOnPaste !== false));
-  adv.append(toggleRow("appendInstruction", "Ask AI to keep placeholders", "Append a note on send so tokens stay intact.", settings.appendInstruction !== false));
-  adv.append(toggleRow("persistMappings", "Remember across restarts", "Keep restoring older chats after the browser closes. Stays on this device.", settings.persistMappings !== false));
+  adv.append(toggleRow("scanOnPaste", t("settings.scanPaste", "Scan on paste"), t("settings.scanPasteHint", "Mask sensitive data you paste in."), settings.scanOnPaste !== false));
+  adv.append(toggleRow("appendInstruction", t("settings.keepTokens", "Ask AI to keep placeholders"), t("settings.keepTokensHint", "Append a note on send so tokens stay intact."), settings.appendInstruction !== false));
+  adv.append(toggleRow("persistMappings", t("settings.remember", "Remember across restarts"), t("settings.rememberHint", "Keep restoring older chats after the browser closes. Stays on this device."), settings.persistMappings !== false));
 
-  adv.append(el("div", "section", "What to detect"));
-  adv.append(toggleRow("detectNames", "Names", "Two-or-more capitalised words (heuristic).", settings.detectNames !== false));
-  adv.append(toggleRow("detectNumbers", "Numbers", "Any run of 3+ digits.", settings.detectNumbers !== false));
-  adv.append(toggleRow("detectAddresses", "Addresses", "Street addresses.", settings.detectAddresses !== false));
-  adv.append(toggleRow("detectCodes", "Codes / IDs", "Tokens mixing letters and digits.", settings.detectCodes !== false));
-  adv.append(el("p", "lead", "Emails, phone numbers, cards, SSNs, IPs and API keys are always detected."));
+  adv.append(el("div", "section", t("settings.whatDetect", "What to detect")));
+  adv.append(toggleRow("detectNames", t("settings.names", "Names"), t("settings.namesHint", "Two-or-more capitalised words (heuristic)."), settings.detectNames !== false));
+  adv.append(toggleRow("detectNumbers", t("settings.numbers", "Numbers"), t("settings.numbersHint", "Any run of 3+ digits."), settings.detectNumbers !== false));
+  adv.append(toggleRow("detectAddresses", t("settings.addresses", "Addresses"), t("settings.addressesHint", "Street addresses."), settings.detectAddresses !== false));
+  adv.append(toggleRow("detectCodes", t("settings.codes", "Codes / IDs"), t("settings.codesHint", "Tokens mixing letters and digits."), settings.detectCodes !== false));
+  adv.append(el("p", "lead", t("settings.alwaysDetected", "Emails, phone numbers, cards, SSNs, IPs and API keys are always detected.")));
 
-  const clearBtn = el("button", "btn btn--secondary", "Clear saved data");
+  const clearBtn = el("button", "btn btn--secondary", t("settings.clear", "Clear saved data"));
   clearBtn.type = "button";
   clearBtn.addEventListener("click", async () => {
     await act({ type: "CLEAR_DATA" }); // clears only the active site's data
-    clearBtn.textContent = "Cleared";
-    setTimeout(() => { clearBtn.textContent = "Clear saved data"; }, 1200);
+    clearBtn.textContent = t("settings.cleared", "Cleared");
+    setTimeout(() => { clearBtn.textContent = t("settings.clear", "Clear saved data"); }, 1200);
   });
   adv.append(clearBtn);
 
@@ -675,6 +680,15 @@ function startPolling() {
 }
 function stopPolling() {
   if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+}
+
+function applyStaticText() {
+  const title = document.querySelector(".head strong");
+  if (title) title.textContent = t("app.title", "Ledebe Protector");
+  document.querySelector('.tab[data-tab="home"]').textContent = t("tabs.home", "Home");
+  document.querySelector('.tab[data-tab="words"]').textContent = t("tabs.words", "Custom words");
+  document.querySelector('.tab[data-tab="field"]').textContent = t("tabs.field", "Protected words");
+  document.querySelector('.tab[data-tab="settings"]').textContent = t("tabs.settings", "Settings");
 }
 
 function announceVisibility(visible) {
@@ -703,6 +717,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
 const logoUrl = chrome.runtime.getURL("ledebe-icon.png");
 if (logoUrl) document.getElementById("logo").src = logoUrl;
 
+applyStaticText();
 announceVisibility(true);
 refreshState();
 startPolling();

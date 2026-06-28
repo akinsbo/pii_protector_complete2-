@@ -30,19 +30,20 @@
 .ledebe-notice__card {
   display: flex;
   align-items: center;
-  gap: 14px;
-  min-width: min(720px, calc(100vw - 40px));
-  max-width: calc(100vw - 40px);
-  padding: 18px 22px;
-  border-radius: 20px;
+  gap: 10px;
+  min-width: min(500px, calc(100vw - 40px));
+  max-width: min(620px, calc(100vw - 40px));
+  padding: 12px 16px;
+  border-radius: 16px;
   background: rgba(255, 255, 255, 0.96);
   border: 1px solid rgba(30, 58, 138, 0.14);
-  box-shadow: 0 22px 55px rgba(15, 23, 42, 0.18);
-  color: #1438d8;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(20px, 2.8vw, 34px);
-  line-height: 1.08;
-  transform: translateY(-28px);
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.14);
+  color: #1638b7;
+  font-family: "SF Pro Display", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  font-size: clamp(15px, 1.7vw, 20px);
+  font-weight: 500;
+  line-height: 1.2;
+  transform: translateY(-20px);
   opacity: 0;
   transition: transform 0.26s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.26s ease;
   pointer-events: auto;
@@ -59,13 +60,13 @@
 
 .ledebe-notice__icon {
   flex: none;
-  width: 58px;
-  height: 58px;
+  width: 40px;
+  height: 40px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 3px solid #1d4ed8;
-  border-radius: 14px;
+  border: 2px solid #1d4ed8;
+  border-radius: 11px;
   background: #fff;
   cursor: pointer;
   padding: 0;
@@ -77,8 +78,8 @@
 }
 
 .ledebe-notice__icon img {
-  width: 34px;
-  height: 34px;
+  width: 22px;
+  height: 22px;
   object-fit: contain;
   display: block;
 }
@@ -670,21 +671,21 @@ html.ledebe-page-pushed body > :not(.ledebe-drawer):not(.ledebe-toast) {
   .ledebe-notice__card {
     min-width: 0;
     width: 100%;
-    padding: 14px 16px;
-    gap: 10px;
-    border-radius: 16px;
-    font-size: clamp(16px, 5vw, 24px);
+    padding: 11px 14px;
+    gap: 8px;
+    border-radius: 14px;
+    font-size: clamp(14px, 4.2vw, 18px);
   }
 
   .ledebe-notice__icon {
-    width: 46px;
-    height: 46px;
+    width: 36px;
+    height: 36px;
     border-width: 2px;
-    border-radius: 12px;
+    border-radius: 10px;
   }
 
   .ledebe-notice__icon img {
-    width: 28px;
-    height: 28px;
+    width: 20px;
+    height: 20px;
   }
 }

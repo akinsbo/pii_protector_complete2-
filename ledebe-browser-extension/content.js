@@ -758,7 +758,7 @@
     applyFieldText(activeEditable, result.masked);
     afterProtect(activeEditable);
     toast(`Protected ${result.replacements.length} item${result.replacements.length === 1 ? "" : "s"}.`);
-    openDrawer();
+    showNotice();
   }
 
   // ---- detection, grouped by value with occurrence counts -----------------
@@ -887,7 +887,7 @@
     notice.className = "ledebe-notice";
     notice.innerHTML = `
       <div class="ledebe-notice__card" role="status" aria-live="polite">
-        <span class="ledebe-notice__text">Now protecting. Click icon for full conversation.</span>
+        <span class="ledebe-notice__text">Protected. Click the icon if you want the full panel.</span>
         <button type="button" class="ledebe-notice__icon" aria-label="Open Ledebe conversation panel"></button>
       </div>
     `;
@@ -957,7 +957,7 @@
     refreshDrawer(true);
   }
 
-  // Auto-open overlay slides out 5s after the last activity (unless hovered).
+  // Open overlays stay visible for a moment after the last activity unless hovered.
   // Don't auto-hide on Custom words / Settings — the user navigated there on
   // purpose and may be reading or editing.
   function scheduleAutoHide() {
@@ -1574,8 +1574,7 @@
     if (drawerOpen) {
       refreshDrawer();
     } else if (isAiHost() && !drawerDismissed) {
-      activeTab = "home"; // a reply arrived — land on the chat mirror
-      openDrawer();
+      showNotice();
     }
   }
 

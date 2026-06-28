@@ -328,6 +328,21 @@
     return element.innerText || element.textContent || "";
   }
 
+  function getSelectedFieldText(element) {
+    if (!element) return "";
+    if (isPlainField(element)) {
+      const start = element.selectionStart ?? 0;
+      const end = element.selectionEnd ?? start;
+      return end > start ? element.value.slice(start, end) : "";
+    }
+    const box = getComposer(element) || element;
+    const sel = window.getSelection();
+    if (!sel || !sel.rangeCount) return "";
+    const range = sel.getRangeAt(0);
+    if (!box.contains(range.commonAncestorContainer)) return "";
+    return range.toString();
+  }
+
   // Set a plain field's value through the native setter so frameworks notice.
   function setPlainValue(element, value) {
     const setter = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(element), "value")?.set;
@@ -335,6 +350,45 @@
     else element.value = value;
     element.dispatchEvent(new Event("input", { bubbles: true }));
     element.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+
+  function replaceSelectedFieldText(element, nextValue, fallbackSelectedText = "") {
+    if (isPlainField(element)) {
+      const start = element.selectionStart ?? 0;
+      const end = element.selectionEnd ?? start;
+      if (end > start) {
+        const current = element.value || "";
+        setPlainValue(element, `${current.slice(0, start)}${nextValue}${current.slice(end)}`);
+        const caret = start + nextValue.length;
+        element.selectionStart = element.selectionEnd = caret;
+        return true;
+      }
+      if (fallbackSelectedText) {
+        const current = element.value || "";
+        const index = current.indexOf(fallbackSelectedText);
+        if (index >= 0) {
+          setPlainValue(element, `${current.slice(0, index)}${nextValue}${current.slice(index + fallbackSelectedText.length)}`);
+          const caret = index + nextValue.length;
+          element.selectionStart = element.selectionEnd = caret;
+          return true;
+        }
+      }
+      return false;
+    }
+
+    const box = getComposer(element) || element;
+    const sel = window.getSelection();
+    if (!sel || !sel.rangeCount) return false;
+    const range = sel.getRangeAt(0);
+    if (!box.contains(range.commonAncestorContainer)) return false;
+    sel.removeAllRanges();
+    sel.addRange(range);
+    if (!document.execCommand("insertText", false, nextValue)) {
+      range.deleteContents();
+      range.insertNode(document.createTextNode(nextValue));
+    }
+    box.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: nextValue }));
+    return true;
   }
 
   // ---- caret helpers -------------------------------------------------------
@@ -551,6 +605,10 @@
     return finding ? finding.prefix : "LDB_CUSTOM";
   }
 
+  function placeholderTokensIn(text) {
+    return [...new Set((String(text || "").match(/\[LDB_[A-Z0-9_]+\]/g) || []))];
+  }
+
   function protectValue(value) {
     const element = activeEditable;
     if (!element) return;
@@ -598,6 +656,48 @@
     }
     unprotected.add(value.toLowerCase()); // don't immediately re-mask it
     applyFieldText(element, current);
+    afterProtect(element);
+  }
+
+  function toggleSelectionProtection(selectedText = "") {
+    const element = activeEditable || resolveEditable(document.activeElement);
+    if (!element) {
+      toast("Click into a text field first.");
+      return;
+    }
+    activeEditable = element;
+
+    const selection = getSelectedFieldText(element) || selectedText;
+    const tokens = placeholderTokensIn(selection);
+    if (!tokens.length) {
+      protectActiveField();
+      return;
+    }
+
+    if (isSyncedDocSurface(element)) {
+      toast("Revealing here could send it to the AI. The real value stays in this panel only.");
+      refreshDrawer();
+      return;
+    }
+
+    let restored = selection;
+    let changed = false;
+    for (const token of tokens) {
+      const value = placeholderMap.get(token);
+      if (typeof value !== "string" || !restored.includes(token)) continue;
+      restored = restored.split(token).join(value);
+      unprotected.add(value.toLowerCase());
+      changed = true;
+    }
+    if (!changed) {
+      refreshDrawer();
+      return;
+    }
+
+    if (!replaceSelectedFieldText(element, restored, selection)) {
+      refreshDrawer();
+      return;
+    }
     afterProtect(element);
   }
 
@@ -1930,10 +2030,20 @@
           protectActiveField();
           sendResponse({ ok: true });
           return true;
+        case "TOGGLE_SELECTION_PROTECTION":
+          toggleSelectionProtection(message.selectedText);
+          sendResponse(buildPageState());
+          return true;
         case "OPEN_PANEL":
+          if (drawerOpen) {
+            drawerDismissed = true;
+            closeDrawer();
+            sendResponse({ ok: true, open: false });
+            return true;
+          }
           drawerDismissed = false;
           openDrawer();
-          sendResponse({ ok: true });
+          sendResponse({ ok: true, open: true });
           return true;
         default:
           return false;

@@ -27,6 +27,30 @@ test('in-page icon closes the overlay when it is already open', async ({ context
   await expect(page.locator(S.drawer)).not.toHaveClass(/is-open/);
 });
 
+test('OPEN_PANEL toggles the overlay closed on the second click', async ({ context }) => {
+  const page = await openHost(context);
+  await page.click(S.ta);
+  await page.keyboard.type('email a@b.com ');
+  await expect(page.locator(S.noticeVisible)).toBeVisible();
+
+  const sw = context.serviceWorkers()[0];
+  if (!sw) throw new Error('Extension service worker not available');
+
+  await sw.evaluate(async (pageUrl) => {
+    const [tab] = await chrome.tabs.query({ url: pageUrl });
+    if (!tab?.id) throw new Error(`No tab found for ${pageUrl}`);
+    await chrome.tabs.sendMessage(tab.id, { type: 'OPEN_PANEL' });
+  }, page.url());
+  await expect(page.locator(S.drawerOpen)).toBeVisible();
+
+  await sw.evaluate(async (pageUrl) => {
+    const [tab] = await chrome.tabs.query({ url: pageUrl });
+    if (!tab?.id) throw new Error(`No tab found for ${pageUrl}`);
+    await chrome.tabs.sendMessage(tab.id, { type: 'OPEN_PANEL' });
+  }, page.url());
+  await expect(page.locator(S.drawer)).not.toHaveClass(/is-open/);
+});
+
 test('Protected words: Unprotect reveals the value back into the field', async ({ context }) => {
   const page = await openHost(context);
   await page.click(S.ta);
@@ -35,6 +59,35 @@ test('Protected words: Unprotect reveals the value back into the field', async (
   await openOverlay(page);
   await page.click(S.tab('field'));
   await page.locator(`${S.protectedRow}`, { hasText: 'a@b.com' }).click();
+  await expect.poll(() => page.inputValue(S.ta)).toContain('a@b.com');
+});
+
+test('selected auto-protected placeholder toggles back to its real value', async ({ context }) => {
+  const page = await openHost(context);
+  await page.click(S.ta);
+  await page.keyboard.type('email a@b.com and c@d.com ');
+  await expect.poll(() => page.inputValue(S.ta)).toMatch(/\[LDB_EMAIL_/);
+  const value = await page.inputValue(S.ta);
+
+  const [firstToken] = value.match(/\[LDB_EMAIL_[A-Z0-9]+_\d+\]/g) || [];
+  expect(firstToken).toBeTruthy();
+
+  await page.evaluate(({ selector, token }) => {
+    const el = document.querySelector(selector) as HTMLTextAreaElement;
+    const start = el.value.indexOf(token);
+    el.focus();
+    el.selectionStart = start;
+    el.selectionEnd = start + token.length;
+  }, { selector: S.ta, token: firstToken! });
+
+  const sw = context.serviceWorkers()[0];
+  if (!sw) throw new Error('Extension service worker not available');
+  await sw.evaluate(async ({ pageUrl, token }) => {
+    const [tab] = await chrome.tabs.query({ url: pageUrl });
+    if (!tab?.id) throw new Error(`No tab found for ${pageUrl}`);
+    await chrome.tabs.sendMessage(tab.id, { type: 'TOGGLE_SELECTION_PROTECTION', selectedText: token });
+  }, { pageUrl: page.url(), token: firstToken! });
+
   await expect.poll(() => page.inputValue(S.ta)).toContain('a@b.com');
 });
 
@@ -48,6 +101,39 @@ test('Custom words: adding a term masks it immediately', async ({ context }) => 
   await page.click(S.ta);
   await page.keyboard.type('project Falcon ok ');
   await expect.poll(() => page.inputValue(S.ta)).not.toContain('Falcon');
+});
+
+test('selected custom-word placeholder toggles back to its real value', async ({ context }) => {
+  const page = await openHost(context);
+  await openOverlay(page);
+  await page.click(S.tab('words'));
+  await page.fill(S.wordsInput, 'Falcon');
+  await page.click(S.wordsBtn);
+  await page.click(S.ta);
+  await page.keyboard.type('project Falcon ready ');
+  await expect.poll(() => page.inputValue(S.ta)).toMatch(/\[LDB_CUSTOM_/);
+  const value = await page.inputValue(S.ta);
+
+  const [token] = value.match(/\[LDB_CUSTOM_[A-Z0-9]+_\d+\]/g) || [];
+  expect(token).toBeTruthy();
+
+  await page.evaluate(({ selector, token }) => {
+    const el = document.querySelector(selector) as HTMLTextAreaElement;
+    const start = el.value.indexOf(token);
+    el.focus();
+    el.selectionStart = start;
+    el.selectionEnd = start + token.length;
+  }, { selector: S.ta, token: token! });
+
+  const sw = context.serviceWorkers()[0];
+  if (!sw) throw new Error('Extension service worker not available');
+  await sw.evaluate(async ({ pageUrl, token }) => {
+    const [tab] = await chrome.tabs.query({ url: pageUrl });
+    if (!tab?.id) throw new Error(`No tab found for ${pageUrl}`);
+    await chrome.tabs.sendMessage(tab.id, { type: 'TOGGLE_SELECTION_PROTECTION', selectedText: token });
+  }, { pageUrl: page.url(), token: token! });
+
+  await expect.poll(() => page.inputValue(S.ta)).toContain('Falcon');
 });
 
 test('Settings: turning Numbers off stops number masking', async ({ context }) => {

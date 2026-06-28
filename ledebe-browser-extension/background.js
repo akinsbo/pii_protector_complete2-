@@ -35,7 +35,7 @@ function createContextMenu() {
   try {
     chrome.contextMenus.create({
       id: CONTEXT_MENU_ID,
-      title: "Protect with Ledebe",
+      title: "Toggle protection with Ledebe",
       contexts: ["selection", "editable"]
     });
   } catch (error) {
@@ -80,7 +80,10 @@ chrome.action.onClicked.addListener((tab) => {
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === CONTEXT_MENU_ID && tab?.id) {
-    chrome.tabs.sendMessage(tab.id, { type: "PROTECT_ACTIVE_FIELD" });
+    chrome.tabs.sendMessage(tab.id, {
+      type: "TOGGLE_SELECTION_PROTECTION",
+      selectedText: info.selectionText || ""
+    });
     // A context-menu click is a valid gesture — open the panel too.
     try { chrome.sidePanel.open({ tabId: tab.id }); } catch (error) { /* ignore */ }
   }

@@ -138,3 +138,41 @@ test("OPEN_PANEL reserves viewport space for the in-page drawer", async () => {
     assert.match(h.window.document.body.style.width, /calc\(100vw - \d+px\)/);
   } finally { await h.close(); }
 });
+
+test("OPEN_PANEL toggles the in-page drawer closed on the second click", async () => {
+  const h = await createHarness();
+  try {
+    await h.send({ type: "OPEN_PANEL" });
+    await h.tick(20);
+    let html = h.window.document.documentElement;
+    assert.ok(html.classList.contains("ledebe-page-pushed"));
+
+    await h.send({ type: "OPEN_PANEL" });
+    await h.tick(20);
+    html = h.window.document.documentElement;
+    assert.ok(!html.classList.contains("ledebe-page-pushed"));
+    assert.equal(html.style.marginRight, "0px");
+    assert.equal(h.window.document.body.style.width, "");
+  } finally { await h.close(); }
+});
+
+test("TOGGLE_SELECTION_PROTECTION reveals just the selected placeholder", async () => {
+  const h = await createHarness();
+  try {
+    h.type(h.composer, "email a@b.com and c@d.com ");
+    await h.tick(SCAN);
+    const tokens = h.composer.value.match(/\[LDB_EMAIL_[A-Z0-9]+_\d+\]/g) || [];
+    assert.equal(tokens.length, 2);
+
+    const first = tokens[0];
+    const start = h.composer.value.indexOf(first);
+    h.composer.selectionStart = start;
+    h.composer.selectionEnd = start + first.length;
+
+    await h.send({ type: "TOGGLE_SELECTION_PROTECTION", selectedText: first });
+    await h.tick(20);
+
+    assert.ok(h.composer.value.includes("a@b.com"));
+    assert.ok(h.composer.value.includes(tokens[1]));
+  } finally { await h.close(); }
+});

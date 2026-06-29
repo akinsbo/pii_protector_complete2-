@@ -99,13 +99,7 @@ export async function openOverlay(page: Page): Promise<void> {
     await expect(page.locator(S.noticeVisible)).toBeVisible();
   }
   await expect(page.locator(S.inlineBtn).first()).toBeVisible();
-  const sw = page.context().serviceWorkers()[0];
-  if (!sw) throw new Error('Extension service worker not available');
-  await sw.evaluate(async (pageUrl) => {
-    const [tab] = await chrome.tabs.query({ url: pageUrl });
-    if (!tab?.id) throw new Error(`No tab found for ${pageUrl}`);
-    await chrome.tabs.sendMessage(tab.id, { type: 'OPEN_PANEL' });
-  }, page.url());
+  await sendMessageToPage(page, { type: 'OPEN_PANEL' });
   await expect(page.locator(S.drawerOpen)).toBeVisible();
 }
 
@@ -124,6 +118,16 @@ export async function seedAssistantReply(page: Page, text: string) {
   await page.locator('#reply-prose').evaluate((node, value) => {
     node.textContent = value;
   }, text);
+}
+
+export async function sendMessageToPage(page: Page, message: Record<string, unknown>) {
+  const sw = page.context().serviceWorkers()[0];
+  if (!sw) throw new Error('Extension service worker not available');
+  await sw.evaluate(async ({ pageUrl, message }) => {
+    const [tab] = await chrome.tabs.query({ url: pageUrl });
+    if (!tab?.id) throw new Error(`No tab found for ${pageUrl}`);
+    await chrome.tabs.sendMessage(tab.id, message);
+  }, { pageUrl: page.url(), message });
 }
 
 export const S = {

@@ -23,3 +23,16 @@ test('restore: real value shows in the panel; the page keeps the placeholder', a
   expect(reply).toContain(token);
   expect(reply).not.toContain('a@b.com');
 });
+
+test('restored replies do not auto-open the drawer', async ({ context }) => {
+  const page = await openHost(context);
+  await page.click(S.ta);
+  await page.keyboard.type('email a@b.com ');
+  await expect.poll(() => page.inputValue(S.ta)).toMatch(/\[LDB_EMAIL_/);
+
+  const token = (await page.inputValue(S.ta)).match(/\[LDB_EMAIL_[A-Z0-9]+_\d+\]/)![0];
+  await seedAssistantReply(page, `Sure - ${token} is noted.`);
+
+  await expect(page.locator(S.noticeVisible)).toBeVisible();
+  await expect(page.locator(S.drawerOpen)).toHaveCount(0);
+});

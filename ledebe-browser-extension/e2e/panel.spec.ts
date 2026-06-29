@@ -1,17 +1,11 @@
-import { test, expect, openHost, openOverlay, S } from './helpers';
+import { test, expect, openHost, openOverlay, sendMessageToPage, S } from './helpers';
 
 test('detection shows the notice and the full panel opens from the inline icon', async ({ context }) => {
   const page = await openHost(context);
   await page.click(S.ta);
   await page.keyboard.type('email a@b.com ');
   await expect(page.locator(S.noticeVisible)).toBeVisible();
-  const sw = context.serviceWorkers()[0];
-  if (!sw) throw new Error('Extension service worker not available');
-  await sw.evaluate(async (pageUrl) => {
-    const [tab] = await chrome.tabs.query({ url: pageUrl });
-    if (!tab?.id) throw new Error(`No tab found for ${pageUrl}`);
-    await chrome.tabs.sendMessage(tab.id, { type: 'OPEN_PANEL' });
-  }, page.url());
+  await sendMessageToPage(page, { type: 'OPEN_PANEL' });
   await expect(page.locator(S.drawerOpen)).toBeVisible();
   await expect(page.locator(S.tabs)).toHaveCount(4);
   for (const t of ['home', 'words', 'field', 'settings']) {
@@ -33,21 +27,10 @@ test('OPEN_PANEL toggles the overlay closed on the second click', async ({ conte
   await page.keyboard.type('email a@b.com ');
   await expect(page.locator(S.noticeVisible)).toBeVisible();
 
-  const sw = context.serviceWorkers()[0];
-  if (!sw) throw new Error('Extension service worker not available');
-
-  await sw.evaluate(async (pageUrl) => {
-    const [tab] = await chrome.tabs.query({ url: pageUrl });
-    if (!tab?.id) throw new Error(`No tab found for ${pageUrl}`);
-    await chrome.tabs.sendMessage(tab.id, { type: 'OPEN_PANEL' });
-  }, page.url());
+  await sendMessageToPage(page, { type: 'OPEN_PANEL' });
   await expect(page.locator(S.drawerOpen)).toBeVisible();
 
-  await sw.evaluate(async (pageUrl) => {
-    const [tab] = await chrome.tabs.query({ url: pageUrl });
-    if (!tab?.id) throw new Error(`No tab found for ${pageUrl}`);
-    await chrome.tabs.sendMessage(tab.id, { type: 'OPEN_PANEL' });
-  }, page.url());
+  await sendMessageToPage(page, { type: 'OPEN_PANEL' });
   await expect(page.locator(S.drawer)).not.toHaveClass(/is-open/);
 });
 
@@ -80,13 +63,7 @@ test('selected auto-protected placeholder toggles back to its real value', async
     el.selectionEnd = start + token.length;
   }, { selector: S.ta, token: firstToken! });
 
-  const sw = context.serviceWorkers()[0];
-  if (!sw) throw new Error('Extension service worker not available');
-  await sw.evaluate(async ({ pageUrl, token }) => {
-    const [tab] = await chrome.tabs.query({ url: pageUrl });
-    if (!tab?.id) throw new Error(`No tab found for ${pageUrl}`);
-    await chrome.tabs.sendMessage(tab.id, { type: 'TOGGLE_SELECTION_PROTECTION', selectedText: token });
-  }, { pageUrl: page.url(), token: firstToken! });
+  await sendMessageToPage(page, { type: 'TOGGLE_SELECTION_PROTECTION', selectedText: firstToken! });
 
   await expect.poll(() => page.inputValue(S.ta)).toContain('a@b.com');
 });
@@ -125,15 +102,31 @@ test('selected custom-word placeholder toggles back to its real value', async ({
     el.selectionEnd = start + token.length;
   }, { selector: S.ta, token: token! });
 
-  const sw = context.serviceWorkers()[0];
-  if (!sw) throw new Error('Extension service worker not available');
-  await sw.evaluate(async ({ pageUrl, token }) => {
-    const [tab] = await chrome.tabs.query({ url: pageUrl });
-    if (!tab?.id) throw new Error(`No tab found for ${pageUrl}`);
-    await chrome.tabs.sendMessage(tab.id, { type: 'TOGGLE_SELECTION_PROTECTION', selectedText: token });
-  }, { pageUrl: page.url(), token: token! });
+  await sendMessageToPage(page, { type: 'TOGGLE_SELECTION_PROTECTION', selectedText: token! });
 
   await expect.poll(() => page.inputValue(S.ta)).toContain('Falcon');
+});
+
+test('protected content stays passive until the user clicks the icon', async ({ context }) => {
+  const page = await openHost(context);
+  await page.click(S.ta);
+  await page.keyboard.type('email a@b.com ');
+  await expect.poll(() => page.inputValue(S.ta)).toMatch(/\[LDB_EMAIL_/);
+  await expect(page.locator(S.noticeVisible)).toBeVisible();
+  await expect(page.locator(S.drawerOpen)).toHaveCount(0);
+});
+
+test('manual protect keeps the drawer closed and only shows the compact notice', async ({ context }) => {
+  const page = await openHost(context);
+  await page.click(S.ta);
+  await page.keyboard.type('email a@b.com');
+  await expect(page.locator(S.noticeVisible)).not.toBeVisible();
+
+  await sendMessageToPage(page, { type: 'PROTECT_ACTIVE_FIELD' });
+
+  await expect.poll(() => page.inputValue(S.ta)).toMatch(/\[LDB_EMAIL_/);
+  await expect(page.locator(S.noticeVisible)).toBeVisible();
+  await expect(page.locator(S.drawerOpen)).toHaveCount(0);
 });
 
 test('Settings: turning Numbers off stops number masking', async ({ context }) => {

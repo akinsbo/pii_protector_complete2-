@@ -1006,7 +1006,8 @@
 
   // Manual "protect this field" (popup button / context menu) — masks all PII
   // regardless of host, ignoring the caret guard.
-  function protectActiveField() {
+  function protectActiveField(options = {}) {
+    const { forceNotice = false } = options;
     if (!activeEditable) {
       toast("Click into a text field first.");
       return;
@@ -1018,6 +1019,11 @@
       disabledTypes: disabledTypes()
     });
     if (!result.replacements.length) {
+      if (protectedItems(original).length) {
+        toast("This field is already protected.");
+        showNotice({ ignoreNativePanel: forceNotice });
+        return;
+      }
       toast("Nothing sensitive found in this field.");
       return;
     }
@@ -1025,7 +1031,7 @@
     applyFieldText(activeEditable, result.masked);
     afterProtect(activeEditable);
     toast(`Protected ${result.replacements.length} item${result.replacements.length === 1 ? "" : "s"}.`);
-    showNotice();
+    showNotice({ ignoreNativePanel: forceNotice });
   }
 
   // ---- detection, grouped by value with occurrence counts -----------------
@@ -1205,8 +1211,9 @@
     }, 260);
   }
 
-  function showNotice() {
-    if (nativePanelOpen || drawerOpen) return;
+  function showNotice(options = {}) {
+    const { ignoreNativePanel = false } = options;
+    if ((!ignoreNativePanel && nativePanelOpen) || drawerOpen) return;
     const el = ensureNotice();
     document.querySelectorAll(".ledebe-inline-btn").forEach((button) => {
       button.classList.add("ledebe-guided-target");
@@ -2499,7 +2506,7 @@
           sendResponse({ ok: true });
           return true;
         case "PROTECT_ACTIVE_FIELD":
-          protectActiveField();
+          protectActiveField({ forceNotice: message.source !== "panel" });
           sendResponse({ ok: true });
           return true;
         case "TOGGLE_SELECTION_PROTECTION":

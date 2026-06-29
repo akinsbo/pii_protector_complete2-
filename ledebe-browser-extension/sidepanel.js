@@ -125,7 +125,7 @@ function fieldActions() {
   toggleBtn.addEventListener("click", () => act({ type: "TOGGLE_SELECTION_PROTECTION" }));
   const protectBtn = el("button", "btn btn--primary", t("settings.protectField", "Protect active field now"));
   protectBtn.type = "button";
-  protectBtn.addEventListener("click", () => act({ type: "PROTECT_ACTIVE_FIELD" }));
+  protectBtn.addEventListener("click", () => act({ type: "PROTECT_ACTIVE_FIELD", source: "panel" }));
   wrap.append(toggleBtn, protectBtn);
   return wrap;
 }
@@ -747,7 +747,7 @@ async function renderSettings() {
 
   const protectBtn = el("button", "btn btn--primary", t("settings.protectField", "Protect active field now"));
   protectBtn.type = "button";
-  protectBtn.addEventListener("click", () => act({ type: "PROTECT_ACTIVE_FIELD" }));
+  protectBtn.addEventListener("click", () => act({ type: "PROTECT_ACTIVE_FIELD", source: "panel" }));
   body.append(protectBtn);
 
   const toggleSelectionBtn = el("button", "btn btn--secondary", t("field.toggleSelection", "Toggle selected text"));

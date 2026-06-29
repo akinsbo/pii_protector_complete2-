@@ -10,6 +10,7 @@
       "tabs.settings": "Settings",
       "panel.openAi": "Open an AI chat to begin",
       "panel.noPage": "Ledebe is active on AI chat pages. Open one (ChatGPT, Claude, Gemini…) and your protected values will appear here.",
+      "panel.privacy": "Your data never leaves your device.",
       "common.copy": "Copy",
       "common.copied": "Copied",
       "common.remove": "Remove",
@@ -98,6 +99,7 @@
       "settings.clear": "Clear saved data",
       "settings.cleared": "Cleared",
       "field.none": "No sensitive data detected in this field.",
+      "field.toggleSelection": "Toggle selected text",
       "field.protect": "Protect",
       "field.unprotect": "Unprotect",
       "field.forget": "Forget"

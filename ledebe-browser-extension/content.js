@@ -37,6 +37,8 @@
 
   const COMPANY_TERMS_STORAGE_KEY = "ledebeCompanyTerms";
   const COMPANY_STATE_STORAGE_KEY = "ledebeCompanyState";
+  const COMPANY_API_BASE = "https://m9ur273451.execute-api.us-east-2.amazonaws.com";
+  const FEEDBACK_ENDPOINT = "https://formspree.io/f/xdkogqpv";
   const PERSONAL_TERM_LIMITS = {
     free: 20,
     pro: Infinity,
@@ -222,6 +224,205 @@
       });
   }
 
+  function feedbackCategoryForHost(host) {
+    if (host?.includes("gemini")) return "gemini-extension";
+    if (host?.includes("claude")) return "claude-extension";
+    return "browser-extension";
+  }
+
+  async function getStoredSettings() {
+    const synced = await syncGet(DEFAULTS);
+    const personalTerms = normalizeTerms(
+      synced.personalTerms && synced.personalTerms.length ? synced.personalTerms : synced.customTerms
+    );
+    return {
+      ...synced,
+      customTerms: personalTerms,
+      personalTerms
+    };
+  }
+
+  async function getCompanyState() {
+    const result = await localGet({
+      [COMPANY_STATE_STORAGE_KEY]: null,
+      [COMPANY_TERMS_STORAGE_KEY]: []
+    });
+    return {
+      companySync: result[COMPANY_STATE_STORAGE_KEY],
+      companyTerms: normalizeTerms(result[COMPANY_TERMS_STORAGE_KEY] || [])
+    };
+  }
+
+  function effectivePlanFromData(storedSettings, companySync) {
+    return companySync?.companyId ? "team" : (storedSettings.subscriptionPlan || "free");
+  }
+
+  function personalLimitForPlan(plan) {
+    return PERSONAL_TERM_LIMITS[plan] ?? PERSONAL_TERM_LIMITS.free;
+  }
+
+  function base64ToBuf(b64) {
+    const str = atob(b64);
+    const buf = new Uint8Array(str.length);
+    for (let i = 0; i < str.length; i += 1) buf[i] = str.charCodeAt(i);
+    return buf.buffer;
+  }
+
+  async function importTeamKey(base64) {
+    return crypto.subtle.importKey(
+      "raw",
+      base64ToBuf(base64),
+      { name: "AES-GCM", length: 256 },
+      false,
+      ["decrypt"]
+    );
+  }
+
+  async function decryptTerms(encryptedTerms, termsIv, teamKey) {
+    const iv = base64ToBuf(termsIv);
+    const key = await importTeamKey(teamKey);
+    const decrypted = await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv },
+      key,
+      base64ToBuf(encryptedTerms)
+    );
+    return JSON.parse(new TextDecoder().decode(decrypted));
+  }
+
+  async function decryptTeamKeyWithCode(encryptedTeamKey, salt64, iv64, joinCode) {
+    const enc = new TextEncoder();
+    const salt = base64ToBuf(salt64);
+    const iv = base64ToBuf(iv64);
+    const baseKey = await crypto.subtle.importKey(
+      "raw",
+      enc.encode(joinCode),
+      "PBKDF2",
+      false,
+      ["deriveKey"]
+    );
+    const codeKey = await crypto.subtle.deriveKey(
+      { name: "PBKDF2", salt, iterations: 100000, hash: "SHA-256" },
+      baseKey,
+      { name: "AES-GCM", length: 256 },
+      false,
+      ["decrypt"]
+    );
+    const decrypted = await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv },
+      codeKey,
+      base64ToBuf(encryptedTeamKey)
+    );
+    const bytes = new Uint8Array(decrypted);
+    let str = "";
+    for (const byte of bytes) str += String.fromCharCode(byte);
+    return btoa(str);
+  }
+
+  async function refreshStateIfAvailable() {
+    const local = await localGet({
+      [COMPANY_TERMS_STORAGE_KEY]: [],
+      [COMPANY_STATE_STORAGE_KEY]: null
+    });
+    settings.companyTerms = normalizeTerms(local[COMPANY_TERMS_STORAGE_KEY] || []);
+    settings.companySync = local[COMPANY_STATE_STORAGE_KEY] || null;
+    refreshDrawer(true);
+  }
+
+  async function syncCompanyTerms(force = false) {
+    const { companySync } = await getCompanyState();
+    if (!companySync?.companyId || !companySync.teamKey) {
+      toast(t("settings.joinFirst", "Join a company first."));
+      return null;
+    }
+
+    const response = await fetch(`${COMPANY_API_BASE}/terms/${companySync.companyId}`);
+    if (!response.ok) throw new Error("Could not sync company words");
+    const data = await response.json();
+    if (!data.encryptedTerms) {
+      await chrome.storage.local.set({ [COMPANY_TERMS_STORAGE_KEY]: [] });
+      return [];
+    }
+    if (!force && data.termsVersion <= (companySync.termsVersion || 0)) {
+      return null;
+    }
+
+    const terms = await decryptTerms(data.encryptedTerms, data.termsIv, companySync.teamKey);
+    const nextCompanySync = {
+      ...companySync,
+      termsVersion: data.termsVersion,
+      lastSyncAt: new Date().toISOString()
+    };
+    await chrome.storage.local.set({
+      [COMPANY_TERMS_STORAGE_KEY]: normalizeTerms(terms.map((term) => term.text || term)),
+      [COMPANY_STATE_STORAGE_KEY]: nextCompanySync
+    });
+
+    if (companySync.employeeEmail) {
+      try {
+        await fetch(`${COMPANY_API_BASE}/members/${companySync.companyId}/heartbeat`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: companySync.employeeEmail })
+        });
+      } catch (error) {
+        /* ignore heartbeat */
+      }
+    }
+
+    await refreshStateIfAvailable();
+    return terms;
+  }
+
+  async function joinCompany(joinCode, email) {
+    const response = await fetch(`${COMPANY_API_BASE}/join`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ joinCode: joinCode.toUpperCase(), email })
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Could not join company");
+
+    const teamKey = await decryptTeamKeyWithCode(
+      data.encryptedTeamKey,
+      data.teamKeySalt,
+      data.teamKeyIv,
+      joinCode.toUpperCase()
+    );
+
+    await chrome.storage.local.set({
+      [COMPANY_STATE_STORAGE_KEY]: {
+        companyId: data.companyId,
+        companyName: data.companyName,
+        employeeEmail: email,
+        teamKey,
+        termsVersion: 0,
+        joinedAt: new Date().toISOString()
+      }
+    });
+
+    await syncCompanyTerms(true);
+  }
+
+  async function leaveCompany() {
+    await chrome.storage.local.remove([COMPANY_STATE_STORAGE_KEY, COMPANY_TERMS_STORAGE_KEY]);
+    await refreshStateIfAvailable();
+  }
+
+  async function submitFeedback({ message, email, host, category }) {
+    const response = await fetch(FEEDBACK_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        source: "browser-extension",
+        category,
+        host: host || "unknown",
+        email: email || "anonymous",
+        message
+      })
+    });
+    if (!response.ok) throw new Error("Could not send feedback");
+  }
+
   function effectivePlan() {
     return settings.companySync?.companyId ? "team" : (settings.subscriptionPlan || "free");
   }
@@ -343,6 +544,28 @@
     return range.toString();
   }
 
+  function setSelectedRange(element, start, end) {
+    if (!element) return false;
+    if (isPlainField(element)) {
+      element.focus();
+      element.selectionStart = start;
+      element.selectionEnd = end;
+      return true;
+    }
+    const box = getComposer(element) || element;
+    if (!(box instanceof HTMLElement)) return false;
+    box.focus();
+    try {
+      const sel = window.getSelection();
+      const range = rangeFromOffsets(box, start, end);
+      sel.removeAllRanges();
+      sel.addRange(range);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
   // Set a plain field's value through the native setter so frameworks notice.
   function setPlainValue(element, value) {
     const setter = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(element), "value")?.set;
@@ -352,15 +575,20 @@
     element.dispatchEvent(new Event("change", { bubbles: true }));
   }
 
-  function replaceSelectedFieldText(element, nextValue, fallbackSelectedText = "") {
+  function replaceSelectedFieldText(element, nextValue, fallbackSelectedText = "", keepInsertedSelection = false) {
     if (isPlainField(element)) {
       const start = element.selectionStart ?? 0;
       const end = element.selectionEnd ?? start;
       if (end > start) {
         const current = element.value || "";
         setPlainValue(element, `${current.slice(0, start)}${nextValue}${current.slice(end)}`);
-        const caret = start + nextValue.length;
-        element.selectionStart = element.selectionEnd = caret;
+        const nextEnd = start + nextValue.length;
+        if (keepInsertedSelection) {
+          element.selectionStart = start;
+          element.selectionEnd = nextEnd;
+        } else {
+          element.selectionStart = element.selectionEnd = nextEnd;
+        }
         return true;
       }
       if (fallbackSelectedText) {
@@ -368,8 +596,13 @@
         const index = current.indexOf(fallbackSelectedText);
         if (index >= 0) {
           setPlainValue(element, `${current.slice(0, index)}${nextValue}${current.slice(index + fallbackSelectedText.length)}`);
-          const caret = index + nextValue.length;
-          element.selectionStart = element.selectionEnd = caret;
+          const nextEnd = index + nextValue.length;
+          if (keepInsertedSelection) {
+            element.selectionStart = index;
+            element.selectionEnd = nextEnd;
+          } else {
+            element.selectionStart = element.selectionEnd = nextEnd;
+          }
           return true;
         }
       }
@@ -427,6 +660,22 @@
     }
     range.setEnd(root, root.childNodes.length);
     return range;
+  }
+
+  function focusReplacementSelection(element, replacement, selection = "") {
+    if (!element || !replacement) return;
+    const text = getFieldText(element);
+    let start = text.indexOf(replacement);
+    if (start < 0 && selection) {
+      const alt = text.indexOf(selection);
+      if (alt >= 0) start = alt;
+    }
+    if (start < 0) return;
+    const end = start + replacement.length;
+    void setSelectedRange(element, start, end);
+    window.setTimeout(() => {
+      void setSelectedRange(element, start, end);
+    }, 0);
   }
 
   function setCaret(root, offset) {
@@ -509,7 +758,7 @@
     idleProtectTimer = window.setTimeout(() => {
       idleProtectTimer = null;
       try {
-        liveReplace(element, false);
+        liveReplace(element, true);
       } catch (error) {
         console.debug("[Ledebe]", error);
       }
@@ -554,30 +803,18 @@
     // replace each match in place via a Range, exactly like the prototype, so
     // ProseMirror keeps its model and surrounding formatting intact.
     const box = getComposer(element) || element;
-    const walker = document.createTreeWalker(box, NodeFilter.SHOW_TEXT);
-    let full = "";
-    let n;
-    while ((n = walker.nextNode())) full += n.nodeValue;
+    const full = getComposerText(box);
     if (!full) return false;
 
     const caret = force ? null : getCaret(box);
     const result = computeLiveReplacement(full, caret, options);
     if (!result.changed) return false;
 
-    const sel = window.getSelection();
     selfEdit = true;
     try {
-      for (let i = result.replacements.length - 1; i >= 0; i -= 1) {
-        const item = result.replacements[i];
-        const range = rangeFromOffsets(box, item.start, item.end);
-        sel.removeAllRanges();
-        sel.addRange(range);
-        if (!document.execCommand("insertText", false, item.token)) {
-          range.deleteContents();
-          range.insertNode(document.createTextNode(item.token));
-        }
-      }
-      if (typeof result.caret === "number") setCaret(box, result.caret);
+      applyFieldText(element, result.text, typeof result.caret === "number"
+        ? { selectionStart: result.caret, selectionEnd: result.caret }
+        : undefined);
       rememberReplacements(result.replacements);
     } finally {
       window.setTimeout(() => { selfEdit = false; }, 0);
@@ -588,7 +825,6 @@
 
   function afterProtect(element) {
     activeEditable = element;
-    addRetainInstruction(element); // inject the "keep placeholders" note early, once
     refreshDrawer();
     maybeOpenDrawer();
   }
@@ -625,7 +861,10 @@
     }
 
     rememberReplacements([{ token, original: value }]);
-    applyFieldText(element, masked);
+    applyFieldText(element, masked, {
+      selectionStart: masked.indexOf(token),
+      selectionEnd: masked.indexOf(token) + token.length
+    });
     afterProtect(element);
   }
 
@@ -655,7 +894,10 @@
       return;
     }
     unprotected.add(value.toLowerCase()); // don't immediately re-mask it
-    applyFieldText(element, current);
+    const start = current.indexOf(value);
+    applyFieldText(element, current, start >= 0
+      ? { selectionStart: start, selectionEnd: start + value.length }
+      : undefined);
     afterProtect(element);
   }
 
@@ -669,6 +911,24 @@
 
     const selection = getSelectedFieldText(element) || selectedText;
     const tokens = placeholderTokensIn(selection);
+    if (!tokens.length && selection) {
+      const result = maskText(selection, allCustomTerms(), {
+        namespace: placeholderNamespace(),
+        exclude: unprotected,
+        disabledTypes: disabledTypes()
+      });
+      if (!result.replacements.length) {
+        toast("Nothing sensitive found in this selection.");
+        return;
+      }
+      rememberReplacements(result.replacements);
+      if (!replaceSelectedFieldText(element, result.masked, selection, true)) {
+        refreshDrawer();
+        return;
+      }
+      afterProtect(element);
+      return;
+    }
     if (!tokens.length) {
       protectActiveField();
       return;
@@ -694,10 +954,11 @@
       return;
     }
 
-    if (!replaceSelectedFieldText(element, restored, selection)) {
+    if (!replaceSelectedFieldText(element, restored, selection, true)) {
       refreshDrawer();
       return;
     }
+    focusReplacementSelection(element, restored, selection);
     afterProtect(element);
   }
 
@@ -714,11 +975,14 @@
 
   // Whole-field write used by per-item toggles + manual protect. For rich
   // composers we select-all then insertText so the editor reconciles cleanly.
-  function applyFieldText(element, value) {
+  function applyFieldText(element, value, selection = null) {
     selfEdit = true;
     try {
       if (isPlainField(element)) {
         setPlainValue(element, value);
+        if (selection && typeof selection.selectionStart === "number" && typeof selection.selectionEnd === "number") {
+          setSelectedRange(element, selection.selectionStart, selection.selectionEnd);
+        }
       } else {
         const box = getComposer(element) || element;
         box.focus();
@@ -731,6 +995,9 @@
           box.textContent = value;
         }
         box.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: value }));
+        if (selection && typeof selection.selectionStart === "number" && typeof selection.selectionEnd === "number") {
+          setSelectedRange(box, selection.selectionStart, selection.selectionEnd);
+        }
       }
     } finally {
       window.setTimeout(() => { selfEdit = false; }, 0);
@@ -840,8 +1107,11 @@
       <header class="ledebe-drawer__head">
         <div class="ledebe-drawer__brand">
           <img class="ledebe-drawer__logo" alt="" />
-          <div>
-            <strong>Ledebe Protector</strong>
+          <div class="ledebe-drawer__brand-copy">
+            <div class="ledebe-drawer__title-row">
+              <strong>Ledebe Protector</strong>
+              <span class="ledebe-drawer__privacy-badge"></span>
+            </div>
             <span class="ledebe-drawer__sub"></span>
           </div>
         </div>
@@ -1059,6 +1329,37 @@
     return stripRetainNote(restorePlaceholders((raw || "").trim(), placeholderMap).restored);
   }
 
+  function readStructuredText(node) {
+    if (!(node instanceof HTMLElement)) return "";
+    const clone = node.cloneNode(true);
+    if (!(clone instanceof HTMLElement)) return node.innerText || node.textContent || "";
+    clone.querySelectorAll(
+      'button, svg, img, summary, [aria-hidden="true"], [contenteditable="false"], '
+      + '[role="button"], [data-testid*="copy"], .ledebe-inline-btn'
+    ).forEach((n) => n.remove());
+    clone.querySelectorAll("br").forEach((n) => n.replaceWith("\n"));
+    clone.querySelectorAll("li").forEach((n) => {
+      if (!n.textContent?.trim().startsWith("- ")) {
+        n.prepend("- ");
+      }
+      if (!n.textContent?.endsWith("\n")) n.append("\n");
+    });
+    clone.querySelectorAll("p, div, h1, h2, h3, h4, h5, h6, blockquote, section, article, ul, ol").forEach((n) => {
+      if (!n.textContent?.endsWith("\n")) n.append("\n");
+    });
+    return (clone.textContent || "")
+      .replace(/\u00a0/g, " ")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+  }
+
+  function findStructuredCopyBlock(node) {
+    if (!(node instanceof HTMLElement)) return null;
+    if (node.matches("pre")) return node;
+    if (node.matches('[data-writing-block-fullscreen-editor-region="true"]')) return node;
+    return node.querySelector?.('[data-writing-block-fullscreen-editor-region="true"]') || null;
+  }
+
   // Split a turn into blocks in document order: prose, plus each code block
   // (e.g. ChatGPT's fenced "Email" block) as its own segment with its own Copy.
   // We read innerText from the LIVE, in-document nodes — innerText only honours
@@ -1077,23 +1378,34 @@
 
     for (const child of children) {
       if (child.classList && child.classList.contains("ledebe-inline-btn")) continue;
-      if (child.tagName === "PRE") {
+      const structuredBlock = findStructuredCopyBlock(child);
+      if (structuredBlock) {
         flush();
-        const codeEl = child.querySelector("code") || child; // skip the lang/copy header
-        const code = restoredText(codeEl.innerText || codeEl.textContent || "");
+        const codeEl = structuredBlock.querySelector?.("code") || structuredBlock; // skip the lang/copy header
+        const code = restoredText(readStructuredText(codeEl));
         if (code) blocks.push({ kind: "code", text: code });
       } else {
-        const part = child.innerText || child.textContent || "";
+        const part = readStructuredText(child);
         if (part.trim()) prose.push(part);
       }
     }
     flush();
 
     if (!blocks.length) {
-      const all = restoredText(el.innerText || el.textContent || "");
+      const all = restoredText(readStructuredText(el));
       if (all) blocks.push({ kind: "text", text: all });
     }
     return blocks;
+  }
+
+  function fieldActionsEl() {
+    const wrap = document.createElement("div");
+    wrap.className = "ledebe-drawer__actions";
+    wrap.append(
+      drawerButton(t("field.toggleSelection", "Toggle selected text"), "secondary", () => toggleSelectionProtection()),
+      drawerButton(t("settings.protectField", "Protect active field now"), "primary", () => protectActiveField())
+    );
+    return wrap;
   }
 
   // Mirror the conversation, restored, across the major assistants. Returns
@@ -1279,6 +1591,8 @@
     const fieldValues = new Set(prot.map((item) => item.value));
     const session = sessionItems(fieldValues);
 
+    body.appendChild(fieldActionsEl());
+
     if (exposed.length) {
       body.appendChild(sectionEl(`Exposed (${exposed.length})`));
       for (const item of exposed) {
@@ -1304,7 +1618,7 @@
     }
 
     if (!prot.length && !exposed.length && !session.length) {
-      body.appendChild(emptyEl("No sensitive data detected in this field."));
+      body.appendChild(emptyEl(t("field.none", "No sensitive data detected in this field.")));
     }
   }
 
@@ -1341,6 +1655,18 @@
     return btn;
   }
 
+  function drawerCard() {
+    const card = document.createElement("div");
+    card.className = "ledebe-drawer__card";
+    return card;
+  }
+
+  function drawerStack(className = "") {
+    const stack = document.createElement("div");
+    stack.className = `ledebe-drawer__stack${className ? ` ${className}` : ""}`;
+    return stack;
+  }
+
   async function pauseSite() {
     const host = getHost();
     const paused = new Set(settings.pausedHosts || []);
@@ -1360,7 +1686,9 @@
     if (btn) { btn.textContent = t("settings.cleared", "Cleared"); setTimeout(() => { btn.textContent = t("settings.clear", "Clear saved data"); }, 1200); }
   }
 
-  function renderSettingsPane(body) {
+  async function renderSettingsPane(body) {
+    const storedSettings = await getStoredSettings();
+    const { companySync, companyTerms } = await getCompanyState();
     const host = getHost();
     const status = document.createElement("div");
     status.className = "ledebe-status-line";
@@ -1371,12 +1699,151 @@
     status.append(a, b);
     body.appendChild(status);
 
+    const planLine = document.createElement("div");
+    planLine.className = "ledebe-status-line";
+    const plan = effectivePlanFromData(storedSettings, companySync);
+    const limit = personalLimitForPlan(plan);
+    const planLabel = document.createElement("span");
+    planLabel.textContent = t("settings.subscription", "Subscription");
+    const planValue = document.createElement("strong");
+    planValue.textContent = Number.isFinite(limit)
+      ? `${plan} · ${storedSettings.personalTerms.length}/${limit} personal words`
+      : `${plan} · unlimited personal words`;
+    planLine.append(planLabel, planValue);
+    body.appendChild(planLine);
+
+    const companyCard = drawerCard();
+    companyCard.appendChild(sectionEl(t("settings.companySync", "Company sync")));
+    if (companySync?.companyId) {
+      companyCard.appendChild(leadEl(t("settings.companyActive", "{company} is active. {count} company-managed words are applied automatically.", { company: companySync.companyName, count: companyTerms.length })));
+      const joinedMeta = document.createElement("div");
+      joinedMeta.className = "ledebe-status-line";
+      const joinedLabel = document.createElement("span");
+      joinedLabel.textContent = t("settings.joinedAs", "Joined as");
+      const joinedValue = document.createElement("strong");
+      joinedValue.textContent = companySync.employeeEmail || "—";
+      joinedMeta.append(joinedLabel, joinedValue);
+      companyCard.appendChild(joinedMeta);
+      if (companySync.lastSyncAt) {
+        const syncedMeta = document.createElement("div");
+        syncedMeta.className = "ledebe-status-line";
+        const syncedLabel = document.createElement("span");
+        syncedLabel.textContent = t("settings.lastSync", "Last sync");
+        const syncedValue = document.createElement("strong");
+        syncedValue.textContent = new Date(companySync.lastSyncAt).toLocaleString();
+        syncedMeta.append(syncedLabel, syncedValue);
+        companyCard.appendChild(syncedMeta);
+      }
+
+      companyCard.appendChild(drawerButton(t("settings.syncNow", "Sync company words now"), "primary", async () => {
+        try {
+          await syncCompanyTerms(true);
+          toast(t("settings.syncDone", "Company words synced."));
+          refreshDrawer(true);
+        } catch (error) {
+          toast(error instanceof Error ? error.message : "Sync failed");
+        }
+      }));
+
+      companyCard.appendChild(drawerButton(t("settings.leaveCompany", "Leave company sync"), "secondary", async () => {
+        await leaveCompany();
+        toast(t("settings.left", "Company sync removed from this browser."));
+        refreshDrawer(true);
+      }));
+    } else {
+      companyCard.appendChild(leadEl(t("settings.joinPrompt", "Join your company to receive admin-managed protected words. Your personal custom words still stay private to you and can be added separately.")));
+      const joinCode = document.createElement("input");
+      joinCode.type = "text";
+      joinCode.className = "ledebe-words__input";
+      joinCode.placeholder = t("settings.joinCode", "Company join code");
+      const email = document.createElement("input");
+      email.type = "email";
+      email.className = "ledebe-words__input";
+      email.placeholder = t("settings.workEmail", "Work email");
+      companyCard.append(joinCode, email);
+      companyCard.appendChild(drawerButton(t("settings.joinCompany", "Join company"), "primary", async () => {
+        const code = joinCode.value.trim();
+        const emailValue = email.value.trim();
+        if (!code || !emailValue) {
+          toast(t("settings.joinMissing", "Enter your join code and work email."));
+          return;
+        }
+        try {
+          await joinCompany(code, emailValue);
+          toast(t("settings.joined", "Company sync is active."));
+          refreshDrawer(true);
+        } catch (error) {
+          toast(error instanceof Error ? error.message : "Join failed");
+        }
+      }));
+    }
+    body.appendChild(companyCard);
+
+    const feedbackCard = drawerCard();
+    feedbackCard.appendChild(sectionEl(t("settings.feedback", "Feedback")));
+    feedbackCard.appendChild(leadEl(t("settings.feedbackLead", "Tell us what worked or what broke. Please do not paste sensitive data.")));
+    const feedbackMessage = document.createElement("textarea");
+    feedbackMessage.className = "ledebe-words__input ledebe-drawer__textarea";
+    feedbackMessage.rows = 4;
+    feedbackMessage.placeholder = host && /claude|gemini/.test(host)
+      ? t("settings.feedbackPlaceholderHost", "Describe what happened on {host}...", { host })
+      : t("settings.feedbackPlaceholder", "Describe what happened...");
+    const feedbackEmail = document.createElement("input");
+    feedbackEmail.type = "email";
+    feedbackEmail.className = "ledebe-words__input";
+    feedbackEmail.placeholder = t("settings.feedbackEmail", "Email (optional)");
+    const feedbackRow = drawerStack("ledebe-drawer__stack--actions");
+    feedbackRow.append(
+      drawerButton(t("settings.feedbackGood", "Works well"), "secondary", () => {
+        feedbackMessage.value = host
+          ? t("settings.feedbackGoodFillHost", "Ledebe worked well on {host}.", { host })
+          : t("settings.feedbackGoodFill", "Ledebe worked well for me.");
+      }),
+      drawerButton(
+        host?.includes("gemini")
+          ? t("settings.feedbackGemini", "Report Gemini issue")
+          : host?.includes("claude")
+            ? t("settings.feedbackClaude", "Report Claude issue")
+            : t("settings.feedbackIssue", "Report issue"),
+        "secondary",
+        () => {
+          feedbackMessage.value = host
+            ? t("settings.feedbackIssueFillHost", "I hit a problem on {host}: ", { host })
+            : t("settings.feedbackIssueFill", "I hit a problem: ");
+          feedbackMessage.focus();
+        }
+      )
+    );
+    feedbackCard.append(feedbackMessage, feedbackEmail, feedbackRow);
+    feedbackCard.appendChild(drawerButton(t("settings.feedbackSend", "Send feedback"), "primary", async () => {
+      const message = feedbackMessage.value.trim();
+      if (!message) {
+        toast(t("settings.feedbackMissing", "Enter a short message first."));
+        return;
+      }
+      try {
+        await submitFeedback({
+          message,
+          email: feedbackEmail.value.trim(),
+          host,
+          category: feedbackCategoryForHost(host)
+        });
+        feedbackMessage.value = "";
+        feedbackEmail.value = "";
+        toast(t("settings.feedbackSent", "Feedback sent. Thank you."));
+      } catch (error) {
+        toast(error instanceof Error ? error.message : t("settings.feedbackFailed", "Could not send feedback"));
+      }
+    }));
+    body.appendChild(feedbackCard);
+
     body.appendChild(settingsToggle("enabled", t("settings.protectionOn", "Protection on"), t("settings.protectionHint", "Master switch for detection and masking."), settings.enabled !== false));
     body.appendChild(settingsToggle("autoReplace", t("settings.replace", "Replace as I type"), t("settings.replaceHint", "Mask each value live, before send."), settings.autoReplace !== false));
     body.appendChild(settingsToggle("restoreResponses", t("settings.restore", "Reveal replies here"), t("settings.restoreHint", "Show the reply with real values in this panel."), settings.restoreResponses !== false));
 
     body.appendChild(drawerButton(t("settings.protectField", "Protect active field now"), "primary", () => protectActiveField()));
-    const paused = (settings.pausedHosts || []).includes(host);
+    body.appendChild(drawerButton(t("field.toggleSelection", "Toggle selected text"), "secondary", () => toggleSelectionProtection()));
+    const paused = (storedSettings.pausedHosts || []).includes(host);
     body.appendChild(drawerButton(paused ? t("settings.resume", "Resume on this site") : t("settings.pause", "Pause on this site"), "secondary", pauseSite));
 
     const adv = document.createElement("details");
@@ -1407,6 +1874,8 @@
     if (!drawerOpen || !drawer) return;
     drawer.querySelector(".ledebe-drawer__sub").textContent =
       `${placeholderMap.size} value${placeholderMap.size === 1 ? "" : "s"} protected this session`;
+    const privacyBadge = drawer.querySelector(".ledebe-drawer__privacy-badge");
+    if (privacyBadge) privacyBadge.textContent = t("panel.privacy", "Your data never leaves your device.");
     drawer.querySelectorAll(".ledebe-tab").forEach((b) => b.classList.toggle("is-active", b.dataset.tab === activeTab));
 
     // Home / Protected words are live (rebuilt on each poll). Custom words and
@@ -1433,11 +1902,11 @@
     const transition = "margin-right 0.26s cubic-bezier(0.22, 1, 0.36, 1), width 0.26s cubic-bezier(0.22, 1, 0.36, 1), max-width 0.26s cubic-bezier(0.22, 1, 0.36, 1)";
     html.style.setProperty(PAGE_PUSH_VAR, offset || "0px");
     html.style.transition = transition;
-    html.style.marginRight = offset;
+    html.style.marginRight = offset || "0px";
     html.classList.toggle(PAGE_PUSH_CLASS, Boolean(width));
     if (!body) return;
     body.style.transition = transition;
-    body.style.marginRight = offset;
+    body.style.marginRight = offset || "0px";
     body.style.width = offset ? `calc(100vw - ${offset})` : "";
     body.style.maxWidth = offset ? `calc(100vw - ${offset})` : "";
     body.style.overflowX = offset ? "clip" : "";
@@ -1838,7 +2307,7 @@
     };
   }
 
-  async function requestNativeSidePanelOpen() {
+  async function requestNativeSidePanelToggle() {
     if (!hasContext() || typeof chrome.runtime?.sendMessage !== "function") return false;
     return new Promise((resolve) => {
       let settled = false;
@@ -1849,7 +2318,7 @@
       };
       const timer = window.setTimeout(() => finish(false), 180);
       try {
-        chrome.runtime.sendMessage({ type: "OPEN_SIDE_PANEL" }, (response) => {
+        chrome.runtime.sendMessage({ type: "TOGGLE_SIDE_PANEL" }, (response) => {
           window.clearTimeout(timer);
           try {
             if (chrome.runtime?.lastError) {
@@ -1868,23 +2337,27 @@
     });
   }
 
-  // The in-page icon prefers the real Chrome side panel so the browser resizes
-  // ChatGPT/Claude itself; if Chrome rejects that open, we fall back to our own
-  // drawer and reserve the viewport space locally.
   async function toggleOverlay() {
-    if (nativePanelOpen) return;
+    if (nativePanelOpen) {
+      const nativeToggled = await requestNativeSidePanelToggle();
+      if (nativeToggled) {
+        nativePanelOpen = false;
+        if (drawerOpen) closeDrawer();
+        return;
+      }
+    }
+    const nativeToggled = await requestNativeSidePanelToggle();
+    if (nativeToggled) {
+      nativePanelOpen = true;
+      if (drawerOpen) closeDrawer();
+      hideNotice(true);
+      return;
+    }
     if (drawerOpen) {
       drawerDismissed = true;
       closeDrawer();
       return;
     }
-    const nativeOpened = await requestNativeSidePanelOpen();
-    if (nativeOpened) {
-      nativePanelOpen = true;
-      if (drawerOpen) closeDrawer();
-      return;
-    }
-    nativePanelOpen = false;
     drawerDismissed = false;
     openDrawer();
   }

@@ -50,6 +50,16 @@ async function getActiveTab() {
   return tab;
 }
 
+async function announceNativePanelVisibility(visible) {
+  const tab = await getActiveTab();
+  if (!tab?.id) return;
+  try {
+    await chrome.runtime.sendMessage({ type: "SIDE_PANEL_VISIBILITY", visible, tabId: tab.id });
+  } catch (error) {
+    /* ignore */
+  }
+}
+
 async function sendToTab(message) {
   const tab = await getActiveTab();
   if (!tab?.id) return null;
@@ -106,6 +116,18 @@ function copyButton(label, getText) {
     } catch (error) { /* clipboard blocked */ }
   });
   return btn;
+}
+
+function fieldActions() {
+  const wrap = el("div", "stack stack--actions");
+  const toggleBtn = el("button", "btn btn--secondary", t("field.toggleSelection", "Toggle selected text"));
+  toggleBtn.type = "button";
+  toggleBtn.addEventListener("click", () => act({ type: "TOGGLE_SELECTION_PROTECTION" }));
+  const protectBtn = el("button", "btn btn--primary", t("settings.protectField", "Protect active field now"));
+  protectBtn.type = "button";
+  protectBtn.addEventListener("click", () => act({ type: "PROTECT_ACTIVE_FIELD" }));
+  wrap.append(toggleBtn, protectBtn);
+  return wrap;
 }
 
 function showFlash(message, kind = "info") {
@@ -505,6 +527,8 @@ function renderField() {
   const prot = state.protected || [];
   const session = state.session || [];
 
+  body.append(fieldActions());
+
   if (exposed.length) {
     body.append(el("div", "section", `Exposed (${exposed.length})`));
     for (const item of exposed) {
@@ -530,7 +554,7 @@ function renderField() {
     }
   }
   if (!exposed.length && !prot.length && !session.length) {
-    body.append(el("p", "empty", "No sensitive data detected in this field."));
+    body.append(el("p", "empty", t("field.none", "No sensitive data detected in this field.")));
   }
 }
 
@@ -560,7 +584,6 @@ async function renderSettings() {
   line.append(el("span", null, t("settings.currentSite", "Current site")));
   line.append(el("strong", null, host || "—"));
   body.append(line);
-
   const planLine = el("div", "status-line");
   const plan = effectivePlanFromData(settings, companySync);
   const limit = personalLimitForPlan(plan);
@@ -727,6 +750,11 @@ async function renderSettings() {
   protectBtn.addEventListener("click", () => act({ type: "PROTECT_ACTIVE_FIELD" }));
   body.append(protectBtn);
 
+  const toggleSelectionBtn = el("button", "btn btn--secondary", t("field.toggleSelection", "Toggle selected text"));
+  toggleSelectionBtn.type = "button";
+  toggleSelectionBtn.addEventListener("click", () => act({ type: "TOGGLE_SELECTION_PROTECTION" }));
+  body.append(toggleSelectionBtn);
+
   // --- everything else, tucked away -----------------------------------------
   const adv = document.createElement("details");
   adv.className = "advanced";
@@ -774,6 +802,8 @@ function stopPolling() {
 function applyStaticText() {
   const title = document.querySelector(".head strong");
   if (title) title.textContent = t("app.title", "Ledebe Protector");
+  const privacy = document.getElementById("privacy-note");
+  if (privacy) privacy.textContent = t("panel.privacy", "Your data never leaves your device.");
   document.querySelector('.tab[data-tab="home"]').textContent = t("tabs.home", "Home");
   document.querySelector('.tab[data-tab="words"]').textContent = t("tabs.words", "Custom words");
   document.querySelector('.tab[data-tab="field"]').textContent = t("tabs.field", "Protected words");
@@ -782,6 +812,7 @@ function applyStaticText() {
 
 function announceVisibility(visible) {
   void sendToTab({ type: "PANEL_VISIBLE", visible });
+  void announceNativePanelVisibility(visible);
 }
 
 document.querySelectorAll(".tab").forEach((b) => b.addEventListener("click", () => setTab(b.dataset.tab)));
@@ -792,6 +823,16 @@ document.addEventListener("visibilitychange", () => {
   if (visible) refreshState();
 });
 window.addEventListener("pagehide", () => announceVisibility(false));
+
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  if (message?.type === "CLOSE_SIDE_PANEL") {
+    void announceVisibility(false);
+    window.close();
+    sendResponse?.({ ok: true });
+    return true;
+  }
+  return false;
+});
 
 chrome.tabs.onActivated.addListener(() => refreshState());
 chrome.tabs.onUpdated.addListener((_, info) => { if (info.status === "complete") refreshState(); });

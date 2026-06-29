@@ -96,6 +96,19 @@ function escapeForRegex(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+function isWordishChar(char) {
+  return /[A-Za-z0-9]/.test(char || "");
+}
+
+function customTermRegex(term) {
+  const escaped = escapeForRegex(term);
+  const startsWordish = isWordishChar(term[0]);
+  const endsWordish = isWordishChar(term[term.length - 1]);
+  const prefix = startsWordish ? "(?<![A-Za-z0-9])" : "";
+  const suffix = endsWordish ? "(?![A-Za-z0-9])" : "";
+  return new RegExp(`${prefix}${escaped}${suffix}`, "gi");
+}
+
 function normalizeDigits(value) {
   return value.replace(/\D/g, "");
 }
@@ -282,7 +295,7 @@ function detectPII(input, customTerms = [], disabledTypes = []) {
       continue;
     }
 
-    const regex = new RegExp(escapeForRegex(term), "gi");
+    const regex = customTermRegex(term);
     let match;
     while ((match = regex.exec(input)) !== null) {
       findings.push(createFinding("CUSTOM", "Custom Term", "LDB_CUSTOM", match[0], match.index));

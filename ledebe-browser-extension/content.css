@@ -219,6 +219,38 @@ html.ledebe-page-pushed body > :not(.ledebe-drawer):not(.ledebe-toast) {
   margin: 4px 4px 12px;
 }
 
+.ledebe-drawer__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.ledebe-drawer__actions .ledebe-drawer__btn {
+  flex: 1 1 180px;
+  margin-top: 0;
+}
+
+.ledebe-drawer__stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0 12px;
+}
+
+.ledebe-drawer__stack--actions .ledebe-drawer__btn {
+  flex: 1 1 180px;
+  margin-top: 0;
+}
+
+.ledebe-drawer__card {
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 12px;
+  background: #f8fafc;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
 /* Home tab: mirrored chat */
 .ledebe-msg {
   border: 1px solid rgba(15, 23, 42, 0.07);
@@ -314,6 +346,15 @@ html.ledebe-page-pushed body > :not(.ledebe-drawer):not(.ledebe-toast) {
   color: #1e293b;
 }
 
+.ledebe-drawer__textarea {
+  width: 100%;
+  min-height: 104px;
+  resize: vertical;
+  background: #fff;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
 .ledebe-words__btn {
   border: none;
   background: #1e3a8a;
@@ -341,6 +382,17 @@ html.ledebe-page-pushed body > :not(.ledebe-drawer):not(.ledebe-toast) {
   gap: 10px;
 }
 
+.ledebe-drawer__brand-copy {
+  min-width: 0;
+}
+
+.ledebe-drawer__title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .ledebe-drawer__logo {
   width: 28px;
   height: 28px;
@@ -359,6 +411,19 @@ html.ledebe-page-pushed body > :not(.ledebe-drawer):not(.ledebe-toast) {
   font-size: 11px;
   opacity: 0.82;
   margin-top: 2px;
+}
+
+.ledebe-drawer__privacy-badge {
+  display: inline-flex;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 .ledebe-drawer__close {
@@ -608,10 +673,15 @@ html.ledebe-page-pushed body > :not(.ledebe-drawer):not(.ledebe-toast) {
   .ledebe-row:hover {
     background: #243049;
   }
+  .ledebe-drawer__card {
+    background: #1e293b;
+    border-color: rgba(148, 163, 184, 0.18);
+  }
   .ledebe-row__meta,
   .ledebe-drawer__section,
   .ledebe-drawer__empty,
-  .ledebe-drawer__hint {
+  .ledebe-drawer__hint,
+  .ledebe-drawer__lead {
     color: #94a3b8;
   }
   .ledebe-drawer__restored {

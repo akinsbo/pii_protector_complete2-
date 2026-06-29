@@ -178,6 +178,12 @@ test("detectPII finds an email and a custom term", () => {
   assert.ok(types.includes("CUSTOM"));
 });
 
+test("custom terms respect word boundaries", () => {
+  assert.ok(detectPII("Service A is down", ["Service A"]).some((f) => f.type === "CUSTOM"));
+  assert.ok(!detectPII("MyService Abridge issue", ["Service A"]).some((f) => f.type === "CUSTOM"));
+  assert.ok(!detectPII("ProjectFalconX shipped", ["ProjectFalcon"]).some((f) => f.type === "CUSTOM"));
+});
+
 // ---------------------------------------------------------------------------
 // Expanded detection: numbers, alphanumerics, names, addresses
 // ---------------------------------------------------------------------------

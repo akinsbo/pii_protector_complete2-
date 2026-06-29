@@ -176,3 +176,65 @@ test("TOGGLE_SELECTION_PROTECTION reveals just the selected placeholder", async 
     assert.ok(h.composer.value.includes(tokens[1]));
   } finally { await h.close(); }
 });
+
+test("TOGGLE_SELECTION_PROTECTION protects just the selected plaintext and selects the placeholder", async () => {
+  const h = await createHarness();
+  try {
+    h.type(h.composer, "ping a@b.com now");
+    const start = h.composer.value.indexOf("a@b.com");
+    h.composer.selectionStart = start;
+    h.composer.selectionEnd = start + "a@b.com".length;
+
+    await h.send({ type: "TOGGLE_SELECTION_PROTECTION", selectedText: "a@b.com" });
+    await h.tick(20);
+
+    const [token] = h.composer.value.match(/\[LDB_EMAIL_[A-Z0-9]+_\d+\]|\[LDB_EMAIL_\d+\]/g) || [];
+    assert.ok(token);
+    assert.equal(h.composer.value.slice(h.composer.selectionStart, h.composer.selectionEnd), token);
+  } finally { await h.close(); }
+});
+
+test("Home tab gives ChatGPT email writing blocks their own copyable section", async () => {
+  const h = await createHarness();
+  try {
+    h.type(h.composer, "email a@b.com ");
+    await h.tick(SCAN);
+
+    const [token] = h.composer.value.match(/\[LDB_EMAIL_[A-Z0-9]+_\d+\]/g) || [];
+    assert.ok(token, "email placeholder should exist");
+
+    const thread = h.window.document.createElement("div");
+    thread.innerHTML = `
+      <div data-message-author-role="assistant">
+        <div class="markdown prose">
+          <p>Here's a sample email with a realistic address:</p>
+          <div class="writing-block-editor">
+            <div
+              class="ProseMirror markdown prose"
+              data-writing-block-fullscreen-editor-region="true"
+              contenteditable="true"
+            >
+              <p>Subject: Welcome</p>
+              <p>From: Sarah Johnson &lt;${token}&gt;</p>
+              <p>To: Alex Carter &lt;${token}&gt;</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    h.window.document.body.appendChild(thread);
+
+    await h.send({ type: "OPEN_PANEL" });
+    await h.tick(20);
+    h.window.document.querySelector('.ledebe-tab[data-tab="home"]')?.dispatchEvent(
+      new h.window.MouseEvent("click", { bubbles: true })
+    );
+    await h.tick(20);
+
+    const blocks = h.window.document.querySelectorAll(".ledebe-msg__block");
+    assert.equal(blocks.length, 2);
+    assert.ok(blocks[1].classList.contains("is-code"));
+    assert.match(blocks[1].textContent || "", /From: Sarah Johnson <a@b\.com>/);
+    assert.equal(h.window.document.querySelectorAll(".ledebe-msg__copy").length, 2);
+  } finally { await h.close(); }
+});

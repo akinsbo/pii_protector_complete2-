@@ -21,6 +21,8 @@ const DEFAULT_SETTINGS = {
   subscriptionPlan: "free"
 };
 
+const nativePanelVisibility = new Map();
+
 async function ensureSessionAccess() {
   try {
     await chrome.storage.session?.setAccessLevel?.({
@@ -89,17 +91,26 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   }
 });
 
-// In-page Ledebe icons ask to open the native panel. Chrome usually rejects a
-// programmatic open outside a toolbar/context-menu gesture; we try anyway and
-// report success so the content script can fall back to its overlay if not.
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message?.type === "OPEN_SIDE_PANEL" && sender.tab?.id) {
+  if (message?.type === "SIDE_PANEL_VISIBILITY") {
+    const tabId = Number(message.tabId);
+    if (Number.isInteger(tabId)) nativePanelVisibility.set(tabId, Boolean(message.visible));
+    sendResponse?.({ ok: true });
+    return true;
+  }
+
+  if (message?.type === "TOGGLE_SIDE_PANEL" && sender.tab?.id) {
     (async () => {
       try {
+        if (nativePanelVisibility.get(sender.tab.id)) {
+          await chrome.runtime.sendMessage({ type: "CLOSE_SIDE_PANEL", tabId: sender.tab.id });
+          sendResponse({ ok: true, open: false, native: true });
+          return;
+        }
         await chrome.sidePanel.open({ tabId: sender.tab.id });
-        sendResponse({ ok: true });
+        sendResponse({ ok: true, open: true, native: true });
       } catch (error) {
-        sendResponse({ ok: false });
+        sendResponse({ ok: false, native: true });
       }
     })();
     return true; // async response

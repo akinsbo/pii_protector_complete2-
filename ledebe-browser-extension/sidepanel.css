@@ -22,8 +22,22 @@ body {
 }
 
 .head__logo { width: 28px; height: 28px; border-radius: 7px; object-fit: contain; }
+.head__copy { min-width: 0; }
+.head__title-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .head strong { display: block; font-size: 14px; }
 .head__sub { display: block; font-size: 11px; opacity: 0.82; margin-top: 2px; }
+.head__privacy {
+  display: inline-flex;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
 
 .tabs {
   display: flex;
@@ -68,6 +82,8 @@ body {
 .flash--ok { background: #dcfce7; color: #166534; }
 .flash--warn { background: #fef3c7; color: #92400e; }
 .stack { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 12px; }
+.stack--actions { gap: 8px; margin: 0 0 12px; }
+.stack--actions .btn { flex: 1 1 180px; margin-top: 0; }
 .pill {
   font-size: 11px;
   font-weight: 700;

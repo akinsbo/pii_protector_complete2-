@@ -22,6 +22,7 @@ const COMPANY_API_BASE = "https://m9ur273451.execute-api.us-east-2.amazonaws.com
 const FEEDBACK_ENDPOINT = "https://formspree.io/f/xdkogqpv";
 const COMPANY_TERMS_STORAGE_KEY = "ledebeCompanyTerms";
 const COMPANY_STATE_STORAGE_KEY = "ledebeCompanyState";
+const SESSION_PAUSED_HOSTS_KEY = "ledebeSessionPausedHosts";
 const PERSONAL_TERM_LIMITS = {
   free: 20,
   pro: Infinity,
@@ -173,6 +174,15 @@ async function getStoredSettings() {
     ...settings,
     customTerms: personalTerms,
     personalTerms
+  };
+}
+
+async function getSessionState() {
+  const result = await chrome.storage.session.get({
+    [SESSION_PAUSED_HOSTS_KEY]: []
+  });
+  return {
+    sessionPausedHosts: normalizeTerms(result[SESSION_PAUSED_HOSTS_KEY] || [])
   };
 }
 
@@ -338,19 +348,31 @@ async function leaveCompany() {
 }
 
 async function submitFeedback({ message, email, host, category }) {
+  const payload = {
+    source: "browser-extension",
+    category,
+    host: host || "unknown",
+    message
+  };
+  if (email) payload.email = email;
+
   const response = await fetch(FEEDBACK_ENDPOINT, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      source: "browser-extension",
-      category,
-      host: host || "unknown",
-      email: email || "anonymous",
-      message
-    })
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "application/json"
+    },
+    body: JSON.stringify(payload)
   });
   if (!response.ok) {
-    throw new Error("Could not send feedback");
+    let detail = "";
+    try {
+      const data = await response.json();
+      detail = data?.error || data?.message || "";
+    } catch (error) {
+      /* ignore non-json errors */
+    }
+    throw new Error(detail || "Could not send feedback");
   }
 }
 
@@ -368,6 +390,63 @@ function msgCopyButton(getTextOrString) {
     } catch (error) { /* clipboard blocked */ }
   });
   return btn;
+}
+
+const PLACEHOLDER_TOKEN_RE = /\[LDB_[A-Z0-9_]+\]/g;
+const BULLET_LINE_RE = /^\s*[-*•]\s+/;
+
+function appendInlineText(container, text) {
+  let lastIndex = 0;
+  for (const match of text.matchAll(PLACEHOLDER_TOKEN_RE)) {
+    const token = match[0];
+    const index = match.index || 0;
+    if (index > lastIndex) {
+      container.append(document.createTextNode(text.slice(lastIndex, index)));
+    }
+    const chip = el("code", "msg__token", token);
+    container.append(chip);
+    lastIndex = index + token.length;
+  }
+  if (lastIndex < text.length) {
+    container.append(document.createTextNode(text.slice(lastIndex)));
+  }
+}
+
+function appendParagraphText(container, text) {
+  const lines = text.split("\n");
+  lines.forEach((line, index) => {
+    appendInlineText(container, line);
+    if (index < lines.length - 1) container.append(document.createElement("br"));
+  });
+}
+
+function buildFormattedBlock(text) {
+  const fragment = document.createDocumentFragment();
+  const paragraphs = String(text || "")
+    .replace(/\r\n/g, "\n")
+    .split(/\n{2,}/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  for (const paragraphText of paragraphs) {
+    const lines = paragraphText.split("\n").map((line) => line.trimEnd()).filter(Boolean);
+    const isList = lines.length > 0 && lines.every((line) => BULLET_LINE_RE.test(line));
+    if (isList) {
+      const list = el("ul", "msg__list");
+      for (const line of lines) {
+        const item = el("li", "msg__list-item");
+        appendInlineText(item, line.replace(BULLET_LINE_RE, ""));
+        list.append(item);
+      }
+      fragment.append(list);
+      continue;
+    }
+    const paragraph = el("p", "msg__paragraph");
+    appendParagraphText(paragraph, paragraphText);
+    fragment.append(paragraph);
+  }
+
+  return fragment;
 }
 
 // ---- render --------------------------------------------------------------
@@ -429,7 +508,10 @@ function renderHome() {
       const blk = el("div", "msg__block" + (block.kind === "code" ? " is-code" : ""));
       const bhead = el("div", "msg__bhead");
       bhead.append(msgCopyButton(block.text)); // copies just this block
-      blk.append(bhead, el("div", "msg__text", block.text));
+      const text = el("div", "msg__text");
+      if (block.kind === "code") text.textContent = block.text;
+      else text.append(buildFormattedBlock(block.text));
+      blk.append(bhead, text);
       msg.append(blk);
     }
     body.append(msg);
@@ -574,6 +656,7 @@ function toggleRow(key, label, hint, checked) {
 
 async function renderSettings() {
   const settings = await getStoredSettings();
+  const { sessionPausedHosts } = await getSessionState();
   const { companySync, companyTerms } = await getCompanyState();
   body.innerHTML = "";
   $("#session-count").textContent =
@@ -733,6 +816,24 @@ async function renderSettings() {
   body.append(toggleRow("restoreResponses", t("settings.restore", "Reveal replies here"), t("settings.restoreHint", "Show the reply with real values in this panel."), settings.restoreResponses !== false));
 
   const paused = host ? (settings.pausedHosts || []).includes(host) : false;
+  const sessionPaused = host ? sessionPausedHosts.includes(host) : false;
+  const sessionPauseBtn = el(
+    "button",
+    "btn btn--secondary",
+    sessionPaused ? t("settings.resumeSession", "Resume this session") : t("settings.pauseSession", "Pause for this session")
+  );
+  sessionPauseBtn.type = "button";
+  sessionPauseBtn.disabled = !host;
+  sessionPauseBtn.addEventListener("click", async () => {
+    const cur = await chrome.storage.session.get({ [SESSION_PAUSED_HOSTS_KEY]: [] });
+    const set = new Set(cur[SESSION_PAUSED_HOSTS_KEY] || []);
+    if (set.has(host)) set.delete(host); else set.add(host);
+    await chrome.storage.session.set({ [SESSION_PAUSED_HOSTS_KEY]: Array.from(set) });
+    await refreshState();
+    renderSettings();
+  });
+  body.append(sessionPauseBtn);
+
   const pauseBtn = el("button", "btn btn--secondary", paused ? t("settings.resume", "Resume on this site") : t("settings.pause", "Pause on this site"));
   pauseBtn.type = "button";
   pauseBtn.disabled = !host;
@@ -839,6 +940,7 @@ chrome.tabs.onUpdated.addListener((_, info) => { if (info.status === "complete")
 
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === "sync" && (activeTab === "settings" || activeTab === "words")) render(true);
+  if (area === "session" && changes[SESSION_PAUSED_HOSTS_KEY] && activeTab === "settings") render(true);
   if (area === "local" && (changes[COMPANY_STATE_STORAGE_KEY] || changes[COMPANY_TERMS_STORAGE_KEY])) {
     if (activeTab === "settings" || activeTab === "words") render(true);
   }

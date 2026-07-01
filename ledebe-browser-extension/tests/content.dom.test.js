@@ -87,6 +87,17 @@ test("paused host does not mask", async () => {
   } finally { await h.close(); }
 });
 
+test("session pause stops masking for the current host immediately", async () => {
+  const h = await createHarness();
+  try {
+    await h.chrome.storage.session.set({ ledebeSessionPausedHosts: ["chatgpt.com"] });
+    await h.tick(20);
+    h.type(h.composer, "email a@b.com ");
+    await h.tick(SCAN);
+    assert.ok(h.composer.value.includes("a@b.com"));
+  } finally { await h.close(); }
+});
+
 test("disabled category is honored end-to-end (numbers off, email on)", async () => {
   const h = await createHarness({ sync: { detectNumbers: false } });
   try {
@@ -114,6 +125,17 @@ test("send-flush prepends the keep-placeholders note once", async () => {
   } finally { await h.close(); }
 });
 
+test("manual protect does not prepend the keep-placeholders note", async () => {
+  const h = await createHarness();
+  try {
+    h.type(h.composer, "email a@b.com");
+    await h.send({ type: "PROTECT_ACTIVE_FIELD" });
+    await h.tick(20);
+    assert.match(h.composer.value, /\[LDB_EMAIL_/);
+    assert.ok(!h.composer.value.startsWith("[Ledebe note to the assistant:"));
+  } finally { await h.close(); }
+});
+
 test("GET_STATE returns the grouped panel shape", async () => {
   const h = await createHarness();
   try {
@@ -127,11 +149,11 @@ test("GET_STATE returns the grouped panel shape", async () => {
   } finally { await h.close(); }
 });
 
-test("OPEN_PANEL reserves viewport space for the in-page drawer", async () => {
+test("protecting content opens the in-page drawer and reserves viewport space", async () => {
   const h = await createHarness();
   try {
-    await h.send({ type: "OPEN_PANEL" });
-    await h.tick(20);
+    h.type(h.composer, "email a@b.com ");
+    await h.tick(SCAN);
     const html = h.window.document.documentElement;
     assert.ok(html.classList.contains("ledebe-page-pushed"));
     assert.match(html.style.marginRight, /\d+px/);
@@ -224,8 +246,10 @@ test("Home tab gives ChatGPT email writing blocks their own copyable section", a
     `;
     h.window.document.body.appendChild(thread);
 
-    await h.send({ type: "OPEN_PANEL" });
-    await h.tick(20);
+    if (!h.window.document.querySelector(".ledebe-drawer.is-open")) {
+      await h.send({ type: "OPEN_PANEL" });
+      await h.tick(20);
+    }
     h.window.document.querySelector('.ledebe-tab[data-tab="home"]')?.dispatchEvent(
       new h.window.MouseEvent("click", { bubbles: true })
     );

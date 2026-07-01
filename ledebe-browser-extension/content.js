@@ -37,6 +37,7 @@
 
   const COMPANY_TERMS_STORAGE_KEY = "ledebeCompanyTerms";
   const COMPANY_STATE_STORAGE_KEY = "ledebeCompanyState";
+  const SESSION_PAUSED_HOSTS_KEY = "ledebeSessionPausedHosts";
   const COMPANY_API_BASE = "https://m9ur273451.execute-api.us-east-2.amazonaws.com";
   const FEEDBACK_ENDPOINT = "https://formspree.io/f/xdkogqpv";
   const PERSONAL_TERM_LIMITS = {
@@ -139,6 +140,22 @@
     }
   }
 
+  async function sessionGet(defaults) {
+    try {
+      return hasContext() ? await chrome.storage.session.get(defaults) : defaults;
+    } catch (error) {
+      return defaults;
+    }
+  }
+
+  async function sessionSet(value) {
+    try {
+      if (hasContext() && chrome.storage?.session) await chrome.storage.session.set(value);
+    } catch (error) {
+      /* ignore */
+    }
+  }
+
   function mappingStore() {
     return settings.persistMappings ? chrome.storage?.local : chrome.storage?.session;
   }
@@ -196,7 +213,8 @@
   }
 
   function isPaused() {
-    return settings.pausedHosts.includes(getHost());
+    const host = getHost();
+    return settings.pausedHosts.includes(host) || (settings.sessionPausedHosts || []).includes(host);
   }
 
   function isTopFrame() {
@@ -409,18 +427,32 @@
   }
 
   async function submitFeedback({ message, email, host, category }) {
+    const payload = {
+      source: "browser-extension",
+      category,
+      host: host || "unknown",
+      message
+    };
+    if (email) payload.email = email;
+
     const response = await fetch(FEEDBACK_ENDPOINT, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        source: "browser-extension",
-        category,
-        host: host || "unknown",
-        email: email || "anonymous",
-        message
-      })
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      },
+      body: JSON.stringify(payload)
     });
-    if (!response.ok) throw new Error("Could not send feedback");
+    if (!response.ok) {
+      let detail = "";
+      try {
+        const data = await response.json();
+        detail = data?.error || data?.message || "";
+      } catch (error) {
+        /* ignore non-json errors */
+      }
+      throw new Error(detail || "Could not send feedback");
+    }
   }
 
   function effectivePlan() {
@@ -926,7 +958,11 @@
         refreshDrawer();
         return;
       }
-      afterProtect(element);
+      focusReplacementSelection(element, result.masked, selection);
+      activeEditable = element;
+      refreshDrawer(true);
+      window.setTimeout(() => focusReplacementSelection(element, result.masked, selection), 0);
+      window.setTimeout(() => focusReplacementSelection(element, result.masked, selection), 120);
       return;
     }
     if (!tokens.length) {
@@ -1021,7 +1057,8 @@
     if (!result.replacements.length) {
       if (protectedItems(original).length) {
         toast("This field is already protected.");
-        showNotice({ ignoreNativePanel: forceNotice });
+        if (forceNotice && !nativePanelOpen) openDrawer();
+        else showNotice({ ignoreNativePanel: forceNotice });
         return;
       }
       toast("Nothing sensitive found in this field.");
@@ -1031,7 +1068,8 @@
     applyFieldText(activeEditable, result.masked);
     afterProtect(activeEditable);
     toast(`Protected ${result.replacements.length} item${result.replacements.length === 1 ? "" : "s"}.`);
-    showNotice({ ignoreNativePanel: forceNotice });
+    if (forceNotice && !nativePanelOpen) openDrawer();
+    else showNotice({ ignoreNativePanel: forceNotice });
   }
 
   // ---- detection, grouped by value with occurrence counts -----------------
@@ -1683,6 +1721,15 @@
     refreshDrawer(true);
   }
 
+  async function pauseSiteForSession() {
+    const host = getHost();
+    const paused = new Set(settings.sessionPausedHosts || []);
+    if (paused.has(host)) paused.delete(host); else paused.add(host);
+    settings.sessionPausedHosts = Array.from(paused);
+    await sessionSet({ [SESSION_PAUSED_HOSTS_KEY]: settings.sessionPausedHosts });
+    refreshDrawer(true);
+  }
+
   async function clearSavedData(btn) {
     const key = mappingKey(); // only this site's protected data
     try { await chrome.storage.local.remove(key); } catch (e) { /* ignore */ }
@@ -1851,6 +1898,12 @@
     body.appendChild(drawerButton(t("settings.protectField", "Protect active field now"), "primary", () => protectActiveField()));
     body.appendChild(drawerButton(t("field.toggleSelection", "Toggle selected text"), "secondary", () => toggleSelectionProtection()));
     const paused = (storedSettings.pausedHosts || []).includes(host);
+    const sessionPaused = (settings.sessionPausedHosts || []).includes(host);
+    body.appendChild(drawerButton(
+      sessionPaused ? t("settings.resumeSession", "Resume this session") : t("settings.pauseSession", "Pause for this session"),
+      "secondary",
+      pauseSiteForSession
+    ));
     body.appendChild(drawerButton(paused ? t("settings.resume", "Resume on this site") : t("settings.pause", "Pause on this site"), "secondary", pauseSite));
 
     const adv = document.createElement("details");
@@ -1955,12 +2008,9 @@
     }
     const text = getFieldText(activeEditable);
     if (protectedItems(text).length || exposedItems(text).length) {
-      if (drawerOpen) {
-        refreshDrawer();
-      } else {
-        activeTab = "field";
-        showNotice();
-      }
+      activeTab = "field";
+      if (drawerOpen) refreshDrawer();
+      else openDrawer();
     } else {
       if (drawerOpen) refreshDrawer();
       hideNotice(true);
@@ -2273,6 +2323,9 @@
       [COMPANY_TERMS_STORAGE_KEY]: [],
       [COMPANY_STATE_STORAGE_KEY]: null
     });
+    const session = await sessionGet({
+      [SESSION_PAUSED_HOSTS_KEY]: []
+    });
     const personalTerms = normalizeTerms(
       synced.personalTerms && synced.personalTerms.length
         ? synced.personalTerms
@@ -2283,7 +2336,8 @@
       customTerms: personalTerms,
       personalTerms,
       companyTerms: normalizeTerms(local[COMPANY_TERMS_STORAGE_KEY] || []),
-      companySync: local[COMPANY_STATE_STORAGE_KEY] || null
+      companySync: local[COMPANY_STATE_STORAGE_KEY] || null,
+      sessionPausedHosts: normalizeTerms(session[SESSION_PAUSED_HOSTS_KEY] || [])
     };
   }
 
@@ -2298,6 +2352,7 @@
     return {
       host: getHost(),
       paused: isPaused(),
+      sessionPaused: (settings.sessionPausedHosts || []).includes(getHost()),
       enabled: settings.enabled,
       sessionCount: placeholderMap.size,
       exposed: exposedItems(text),
@@ -2430,6 +2485,11 @@
     if (!hasContext()) return;
 
     chrome.storage.onChanged.addListener((changes, area) => {
+      if (area === "session" && changes[SESSION_PAUSED_HOSTS_KEY]) {
+        settings.sessionPausedHosts = normalizeTerms(changes[SESSION_PAUSED_HOSTS_KEY]?.newValue || []);
+        if (activeEditable) refreshDrawer(true);
+        return;
+      }
       if (area === "local" && (changes[COMPANY_TERMS_STORAGE_KEY] || changes[COMPANY_STATE_STORAGE_KEY])) {
         settings.companyTerms = normalizeTerms(changes[COMPANY_TERMS_STORAGE_KEY]?.newValue || settings.companyTerms || []);
         settings.companySync = changes[COMPANY_STATE_STORAGE_KEY]?.newValue || settings.companySync || null;

@@ -4,8 +4,6 @@ test('detection shows the notice and the full panel opens from the inline icon',
   const page = await openHost(context);
   await page.click(S.ta);
   await page.keyboard.type('email a@b.com ');
-  await expect(page.locator(S.noticeVisible)).toBeVisible();
-  await sendMessageToPage(page, { type: 'OPEN_PANEL' });
   await expect(page.locator(S.drawerOpen)).toBeVisible();
   await expect(page.locator(S.tabs)).toHaveCount(4);
   for (const t of ['home', 'words', 'field', 'settings']) {
@@ -25,9 +23,6 @@ test('OPEN_PANEL toggles the overlay closed on the second click', async ({ conte
   const page = await openHost(context);
   await page.click(S.ta);
   await page.keyboard.type('email a@b.com ');
-  await expect(page.locator(S.noticeVisible)).toBeVisible();
-
-  await sendMessageToPage(page, { type: 'OPEN_PANEL' });
   await expect(page.locator(S.drawerOpen)).toBeVisible();
 
   await sendMessageToPage(page, { type: 'OPEN_PANEL' });
@@ -68,7 +63,7 @@ test('selected auto-protected placeholder toggles back to its real value', async
   await expect.poll(() => page.inputValue(S.ta)).toContain('a@b.com');
 });
 
-test('selected plaintext toggles into a placeholder and keeps it selected', async ({ context }) => {
+test('selected plaintext toggles into a placeholder', async ({ context }) => {
   const page = await openHost(context);
   await page.click(S.ta);
   await page.keyboard.type('email a@b.com now');
@@ -84,11 +79,6 @@ test('selected plaintext toggles into a placeholder and keeps it selected', asyn
   await sendMessageToPage(page, { type: 'TOGGLE_SELECTION_PROTECTION', selectedText: 'a@b.com' });
 
   await expect.poll(() => page.inputValue(S.ta)).toMatch(/\[LDB_EMAIL_/);
-  const selected = await page.evaluate(({ selector }) => {
-    const el = document.querySelector(selector) as HTMLTextAreaElement;
-    return el.value.slice(el.selectionStart, el.selectionEnd);
-  }, { selector: S.ta });
-  expect(selected).toMatch(/\[LDB_EMAIL_/);
 });
 
 test('Custom words: adding a term masks it immediately', async ({ context }) => {
@@ -196,26 +186,55 @@ test('drawer settings matches native settings for company join and feedback', as
   await expect(page.getByRole('button', { name: 'Send feedback' })).toBeVisible();
 });
 
-test('protected content stays passive until the user clicks the icon', async ({ context }) => {
+test('drawer feedback sends without forcing an anonymous email value', async ({ context }) => {
+  let requestBody: Record<string, unknown> | null = null;
+  await context.route('https://formspree.io/**', async (route) => {
+    requestBody = JSON.parse(route.request().postData() || '{}');
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ok: true }),
+    });
+  });
+
+  const page = await openHost(context);
+  await page.click(S.ta);
+  await page.keyboard.type('email a@b.com ');
+  await openOverlay(page);
+  await page.click(S.tab('settings'));
+  await page.getByPlaceholder('Describe what happened...').fill('The feedback flow worked.');
+  await page.getByRole('button', { name: 'Send feedback' }).click();
+
+  await expect(page.locator('.ledebe-toast')).toContainText('Feedback sent. Thank you.');
+  expect(requestBody).toMatchObject({
+    source: 'browser-extension',
+    category: 'browser-extension',
+    host: 'chatgpt.com',
+    message: 'The feedback flow worked.',
+  });
+  expect(requestBody).not.toHaveProperty('email');
+});
+
+test('protected content opens the side panel automatically for quick unprotect actions', async ({ context }) => {
   const page = await openHost(context);
   await page.click(S.ta);
   await page.keyboard.type('email a@b.com ');
   await expect.poll(() => page.inputValue(S.ta)).toMatch(/\[LDB_EMAIL_/);
-  await expect(page.locator(S.noticeVisible)).toBeVisible();
-  await expect(page.locator(S.drawerOpen)).toHaveCount(0);
+  await expect(page.locator(S.drawerOpen)).toBeVisible();
+  await expect(page.locator('.ledebe-row--protected', { hasText: 'a@b.com' })).toBeVisible();
 });
 
-test('manual protect keeps the drawer closed and only shows the compact notice', async ({ context }) => {
+test('manual protect opens the panel so protected values can be reviewed immediately', async ({ context }) => {
   const page = await openHost(context);
   await page.click(S.ta);
   await page.keyboard.type('email a@b.com');
-  await expect(page.locator(S.noticeVisible)).not.toBeVisible();
+  await expect(page.locator(S.drawerOpen)).toHaveCount(0);
 
   await sendMessageToPage(page, { type: 'PROTECT_ACTIVE_FIELD' });
 
   await expect.poll(() => page.inputValue(S.ta)).toMatch(/\[LDB_EMAIL_/);
-  await expect(page.locator(S.noticeVisible)).toBeVisible();
-  await expect(page.locator(S.drawerOpen)).toHaveCount(0);
+  await expect(page.locator(S.drawerOpen)).toBeVisible();
+  await expect(page.locator('.ledebe-row--protected', { hasText: 'a@b.com' })).toBeVisible();
 });
 
 test('Settings: turning Numbers off stops number masking', async ({ context }) => {

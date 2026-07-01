@@ -1,4 +1,4 @@
-import { test, expect, openHost, openOverlay, seedAssistantReply, S } from './helpers';
+import { test, expect, openHost, openOverlay, seedAssistantReply, sendMessageToPage, S } from './helpers';
 
 test('restore: real value shows in the panel; the page keeps the placeholder', async ({ context }) => {
   const page = await openHost(context);
@@ -29,10 +29,13 @@ test('restored replies do not auto-open the drawer', async ({ context }) => {
   await page.click(S.ta);
   await page.keyboard.type('email a@b.com ');
   await expect.poll(() => page.inputValue(S.ta)).toMatch(/\[LDB_EMAIL_/);
+  await expect(page.locator(S.drawerOpen)).toBeVisible();
+  await sendMessageToPage(page, { type: 'OPEN_PANEL' });
+  await expect(page.locator(S.drawerOpen)).toHaveCount(0);
 
   const token = (await page.inputValue(S.ta)).match(/\[LDB_EMAIL_[A-Z0-9]+_\d+\]/)![0];
   await seedAssistantReply(page, `Sure - ${token} is noted.`);
 
-  await expect(page.locator(S.noticeVisible)).toBeVisible();
+  await page.waitForTimeout(500);
   await expect(page.locator(S.drawerOpen)).toHaveCount(0);
 });

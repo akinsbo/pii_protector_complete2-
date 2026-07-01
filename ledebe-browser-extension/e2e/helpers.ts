@@ -93,10 +93,12 @@ export async function openHost(context: BrowserContext, host = 'chatgpt.com'): P
 // Trigger the content-script notice via the normal detection path, then open
 // the full panel from the inline Ledebe icon the same way a user would.
 export async function openOverlay(page: Page): Promise<void> {
+  if (await page.locator(S.drawerOpen).isVisible().catch(() => false)) return;
   if (!(await page.locator(S.noticeVisible).isVisible().catch(() => false))) {
     await page.click(S.ta);
     await page.keyboard.type('email a@b.com ');
-    await expect(page.locator(S.noticeVisible)).toBeVisible();
+    await expect(page.locator(S.drawerOpen)).toBeVisible();
+    return;
   }
   await expect(page.locator(S.inlineBtn).first()).toBeVisible();
   await sendMessageToPage(page, { type: 'OPEN_PANEL' });

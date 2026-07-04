@@ -942,6 +942,11 @@
     activeEditable = element;
 
     const selection = getSelectedFieldText(element) || selectedText;
+    if (!selection) {
+      toast("Select text first, or use Protect active field now.");
+      refreshDrawer();
+      return;
+    }
     const tokens = placeholderTokensIn(selection);
     if (!tokens.length && selection) {
       const result = maskText(selection, allCustomTerms(), {
@@ -963,10 +968,6 @@
       refreshDrawer(true);
       window.setTimeout(() => focusReplacementSelection(element, result.masked, selection), 0);
       window.setTimeout(() => focusReplacementSelection(element, result.masked, selection), 120);
-      return;
-    }
-    if (!tokens.length) {
-      protectActiveField();
       return;
     }
 
@@ -1357,6 +1358,98 @@
     return btn;
   }
 
+  const PLACEHOLDER_TOKEN_RE = /\[LDB_[A-Z0-9_]+\]/g;
+  const BULLET_LINE_RE = /^\s*[-*•]\s+/;
+  const BULLET_ONLY_RE = /^\s*[-*•]\s*$/;
+
+  function appendInlineText(container, text) {
+    let lastIndex = 0;
+    for (const match of text.matchAll(PLACEHOLDER_TOKEN_RE)) {
+      const token = match[0];
+      const index = match.index || 0;
+      if (index > lastIndex) {
+        container.append(document.createTextNode(text.slice(lastIndex, index)));
+      }
+      const chip = document.createElement("code");
+      chip.className = "ledebe-msg__token";
+      chip.textContent = token;
+      container.append(chip);
+      lastIndex = index + token.length;
+    }
+    if (lastIndex < text.length) {
+      container.append(document.createTextNode(text.slice(lastIndex)));
+    }
+  }
+
+  function normalizeBulletLines(lines) {
+    const normalized = [];
+    for (let index = 0; index < lines.length; index += 1) {
+      const line = lines[index];
+      if (BULLET_ONLY_RE.test(line)) {
+        const next = lines[index + 1];
+        if (next && !BULLET_LINE_RE.test(next) && !BULLET_ONLY_RE.test(next)) {
+          normalized.push(`- ${String(next).trim()}`);
+          index += 1;
+          continue;
+        }
+      }
+      normalized.push(line);
+    }
+    return normalized;
+  }
+
+  function appendParagraphText(container, text) {
+    const lines = text.split("\n");
+    lines.forEach((line, index) => {
+      appendInlineText(container, line);
+      if (index < lines.length - 1) container.append(document.createElement("br"));
+    });
+  }
+
+  function buildFormattedBlock(text) {
+    const fragment = document.createDocumentFragment();
+    const paragraphs = String(text || "")
+      .replace(/\r\n/g, "\n")
+      .split(/\n{2,}/)
+      .map((part) => part.trim())
+      .filter(Boolean);
+
+    for (const paragraphText of paragraphs) {
+      const lines = normalizeBulletLines(
+        paragraphText.split("\n").map((line) => line.trimEnd()).filter(Boolean)
+      );
+      const isList = lines.length > 0 && lines.every((line) => BULLET_LINE_RE.test(line));
+      if (isList) {
+        const list = document.createElement("ul");
+        list.className = "ledebe-msg__list";
+        for (const line of lines) {
+          const item = document.createElement("li");
+          item.className = "ledebe-msg__list-item";
+          appendInlineText(item, line.replace(BULLET_LINE_RE, ""));
+          list.appendChild(item);
+        }
+        fragment.appendChild(list);
+        continue;
+      }
+      const paragraph = document.createElement("p");
+      paragraph.className = "ledebe-msg__paragraph";
+      appendParagraphText(paragraph, paragraphText);
+      fragment.appendChild(paragraph);
+    }
+
+    return fragment;
+  }
+
+  function latestAssistantText(turns) {
+    for (let index = turns.length - 1; index >= 0; index -= 1) {
+      const turn = turns[index];
+      if (turn?.role !== "assistant") continue;
+      const text = (turn.blocks || []).map((block) => block.text).filter(Boolean).join("\n\n").trim();
+      if (text) return text;
+    }
+    return "";
+  }
+
   // ---- Home tab: the chat, mirrored with real values restored -------------
 
   function stripRetainNote(text) {
@@ -1447,8 +1540,8 @@
     const wrap = document.createElement("div");
     wrap.className = "ledebe-drawer__actions";
     wrap.append(
-      drawerButton(t("field.toggleSelection", "Toggle selected text"), "secondary", () => toggleSelectionProtection()),
-      drawerButton(t("settings.protectField", "Protect active field now"), "primary", () => protectActiveField())
+      drawerButton(t("settings.protectField", "Protect active field now"), "primary", () => protectActiveField()),
+      drawerButton(t("field.toggleSelection", "Toggle selected text"), "secondary", () => toggleSelectionProtection())
     );
     return wrap;
   }
@@ -1533,15 +1626,16 @@
         bhead.appendChild(msgCopyButton(block.text)); // copies just this block
         const text = document.createElement("div");
         text.className = "ledebe-msg__text";
-        text.textContent = block.text;
+        if (block.kind === "code") text.textContent = block.text;
+        else text.appendChild(buildFormattedBlock(block.text));
         blk.append(bhead, text);
         msg.appendChild(blk);
       }
       body.appendChild(msg);
     }
 
-    body.appendChild(copyButton(t("home.copyTranscript", "Copy whole transcript"), () =>
-      turns.map((turn) => `${turn.role === "assistant" ? t("home.assistant", "Assistant") : t("home.you", "You")}:\n${turn.blocks.map((b) => b.text).join("\n\n")}`).join("\n\n")));
+    body.appendChild(copyButton(t("home.copyReply", "Copy restored reply"), () =>
+      latestAssistantText(turns) || latestRestoredText || ""));
   }
 
   // ---- Custom words tab ----------------------------------------------------

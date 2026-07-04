@@ -208,3 +208,81 @@ test("side panel feedback omits blank email and shows success", async () => {
     await h.close();
   }
 });
+
+test("settings show activation code entry and upgrade path for free users", async () => {
+  const h = await createHarness({
+    state: {
+      host: "chatgpt.com",
+      sessionCount: 0,
+      transcript: [],
+      latestRestored: ""
+    }
+  });
+  try {
+    h.document.querySelector('.tab[data-tab="settings"]').click();
+    await h.tick(40);
+
+    assert.match(h.document.body.textContent, /Browser Pro activation/);
+    assert.match(h.document.body.textContent, /Upgrade to Pro/);
+    assert.ok(h.document.querySelector('input[placeholder="Activation code"]'));
+  } finally {
+    await h.close();
+  }
+});
+
+test("redeeming an activation code stores plan state and shows success", async () => {
+  const h = await createHarness({
+    state: {
+      host: "chatgpt.com",
+      sessionCount: 0,
+      transcript: [],
+      latestRestored: ""
+    },
+    fetchImpl: async (url, options = {}) => {
+      if (String(url).includes("/activation/redeem")) {
+        return {
+          ok: true,
+          json: async () => ({
+            active: true,
+            plan: "pro",
+            features: ["pro"],
+            sessionToken: "session-123",
+            sessionExpiresAt: "2026-08-01T00:00:00.000Z",
+            activationCodeMasked: "LDB-PRO-ABCD...WXYZ",
+            privacyBoundary: "Billing only."
+          })
+        };
+      }
+      if (String(url).includes("/activation/session")) {
+        return {
+          ok: true,
+          json: async () => ({
+            active: true,
+            plan: "pro",
+            features: ["pro"],
+            sessionExpiresAt: "2026-08-01T00:00:00.000Z",
+            activationCodeMasked: "LDB-PRO-ABCD...WXYZ",
+            privacyBoundary: "Billing only."
+          })
+        };
+      }
+      return { ok: true, json: async () => ({ ok: true }) };
+    }
+  });
+  try {
+    h.document.querySelector('.tab[data-tab="settings"]').click();
+    await h.tick(40);
+
+    const input = h.document.querySelector('input[placeholder="Activation code"]');
+    const activate = Array.from(h.document.querySelectorAll("button")).find((button) => button.textContent === "Activate Pro");
+    input.value = "LDB-PRO-ABCD-WXYZ";
+    activate.click();
+    await h.tick(60);
+
+    assert.equal(h.window.chrome._areas.sync.subscriptionPlan, "pro");
+    assert.equal(h.window.chrome._areas.local.ledebeActivationState.plan, "pro");
+    assert.match(h.document.getElementById("flash")?.textContent || "", /Browser Pro is active on this browser\./);
+  } finally {
+    await h.close();
+  }
+});

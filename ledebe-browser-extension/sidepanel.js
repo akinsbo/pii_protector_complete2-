@@ -19,10 +19,13 @@ const DEFAULTS = {
 };
 
 const COMPANY_API_BASE = "https://m9ur273451.execute-api.us-east-2.amazonaws.com";
+const ACTIVATION_API_BASE = COMPANY_API_BASE;
 const FEEDBACK_ENDPOINT = "https://formspree.io/f/xdkogqpv";
 const COMPANY_TERMS_STORAGE_KEY = "ledebeCompanyTerms";
 const COMPANY_STATE_STORAGE_KEY = "ledebeCompanyState";
+const ACTIVATION_STATE_STORAGE_KEY = "ledebeActivationState";
 const SESSION_PAUSED_HOSTS_KEY = "ledebeSessionPausedHosts";
+const ACTIVATION_STATUS_REFRESH_MS = 15 * 60 * 1000;
 const PERSONAL_TERM_LIMITS = {
   free: 20,
   pro: Infinity,
@@ -106,6 +109,22 @@ function row(kind, primary, secondary, action, onClick) {
   return r;
 }
 
+function collapsibleCard(title, { badge = "", open = false } = {}) {
+  const details = document.createElement("details");
+  details.className = "card card--collapsible";
+  details.open = open;
+
+  const summary = el("summary", "card__summary");
+  const titleWrap = el("span", "card__summary-copy");
+  titleWrap.append(el("span", "card__summary-title", title));
+  if (badge) titleWrap.append(el("span", "card__summary-badge", badge));
+  summary.append(titleWrap, el("span", "card__summary-chevron", ""));
+
+  const content = el("div", "card__content");
+  details.append(summary, content);
+  return { details, content };
+}
+
 function copyButton(label, getText) {
   const btn = el("button", "btn btn--ghost", label);
   btn.type = "button";
@@ -121,13 +140,13 @@ function copyButton(label, getText) {
 
 function fieldActions() {
   const wrap = el("div", "stack stack--actions");
-  const toggleBtn = el("button", "btn btn--secondary", t("field.toggleSelection", "Toggle selected text"));
-  toggleBtn.type = "button";
-  toggleBtn.addEventListener("click", () => act({ type: "TOGGLE_SELECTION_PROTECTION" }));
   const protectBtn = el("button", "btn btn--primary", t("settings.protectField", "Protect active field now"));
   protectBtn.type = "button";
   protectBtn.addEventListener("click", () => act({ type: "PROTECT_ACTIVE_FIELD", source: "panel" }));
-  wrap.append(toggleBtn, protectBtn);
+  const toggleBtn = el("button", "btn btn--secondary", t("field.toggleSelection", "Toggle selected text"));
+  toggleBtn.type = "button";
+  toggleBtn.addEventListener("click", () => act({ type: "TOGGLE_SELECTION_PROTECTION" }));
+  wrap.append(protectBtn, toggleBtn);
   return wrap;
 }
 
@@ -197,8 +216,32 @@ async function getCompanyState() {
   };
 }
 
+async function getActivationState() {
+  const result = await chrome.storage.local.get({
+    [ACTIVATION_STATE_STORAGE_KEY]: null
+  });
+  return result[ACTIVATION_STATE_STORAGE_KEY];
+}
+
+async function setActivationState(nextState) {
+  await chrome.storage.local.set({
+    [ACTIVATION_STATE_STORAGE_KEY]: nextState
+  });
+}
+
+async function clearActivationState() {
+  await chrome.storage.local.remove([ACTIVATION_STATE_STORAGE_KEY]);
+  await chrome.storage.sync.set({ subscriptionPlan: "free" });
+}
+
 function effectivePlanFromData(settings, companySync) {
   return companySync?.companyId ? "team" : (settings.subscriptionPlan || "free");
+}
+
+function formatWhen(iso) {
+  if (!iso) return "—";
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? "—" : date.toLocaleString();
 }
 
 function personalLimitForPlan(plan) {
@@ -347,6 +390,96 @@ async function leaveCompany() {
   await refreshStateIfAvailable();
 }
 
+async function redeemActivationCode(code) {
+  const response = await fetch(`${ACTIVATION_API_BASE}/activation/redeem`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      activationCode: code.trim().toUpperCase(),
+      extensionVersion: chrome.runtime.getManifest?.().version || null,
+      deviceLabel: navigator.userAgent.slice(0, 120)
+    })
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || "Could not redeem activation code");
+
+  const nextState = {
+    sessionToken: data.sessionToken,
+    sessionExpiresAt: data.sessionExpiresAt,
+    lastValidatedAt: new Date().toISOString(),
+    plan: data.plan,
+    features: data.features || [],
+    activationCodeMasked: data.activationCodeMasked || null,
+    privacyBoundary: data.privacyBoundary || null
+  };
+  await setActivationState(nextState);
+  await chrome.storage.sync.set({ subscriptionPlan: data.plan || "pro" });
+  await refreshStateIfAvailable();
+  return nextState;
+}
+
+async function syncActivationSession(force = false) {
+  const activationState = await getActivationState();
+  if (!activationState?.sessionToken) return null;
+
+  const lastValidated = activationState.lastValidatedAt ? new Date(activationState.lastValidatedAt).getTime() : 0;
+  if (!force && activationState.sessionExpiresAt && new Date(activationState.sessionExpiresAt).getTime() > Date.now()
+    && (Date.now() - lastValidated) < ACTIVATION_STATUS_REFRESH_MS) {
+    return activationState;
+  }
+
+  const response = await fetch(`${ACTIVATION_API_BASE}/activation/session`, {
+    headers: {
+      Authorization: `Bearer ${activationState.sessionToken}`
+    }
+  });
+
+  if (response.status === 401) {
+    await clearActivationState();
+    await refreshStateIfAvailable();
+    return null;
+  }
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || "Could not validate activation");
+
+  const nextState = {
+    ...activationState,
+    sessionExpiresAt: data.sessionExpiresAt || activationState.sessionExpiresAt,
+    lastValidatedAt: new Date().toISOString(),
+    plan: data.plan || activationState.plan,
+    features: data.features || activationState.features || [],
+    activationCodeMasked: data.activationCodeMasked || activationState.activationCodeMasked,
+    privacyBoundary: data.privacyBoundary || activationState.privacyBoundary || null
+  };
+  await setActivationState(nextState);
+  await chrome.storage.sync.set({ subscriptionPlan: nextState.plan || "pro" });
+  await refreshStateIfAvailable();
+  return nextState;
+}
+
+async function logoutActivationSession() {
+  const activationState = await getActivationState();
+  if (activationState?.sessionToken) {
+    try {
+      await fetch(`${ACTIVATION_API_BASE}/activation/logout`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${activationState.sessionToken}`
+        }
+      });
+    } catch (error) {
+      /* ignore network failures on local logout */
+    }
+  }
+  await clearActivationState();
+  await refreshStateIfAvailable();
+}
+
+async function openPricingPage() {
+  await chrome.tabs.create({ url: "https://ledebe.com/pricing/" });
+}
+
 async function submitFeedback({ message, email, host, category }) {
   const payload = {
     source: "browser-extension",
@@ -394,6 +527,7 @@ function msgCopyButton(getTextOrString) {
 
 const PLACEHOLDER_TOKEN_RE = /\[LDB_[A-Z0-9_]+\]/g;
 const BULLET_LINE_RE = /^\s*[-*•]\s+/;
+const BULLET_ONLY_RE = /^\s*[-*•]\s*$/;
 
 function appendInlineText(container, text) {
   let lastIndex = 0;
@@ -420,6 +554,33 @@ function appendParagraphText(container, text) {
   });
 }
 
+function normalizeBulletLines(lines) {
+  const normalized = [];
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+    if (BULLET_ONLY_RE.test(line)) {
+      const next = lines[index + 1];
+      if (next && !BULLET_LINE_RE.test(next) && !BULLET_ONLY_RE.test(next)) {
+        normalized.push(`- ${String(next).trim()}`);
+        index += 1;
+        continue;
+      }
+    }
+    normalized.push(line);
+  }
+  return normalized;
+}
+
+function latestAssistantText(turns) {
+  for (let index = turns.length - 1; index >= 0; index -= 1) {
+    const turn = turns[index];
+    if (turn?.role !== "assistant") continue;
+    const text = (turn.blocks || []).map((block) => block.text).filter(Boolean).join("\n\n").trim();
+    if (text) return text;
+  }
+  return "";
+}
+
 function buildFormattedBlock(text) {
   const fragment = document.createDocumentFragment();
   const paragraphs = String(text || "")
@@ -429,7 +590,9 @@ function buildFormattedBlock(text) {
     .filter(Boolean);
 
   for (const paragraphText of paragraphs) {
-    const lines = paragraphText.split("\n").map((line) => line.trimEnd()).filter(Boolean);
+    const lines = normalizeBulletLines(
+      paragraphText.split("\n").map((line) => line.trimEnd()).filter(Boolean)
+    );
     const isList = lines.length > 0 && lines.every((line) => BULLET_LINE_RE.test(line));
     if (isList) {
       const list = el("ul", "msg__list");
@@ -516,8 +679,8 @@ function renderHome() {
     }
     body.append(msg);
   }
-  body.append(copyButton(t("home.copyTranscript", "Copy whole transcript"), () =>
-    turns.map((turn) => `${turn.role === "assistant" ? t("home.assistant", "Assistant") : t("home.you", "You")}:\n${(turn.blocks || []).map((b) => b.text).join("\n\n")}`).join("\n\n")));
+  body.append(copyButton(t("home.copyReply", "Copy restored reply"), () =>
+    latestAssistantText(turns) || state.latestRestored || ""));
 }
 
 async function renderWords() {
@@ -658,9 +821,18 @@ async function renderSettings() {
   const settings = await getStoredSettings();
   const { sessionPausedHosts } = await getSessionState();
   const { companySync, companyTerms } = await getCompanyState();
+  let activationState = await getActivationState();
   body.innerHTML = "";
   $("#session-count").textContent =
     `${state ? state.sessionCount : 0} value${(state && state.sessionCount === 1) ? "" : "s"} protected this session`;
+
+  if (activationState?.sessionToken) {
+    try {
+      activationState = await syncActivationSession(false);
+    } catch (error) {
+      showFlash(error instanceof Error ? error.message : "Could not refresh activation", "warn");
+    }
+  }
 
   const host = state?.host;
   const line = el("div", "status-line");
@@ -674,19 +846,107 @@ async function renderSettings() {
   planLine.append(el("strong", null, Number.isFinite(limit) ? `${plan} · ${settings.personalTerms.length}/${limit} personal words` : `${plan} · unlimited personal words`));
   body.append(planLine);
 
-  const companyCard = el("div", "card");
-  companyCard.append(el("div", "section", t("settings.companySync", "Company sync")));
+  const activationCard = collapsibleCard(
+    t("settings.activation", "Browser Pro activation"),
+    {
+      badge: activationState?.sessionToken ? t("settings.activationActive", "Active") : "",
+      open: Boolean(activationState?.sessionToken)
+    }
+  );
+  if (activationState?.sessionToken) {
+    activationCard.content.append(el("p", "lead", t("settings.activationActiveLead", "Pro is active on this browser. Ledebe stores billing and entitlement status only; your custom words stay on this device.")));
+    const statusLine = el("div", "status-line");
+    statusLine.append(el("span", null, t("settings.activationStatus", "Status")));
+    statusLine.append(el("strong", null, t("settings.activationActive", "Active")));
+    activationCard.content.append(statusLine);
+
+    const codeLine = el("div", "status-line");
+    codeLine.append(el("span", null, t("settings.activationCodeLabel", "Activation code")));
+    codeLine.append(el("strong", null, activationState.activationCodeMasked || "—"));
+    activationCard.content.append(codeLine);
+
+    const expiryLine = el("div", "status-line");
+    expiryLine.append(el("span", null, t("settings.activationValidUntil", "Session valid until")));
+    expiryLine.append(el("strong", null, formatWhen(activationState.sessionExpiresAt)));
+    activationCard.content.append(expiryLine);
+
+    if (activationState.privacyBoundary) {
+      activationCard.content.append(el("p", "lead", activationState.privacyBoundary));
+    }
+
+    const checkBtn = el("button", "btn btn--primary", t("settings.activationRefresh", "Check activation"));
+    checkBtn.type = "button";
+    checkBtn.addEventListener("click", async () => {
+      checkBtn.disabled = true;
+      try {
+        await syncActivationSession(true);
+        showFlash(t("settings.activationChecked", "Activation is still active."), "ok");
+        renderSettings();
+      } catch (error) {
+        showFlash(error instanceof Error ? error.message : "Could not check activation", "warn");
+      } finally {
+        checkBtn.disabled = false;
+      }
+    });
+    activationCard.content.append(checkBtn);
+
+    const removeBtn = el("button", "btn btn--secondary", t("settings.activationRemove", "Remove activation from this browser"));
+    removeBtn.type = "button";
+    removeBtn.addEventListener("click", async () => {
+      await logoutActivationSession();
+      showFlash(t("settings.activationRemoved", "Activation removed from this browser."), "ok");
+      renderSettings();
+    });
+    activationCard.content.append(removeBtn);
+  } else {
+    activationCard.content.append(el("p", "lead", t("settings.activationLead", "Pay on ledebe.com/pricing, then paste the activation code you receive. Ledebe servers do not store your custom words.")));
+    const activationCodeInput = el("input", "words-input");
+    activationCodeInput.type = "text";
+    activationCodeInput.placeholder = t("settings.activationCode", "Activation code");
+    const activateBtn = el("button", "btn btn--primary", t("settings.activationRedeem", "Activate Pro"));
+    activateBtn.type = "button";
+    activateBtn.addEventListener("click", async () => {
+      const code = activationCodeInput.value.trim();
+      if (!code) {
+        showFlash(t("settings.activationMissing", "Enter your activation code."), "warn");
+        return;
+      }
+      activateBtn.disabled = true;
+      try {
+        await redeemActivationCode(code);
+        activationCodeInput.value = "";
+        showFlash(t("settings.activationDone", "Browser Pro is active on this browser."), "ok");
+        renderSettings();
+      } catch (error) {
+        showFlash(error instanceof Error ? error.message : "Activation failed", "warn");
+      } finally {
+        activateBtn.disabled = false;
+      }
+    });
+    const upgradeBtn = el("button", "btn btn--secondary", t("settings.activationUpgrade", "Upgrade to Pro"));
+    upgradeBtn.type = "button";
+    upgradeBtn.addEventListener("click", () => {
+      void openPricingPage();
+    });
+    activationCard.content.append(activationCodeInput, activateBtn, upgradeBtn);
+  }
+  body.append(activationCard.details);
+
+  const companyCard = collapsibleCard(
+    t("settings.companySync", "Company sync"),
+    { badge: companySync?.companyId ? companySync.companyName || "Active" : "", open: false }
+  );
   if (companySync?.companyId) {
-    companyCard.append(el("p", "lead", t("settings.companyActive", "{company} is active. {count} company-managed words are applied automatically.", { company: companySync.companyName, count: companyTerms.length })));
+    companyCard.content.append(el("p", "lead", t("settings.companyActive", "{company} is active. {count} company-managed words are applied automatically.", { company: companySync.companyName, count: companyTerms.length })));
     const joinedMeta = el("div", "status-line");
     joinedMeta.append(el("span", null, t("settings.joinedAs", "Joined as")));
     joinedMeta.append(el("strong", null, companySync.employeeEmail || "—"));
-    companyCard.append(joinedMeta);
+    companyCard.content.append(joinedMeta);
     if (companySync.lastSyncAt) {
       const syncedMeta = el("div", "status-line");
       syncedMeta.append(el("span", null, t("settings.lastSync", "Last sync")));
       syncedMeta.append(el("strong", null, new Date(companySync.lastSyncAt).toLocaleString()));
-      companyCard.append(syncedMeta);
+      companyCard.content.append(syncedMeta);
     }
 
     const syncBtn = el("button", "btn btn--primary", t("settings.syncNow", "Sync company words now"));
@@ -703,7 +963,7 @@ async function renderSettings() {
         syncBtn.disabled = false;
       }
     });
-    companyCard.append(syncBtn);
+    companyCard.content.append(syncBtn);
 
     const leaveBtn = el("button", "btn btn--secondary", t("settings.leaveCompany", "Leave company sync"));
     leaveBtn.type = "button";
@@ -712,9 +972,9 @@ async function renderSettings() {
       showFlash(t("settings.left", "Company sync removed from this browser."), "ok");
       renderSettings();
     });
-    companyCard.append(leaveBtn);
+    companyCard.content.append(leaveBtn);
   } else {
-    companyCard.append(el("p", "lead", t("settings.joinPrompt", "Join your company to receive admin-managed protected words. Your personal custom words still stay private to you and can be added separately.")));
+    companyCard.content.append(el("p", "lead", t("settings.joinPrompt", "Join your company to receive admin-managed protected words. Your personal custom words still stay private to you and can be added separately.")));
     const joinCode = el("input", "words-input");
     joinCode.type = "text";
     joinCode.placeholder = t("settings.joinCode", "Company join code");
@@ -741,13 +1001,15 @@ async function renderSettings() {
         joinBtn.disabled = false;
       }
     });
-    companyCard.append(joinCode, email, joinBtn);
+    companyCard.content.append(joinCode, email, joinBtn);
   }
-  body.append(companyCard);
+  body.append(companyCard.details);
 
-  const feedbackCard = el("div", "card");
-  feedbackCard.append(el("div", "section", t("settings.feedback", "Feedback")));
-  feedbackCard.append(el("p", "lead", t("settings.feedbackLead", "Tell us what worked or what broke. Please do not paste sensitive data.")));
+  const feedbackCard = collapsibleCard(
+    t("settings.feedback", "Feedback"),
+    { open: false }
+  );
+  feedbackCard.content.append(el("p", "lead", t("settings.feedbackLead", "Tell us what worked or what broke. Please do not paste sensitive data.")));
   const feedbackMessage = document.createElement("textarea");
   feedbackMessage.className = "words-input";
   feedbackMessage.rows = 4;
@@ -807,8 +1069,8 @@ async function renderSettings() {
       sendFeedbackBtn.disabled = false;
     }
   });
-  feedbackCard.append(feedbackMessage, feedbackEmail, feedbackRow, sendFeedbackBtn);
-  body.append(feedbackCard);
+  feedbackCard.content.append(feedbackMessage, feedbackEmail, feedbackRow, sendFeedbackBtn);
+  body.append(feedbackCard.details);
 
   // --- the few settings most people touch -----------------------------------
   body.append(toggleRow("enabled", t("settings.protectionOn", "Protection on"), t("settings.protectionHint", "Master switch for detection and masking."), settings.enabled !== false));
@@ -846,14 +1108,13 @@ async function renderSettings() {
   });
   body.append(pauseBtn);
 
+  const toggleSelectionBtn = el("button", "btn btn--secondary", t("field.toggleSelection", "Toggle selected text"));
+  toggleSelectionBtn.type = "button";
+  toggleSelectionBtn.addEventListener("click", () => act({ type: "TOGGLE_SELECTION_PROTECTION" }));
   const protectBtn = el("button", "btn btn--primary", t("settings.protectField", "Protect active field now"));
   protectBtn.type = "button";
   protectBtn.addEventListener("click", () => act({ type: "PROTECT_ACTIVE_FIELD", source: "panel" }));
   body.append(protectBtn);
-
-  const toggleSelectionBtn = el("button", "btn btn--secondary", t("field.toggleSelection", "Toggle selected text"));
-  toggleSelectionBtn.type = "button";
-  toggleSelectionBtn.addEventListener("click", () => act({ type: "TOGGLE_SELECTION_PROTECTION" }));
   body.append(toggleSelectionBtn);
 
   // --- everything else, tucked away -----------------------------------------
@@ -941,7 +1202,7 @@ chrome.tabs.onUpdated.addListener((_, info) => { if (info.status === "complete")
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === "sync" && (activeTab === "settings" || activeTab === "words")) render(true);
   if (area === "session" && changes[SESSION_PAUSED_HOSTS_KEY] && activeTab === "settings") render(true);
-  if (area === "local" && (changes[COMPANY_STATE_STORAGE_KEY] || changes[COMPANY_TERMS_STORAGE_KEY])) {
+  if (area === "local" && (changes[COMPANY_STATE_STORAGE_KEY] || changes[COMPANY_TERMS_STORAGE_KEY] || changes[ACTIVATION_STATE_STORAGE_KEY])) {
     if (activeTab === "settings" || activeTab === "words") render(true);
   }
 });

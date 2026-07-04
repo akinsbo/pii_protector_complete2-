@@ -13,6 +13,12 @@ const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const COMPANIES = 'ledebe-companies';
 const MEMBERS   = 'ledebe-members';
 const AUDIT     = 'ledebe-audit';
+const ACTIVATION_CODES = process.env.LEDEBE_ACTIVATION_CODES_TABLE || 'ledebe-activation-codes';
+const EXTENSION_SESSIONS = process.env.LEDEBE_EXTENSION_SESSIONS_TABLE || 'ledebe-extension-sessions';
+const ACTIVATION_ADMIN_TOKEN = process.env.LEDEBE_ACTIVATION_ADMIN_TOKEN || '';
+const EXTENSION_SESSION_MS = 30 * 24 * 60 * 60 * 1000;
+const EXTENSION_PRIVACY_BOUNDARY =
+  'Ledebe servers store billing, activation codes, and extension entitlement status only. Custom words and protected content remain on the user device.';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -45,6 +51,48 @@ function generateJoinCode() {
 
 function generateToken() {
   return randomBytes(24).toString('hex');
+}
+
+function normalizeEmail(email) {
+  return String(email || '').trim().toLowerCase();
+}
+
+function featuresForPlan(plan) {
+  switch (plan) {
+    case 'team':
+      return ['pro', 'teamSync', 'sharedTerms'];
+    case 'enterprise':
+      return ['pro', 'teamSync', 'sharedTerms', 'analytics', 'auditLog', 'policyDistribution', 'enterpriseControls'];
+    case 'pro':
+      return ['pro'];
+    default:
+      return [];
+  }
+}
+
+function generateActivationCode(plan = 'pro') {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const seg = () => Array.from({ length: 4 }, () =>
+    chars[Math.floor(Math.random() * chars.length)]
+  ).join('');
+  const prefix = plan === 'team' ? 'TEAM' : plan === 'enterprise' ? 'ENT' : 'PRO';
+  return `LDB-${prefix}-${seg()}-${seg()}`;
+}
+
+function createSessionExpiry(expiresAt) {
+  const cap = expiresAt ? new Date(expiresAt).getTime() : Number.POSITIVE_INFINITY;
+  const desired = Date.now() + EXTENSION_SESSION_MS;
+  const bounded = Number.isFinite(cap) ? Math.min(desired, cap) : desired;
+  return new Date(bounded).toISOString();
+}
+
+function isExpired(iso) {
+  return iso ? new Date(iso).getTime() <= Date.now() : false;
+}
+
+function maskActivationCode(code) {
+  const value = String(code || '');
+  return value.length > 8 ? `${value.slice(0, 8)}…${value.slice(-4)}` : value;
 }
 
 async function audit(companyId, action, detail, by) {
@@ -143,6 +191,163 @@ export const handler = async (event) => {
         teamKeyIv: res.Item.teamKeyIv,
         termsVersion: res.Item.termsVersion,
       });
+    }
+
+    async function requireActivationAdmin() {
+      if (!ACTIVATION_ADMIN_TOKEN) return false;
+      const header = event.headers?.['x-admin-token'] || event.headers?.['X-Admin-Token'] || '';
+      return header === ACTIVATION_ADMIN_TOKEN;
+    }
+
+    async function getExtensionSession() {
+      const authHeader = event.headers?.authorization || event.headers?.Authorization || '';
+      const token = authHeader.replace('Bearer ', '').trim();
+      if (!token) return null;
+
+      const res = await ddb.send(new GetCommand({
+        TableName: EXTENSION_SESSIONS,
+        Key: { sessionToken: token }
+      }));
+      if (!res.Item || isExpired(res.Item.sessionExpiresAt)) {
+        return null;
+      }
+
+      const activation = await ddb.send(new GetCommand({
+        TableName: ACTIVATION_CODES,
+        Key: { activationCode: res.Item.activationCode }
+      }));
+      if (!activation.Item || activation.Item.status !== 'active' || isExpired(activation.Item.expiresAt)) {
+        return null;
+      }
+
+      return { session: res.Item, activation: activation.Item };
+    }
+
+    // ── POST /activation/issue — create an activation code (admin / webhook) ─
+    if (method === 'POST' && path === '/activation/issue') {
+      const allowed = await requireActivationAdmin();
+      if (!allowed) return json(403, { error: 'Forbidden' });
+
+      const plan = ['pro', 'team', 'enterprise'].includes(body.plan) ? body.plan : 'pro';
+      const email = normalizeEmail(body.email);
+      if (!email) return json(400, { error: 'email required' });
+
+      const activationCode = generateActivationCode(plan);
+      const item = {
+        activationCode,
+        email,
+        plan,
+        status: 'active',
+        features: featuresForPlan(plan),
+        createdAt: new Date().toISOString(),
+        expiresAt: body.expiresAt || null,
+        maxRedemptions: Number.isFinite(Number(body.maxRedemptions)) ? Number(body.maxRedemptions) : 10,
+        redeemedCount: 0,
+        source: body.source || 'manual',
+        paddleCustomerId: body.paddleCustomerId || null,
+        paddleSubscriptionId: body.paddleSubscriptionId || null,
+      };
+
+      await ddb.send(new PutCommand({
+        TableName: ACTIVATION_CODES,
+        Item: item,
+        ConditionExpression: 'attribute_not_exists(activationCode)'
+      }));
+
+      return json(201, {
+        activationCode,
+        plan: item.plan,
+        expiresAt: item.expiresAt,
+        features: item.features
+      });
+    }
+
+    // ── POST /activation/redeem — redeem an activation code in the extension ─
+    if (method === 'POST' && path === '/activation/redeem') {
+      const activationCode = String(body.activationCode || '').trim().toUpperCase();
+      if (!activationCode) return json(400, { error: 'activationCode required' });
+
+      const res = await ddb.send(new GetCommand({
+        TableName: ACTIVATION_CODES,
+        Key: { activationCode }
+      }));
+      const activation = res.Item;
+      if (!activation || activation.status !== 'active' || isExpired(activation.expiresAt)) {
+        return json(404, { error: 'Activation code is invalid or expired' });
+      }
+      if ((activation.redeemedCount || 0) >= (activation.maxRedemptions || 10)) {
+        return json(409, { error: 'Activation code has reached its device limit' });
+      }
+
+      const sessionToken = generateToken();
+      const sessionExpiresAt = createSessionExpiry(activation.expiresAt);
+      const deviceLabel = String(body.deviceLabel || body.browserName || 'browser-extension').slice(0, 120);
+
+      await ddb.send(new PutCommand({
+        TableName: EXTENSION_SESSIONS,
+        Item: {
+          sessionToken,
+          activationCode,
+          plan: activation.plan,
+          features: activation.features || featuresForPlan(activation.plan),
+          email: activation.email,
+          createdAt: new Date().toISOString(),
+          sessionExpiresAt,
+          extensionVersion: body.extensionVersion || null,
+          deviceLabel,
+        }
+      }));
+
+      await ddb.send(new UpdateCommand({
+        TableName: ACTIVATION_CODES,
+        Key: { activationCode },
+        UpdateExpression: 'SET redeemedCount = if_not_exists(redeemedCount, :zero) + :one, lastRedeemedAt = :at, lastDeviceLabel = :label',
+        ExpressionAttributeValues: {
+          ':zero': 0,
+          ':one': 1,
+          ':at': new Date().toISOString(),
+          ':label': deviceLabel,
+        }
+      }));
+
+      return json(200, {
+        active: true,
+        plan: activation.plan,
+        features: activation.features || featuresForPlan(activation.plan),
+        sessionToken,
+        sessionExpiresAt,
+        activationCodeMasked: maskActivationCode(activationCode),
+        privacyBoundary: EXTENSION_PRIVACY_BOUNDARY,
+      });
+    }
+
+    // ── GET /activation/session — validate a redeemed extension session ─────
+    if (method === 'GET' && path === '/activation/session') {
+      const auth = await getExtensionSession();
+      if (!auth) return json(401, { error: 'Invalid or expired session' });
+
+      return json(200, {
+        active: true,
+        plan: auth.activation.plan,
+        features: auth.activation.features || featuresForPlan(auth.activation.plan),
+        sessionExpiresAt: auth.session.sessionExpiresAt,
+        activationCodeMasked: maskActivationCode(auth.session.activationCode),
+        privacyBoundary: EXTENSION_PRIVACY_BOUNDARY,
+      });
+    }
+
+    // ── POST /activation/logout — revoke an extension session locally ───────
+    if (method === 'POST' && path === '/activation/logout') {
+      const authHeader = event.headers?.authorization || event.headers?.Authorization || '';
+      const token = authHeader.replace('Bearer ', '').trim();
+      if (!token) return json(400, { error: 'Authorization required' });
+
+      await ddb.send(new DeleteCommand({
+        TableName: EXTENSION_SESSIONS,
+        Key: { sessionToken: token }
+      }));
+
+      return json(200, { ok: true });
     }
 
     // ── Auth middleware for admin routes ──────────────────────────────────

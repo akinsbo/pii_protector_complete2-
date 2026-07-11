@@ -20,6 +20,16 @@ test("textarea: masks a completed value once the caret moves past it", async () 
   } finally { await h.close(); }
 });
 
+test("textarea: masks a natural sentence containing a gmail address after a trailing space", async () => {
+  const h = await createHarness();
+  try {
+    h.type(h.composer, "hi my email is ade@gmail.com ");
+    await h.tick(SCAN);
+    assert.ok(!h.composer.value.includes("ade@gmail.com"));
+    assert.match(h.composer.value, /\[LDB_EMAIL_/);
+  } finally { await h.close(); }
+});
+
 test("textarea: leaves the value alone while the caret is still in it", async () => {
   const h = await createHarness();
   try {
@@ -216,6 +226,53 @@ test("TOGGLE_SELECTION_PROTECTION protects just the selected plaintext and selec
   } finally { await h.close(); }
 });
 
+test("PROTECT_SELECTION protects just the selected plaintext and selects the placeholder", async () => {
+  const h = await createHarness();
+  try {
+    h.type(h.composer, "ping a@b.com now");
+    const start = h.composer.value.indexOf("a@b.com");
+    h.composer.selectionStart = start;
+    h.composer.selectionEnd = start + "a@b.com".length;
+
+    await h.send({ type: "PROTECT_SELECTION", selectedText: "a@b.com" });
+    await h.tick(20);
+
+    const [token] = h.composer.value.match(/\[LDB_EMAIL_[A-Z0-9]+_\d+\]|\[LDB_EMAIL_\d+\]/g) || [];
+    assert.ok(token);
+    assert.equal(h.composer.value.slice(h.composer.selectionStart, h.composer.selectionEnd), token);
+  } finally { await h.close(); }
+});
+
+test("PROTECT_SELECTION with no selection leaves the field unchanged", async () => {
+  const h = await createHarness();
+  try {
+    h.type(h.composer, "email a@b.com");
+    await h.tick(20);
+
+    h.composer.selectionStart = h.composer.selectionEnd = h.composer.value.length;
+    await h.send({ type: "PROTECT_SELECTION", selectedText: "" });
+    await h.tick(20);
+
+    assert.equal(h.composer.value, "email a@b.com");
+    assert.match(h.window.document.body.textContent || "", /Select text first, then use Protect selected text\./);
+  } finally { await h.close(); }
+});
+
+test("TOGGLE_SELECTION_PROTECTION with no selection leaves the field unchanged", async () => {
+  const h = await createHarness();
+  try {
+    h.type(h.composer, "email a@b.com");
+    await h.tick(20);
+
+    h.composer.selectionStart = h.composer.selectionEnd = h.composer.value.length;
+    await h.send({ type: "TOGGLE_SELECTION_PROTECTION", selectedText: "" });
+    await h.tick(20);
+
+    assert.equal(h.composer.value, "email a@b.com");
+    assert.match(h.window.document.body.textContent || "", /Select text first, or use Protect active field now\./);
+  } finally { await h.close(); }
+});
+
 test("Home tab gives ChatGPT email writing blocks their own copyable section", async () => {
   const h = await createHarness();
   try {
@@ -260,5 +317,46 @@ test("Home tab gives ChatGPT email writing blocks their own copyable section", a
     assert.ok(blocks[1].classList.contains("is-code"));
     assert.match(blocks[1].textContent || "", /From: Sarah Johnson <a@b\.com>/);
     assert.equal(h.window.document.querySelectorAll(".ledebe-msg__copy").length, 2);
+  } finally { await h.close(); }
+});
+
+test("Claude reply fallback uses the copy action row when old assistant markers are missing", async () => {
+  const h = await createHarness({ host: "claude.ai" });
+  try {
+    h.type(h.composer, "email a@b.com ");
+    await h.tick(SCAN);
+
+    const [token] = h.composer.value.match(/\[LDB_EMAIL_[A-Z0-9]+_\d+\]/g) || [];
+    assert.ok(token, "email placeholder should exist");
+
+    const thread = h.window.document.createElement("div");
+    thread.innerHTML = `
+      <div data-testid="user-message">
+        <div>can u update or improve it</div>
+      </div>
+      <div class="claude-turn">
+        <div class="claude-response" data-is-streaming="false">
+          <p>Improved version:</p>
+          <p>Hello ${token}</p>
+        </div>
+        <div class="action-row">
+          <button data-testid="copy-turn-action-button" aria-label="Copy">Copy</button>
+        </div>
+      </div>
+    `;
+    h.window.document.body.appendChild(thread);
+    await h.tick(1400);
+
+    await h.send({ type: "OPEN_PANEL" });
+    await h.tick(40);
+    h.window.document.querySelector('.ledebe-tab[data-tab="home"]')?.dispatchEvent(
+      new h.window.MouseEvent("click", { bubbles: true })
+    );
+    await h.tick(40);
+
+    const assistantText = Array.from(h.window.document.querySelectorAll(".ledebe-msg--assistant .ledebe-msg__text"))
+      .map((node) => node.textContent || "")
+      .join("\n");
+    assert.match(assistantText, /Hello a@b\.com/);
   } finally { await h.close(); }
 });

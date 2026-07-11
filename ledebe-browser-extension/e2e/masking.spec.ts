@@ -8,6 +8,14 @@ test('textarea: masks a completed value as you type', async ({ context }) => {
   expect(await page.inputValue(S.ta)).not.toContain('a@b.com');
 });
 
+test('textarea: masks a natural sentence with a gmail address after a trailing space', async ({ context }) => {
+  const page = await openHost(context);
+  await page.click(S.ta);
+  await page.keyboard.type('hi my email is ade@gmail.com ');
+  await expect.poll(() => page.inputValue(S.ta)).toMatch(/\[LDB_EMAIL_/);
+  expect(await page.inputValue(S.ta)).not.toContain('ade@gmail.com');
+});
+
 test('contenteditable: masks the value in place', async ({ context }) => {
   const page = await openHost(context);
   await page.click(S.pm);

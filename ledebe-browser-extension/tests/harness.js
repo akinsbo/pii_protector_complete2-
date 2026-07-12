@@ -67,7 +67,7 @@ function makeChrome(initialSync) {
     runtime: {
       id: "test-ext",
       getURL: (p) => "chrome-extension://test/" + p,
-      getManifest: () => ({ version: "1.2.7" }),
+      getManifest: () => ({ version: "1.2.9" }),
       onMessage: { addListener: (l) => msgListeners.push(l) },
       sendMessage: () => {}
     },

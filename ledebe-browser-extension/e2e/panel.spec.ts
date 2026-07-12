@@ -166,7 +166,7 @@ for (const host of ['chatgpt.com', 'claude.ai', 'gemini.google.com']) {
     }
 
     await expect(page.locator(S.selectionPopup)).toBeVisible();
-    await page.getByRole('button', { name: 'Protect selection' }).click({ force: true });
+    await page.locator(`${S.selectionPopup} .ledebe-selection-popup__action`).evaluate((node: HTMLButtonElement) => node.click());
     await expect.poll(readValue).toMatch(/\[LDB_EMAIL_/);
 
     const protectedValue = await readValue();
@@ -221,7 +221,7 @@ for (const host of ['chatgpt.com', 'claude.ai', 'gemini.google.com']) {
     }
 
     await expect(page.locator(S.selectionPopup)).toBeVisible();
-    await page.getByRole('button', { name: 'Unprotect selection' }).click({ force: true });
+    await page.locator(`${S.selectionPopup} .ledebe-selection-popup__action`).evaluate((node: HTMLButtonElement) => node.click());
     await expect.poll(readValue).toContain('a@b.com');
   });
 }

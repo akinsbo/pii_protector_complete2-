@@ -244,14 +244,44 @@ test('composer square cycles mild, aggressive, off, then back to mild', async ({
   await expect(page.locator(S.composerToggle)).toHaveClass(/is-mild/);
 });
 
-for (const host of ['claude.ai', 'gemini.google.com']) {
-  test(`composer status dot appears on ${host}`, async ({ context }) => {
+for (const host of ['chatgpt.com', 'claude.ai', 'gemini.google.com']) {
+  test(`composer status dot stays inside the active composer on ${host}`, async ({ context }) => {
     const page = await openHost(context, host);
     const composer = host.includes('gemini') ? S.pm : S.ta;
     await page.click(composer);
     await expect(page.locator(S.composerToggle)).toBeVisible();
+
+    const composerBox = await page.locator(composer).boundingBox();
+    const toggleBox = await page.locator(S.composerToggle).boundingBox();
+    expect(composerBox).toBeTruthy();
+    expect(toggleBox).toBeTruthy();
+    expect(toggleBox!.x).toBeGreaterThanOrEqual(composerBox!.x);
+    expect(toggleBox!.y).toBeGreaterThanOrEqual(composerBox!.y);
+    expect(toggleBox!.x + toggleBox!.width).toBeLessThanOrEqual(composerBox!.x + composerBox!.width);
+    expect(toggleBox!.y + toggleBox!.height).toBeLessThanOrEqual(composerBox!.y + composerBox!.height);
   });
 }
+
+test('mild mode auto-protects a natural email sentence without requiring the selection popup', async ({ context }) => {
+  const page = await openHost(context);
+  await page.click(S.ta);
+  await expect(page.locator(S.composerToggle)).toHaveClass(/is-mild/);
+  await page.keyboard.type('hi my email is ade@gmail.com ');
+  await expect.poll(() => page.inputValue(S.ta)).toMatch(/\[LDB_EMAIL_/);
+  await expect.poll(() => page.inputValue(S.ta)).not.toContain('ade@gmail.com');
+  await expect(page.locator(S.selectionPopup)).toHaveCount(0);
+});
+
+test('aggressive mode auto-protects a natural email sentence without requiring the selection popup', async ({ context }) => {
+  const page = await openHost(context);
+  await page.click(S.ta);
+  await page.click(S.composerToggle);
+  await expect(page.locator(S.composerToggle)).toHaveClass(/is-aggressive/);
+  await page.keyboard.type('hi my email is ade@gmail.com ');
+  await expect.poll(() => page.inputValue(S.ta)).toMatch(/\[LDB_EMAIL_/);
+  await expect.poll(() => page.inputValue(S.ta)).not.toContain('ade@gmail.com');
+  await expect(page.locator(S.selectionPopup)).toHaveCount(0);
+});
 
 test('Gemini rich composer masks content inside the contenteditable textbox', async ({ context }) => {
   const page = await openHost(context, 'gemini.google.com');

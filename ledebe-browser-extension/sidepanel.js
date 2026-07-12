@@ -8,10 +8,11 @@ const DEFAULTS = {
   restoreResponses: true,
   persistMappings: true,
   appendInstruction: true,
-  detectNames: true,
-  detectNumbers: true,
+  protectionMode: "mild",
+  detectNames: false,
+  detectNumbers: false,
   detectAddresses: true,
-  detectCodes: true,
+  detectCodes: false,
   customTerms: [],
   personalTerms: [],
   pausedHosts: [],
@@ -37,6 +38,7 @@ let activeTab = "home";
 let state = null;     // latest GET_STATE snapshot
 let pollTimer = null;
 let advancedOpen = false;
+let accountSupportOpen = false;
 let flashTimer = null;
 
 const body = document.getElementById("body");
@@ -46,6 +48,58 @@ const i18n = globalThis.LEDEBE_I18N || { t: (_key, fallback, values) => {
   return String(fallback || "").replace(/\{(\w+)\}/g, (_, key) => values[key] ?? "");
 } };
 const t = (key, fallback, values) => i18n.t(key, fallback, values);
+
+const PROTECTION_PRESETS = {
+  mild: {
+    detectNames: false,
+    detectNumbers: false,
+    detectAddresses: true,
+    detectCodes: false
+  },
+  aggressive: {
+    detectNames: true,
+    detectNumbers: true,
+    detectAddresses: true,
+    detectCodes: true
+  }
+};
+
+function inferProtectionMode(settings) {
+  for (const [mode, preset] of Object.entries(PROTECTION_PRESETS)) {
+    if (
+      settings.detectNames === preset.detectNames
+      && settings.detectNumbers === preset.detectNumbers
+      && settings.detectAddresses === preset.detectAddresses
+      && settings.detectCodes === preset.detectCodes
+    ) return mode;
+  }
+  return "custom";
+}
+
+async function resumeProtectionForHost(host) {
+  if (!host) return false;
+  const syncSettings = await chrome.storage.sync.get(DEFAULTS);
+  const sessionState = await chrome.storage.session.get({ [SESSION_PAUSED_HOSTS_KEY]: [] });
+  const pausedHosts = new Set(syncSettings.pausedHosts || []);
+  const sessionPausedHosts = new Set(sessionState[SESSION_PAUSED_HOSTS_KEY] || []);
+  let changed = false;
+  if (pausedHosts.delete(host)) changed = true;
+  if (sessionPausedHosts.delete(host)) changed = true;
+  if (!changed) return false;
+  await Promise.all([
+    chrome.storage.sync.set({ pausedHosts: Array.from(pausedHosts) }),
+    chrome.storage.session.set({ [SESSION_PAUSED_HOSTS_KEY]: Array.from(sessionPausedHosts) })
+  ]);
+  return true;
+}
+
+async function applyProtectionMode(mode) {
+  const preset = PROTECTION_PRESETS[mode];
+  if (!preset) return;
+  const tab = await getActiveTab();
+  await resumeProtectionForHost(tab?.url ? new URL(tab.url).hostname : "");
+  await chrome.storage.sync.set({ ...preset, protectionMode: mode });
+}
 
 // ---- messaging -----------------------------------------------------------
 
@@ -143,9 +197,9 @@ function fieldActions() {
   const protectBtn = el("button", "btn btn--primary", t("settings.protectField", "Protect active field now"));
   protectBtn.type = "button";
   protectBtn.addEventListener("click", () => act({ type: "PROTECT_ACTIVE_FIELD", source: "panel" }));
-  const toggleBtn = el("button", "btn btn--secondary", t("field.toggleSelection", "Toggle selected text"));
+  const toggleBtn = el("button", "btn btn--secondary", t("field.protectSelection", "Protect selected text"));
   toggleBtn.type = "button";
-  toggleBtn.addEventListener("click", () => act({ type: "TOGGLE_SELECTION_PROTECTION" }));
+  toggleBtn.addEventListener("click", () => act({ type: "PROTECT_SELECTION" }));
   wrap.append(protectBtn, toggleBtn);
   return wrap;
 }
@@ -794,7 +848,7 @@ function renderField() {
     body.append(el("div", "section", `Protected this session (${session.length})`));
     for (const item of session) {
       const meta = item.count > 1 ? `${item.count} placeholders` : "1 placeholder";
-      body.append(row("protected", item.value, meta, "Forget",
+      body.append(row("session", item.value, meta, "Forget",
         () => act({ type: "FORGET_VALUE", value: item.value })));
     }
   }
@@ -811,14 +865,55 @@ function toggleRow(key, label, hint, checked) {
   input.type = "checkbox";
   input.checked = checked;
   input.addEventListener("change", async () => {
-    await chrome.storage.sync.set({ [key]: input.checked });
+    const settings = await getStoredSettings();
+    settings[key] = input.checked;
+    const protectionMode = ["detectNames", "detectNumbers", "detectAddresses", "detectCodes"].includes(key)
+      ? inferProtectionMode(settings)
+      : settings.protectionMode;
+    await chrome.storage.sync.set({ [key]: input.checked, protectionMode });
   });
   wrap.append(span, input);
   return wrap;
 }
 
+function modePicker(settings) {
+  const wrap = el("div", "mode-picker");
+  const currentMode = inferProtectionMode(settings);
+  const options = [
+    {
+      mode: "mild",
+      label: t("settings.modeMild", "Mild"),
+      hint: t("settings.modeMildHint", "Protects clearly sensitive data, but leaves broad guesses like ordinals and generic codes alone.")
+    },
+    {
+      mode: "aggressive",
+      label: t("settings.modeAggressive", "Aggressive"),
+      hint: t("settings.modeAggressiveHint", "Also protects names, number runs, and mixed letter-number tokens.")
+    }
+  ];
+
+  for (const option of options) {
+    const button = el("button", `mode-option${currentMode === option.mode ? " is-active" : ""}`);
+    button.type = "button";
+    button.append(el("strong", null, option.label), el("span", null, option.hint));
+    button.addEventListener("click", async () => {
+      await applyProtectionMode(option.mode);
+      await refreshState();
+      renderSettings();
+    });
+    wrap.append(button);
+  }
+
+  if (currentMode === "custom") {
+    wrap.append(el("p", "lead", t("settings.modeCustomHint", "Custom mix active — advanced toggles no longer match the built-in presets.")));
+  }
+
+  return wrap;
+}
+
 async function renderSettings() {
   const settings = await getStoredSettings();
+  settings.protectionMode = inferProtectionMode(settings);
   const { sessionPausedHosts } = await getSessionState();
   const { companySync, companyTerms } = await getCompanyState();
   let activationState = await getActivationState();
@@ -838,13 +933,19 @@ async function renderSettings() {
   const line = el("div", "status-line");
   line.append(el("span", null, t("settings.currentSite", "Current site")));
   line.append(el("strong", null, host || "—"));
-  body.append(line);
   const planLine = el("div", "status-line");
   const plan = effectivePlanFromData(settings, companySync);
   const limit = personalLimitForPlan(plan);
   planLine.append(el("span", null, t("settings.subscription", "Subscription")));
   planLine.append(el("strong", null, Number.isFinite(limit) ? `${plan} · ${settings.personalTerms.length}/${limit} personal words` : `${plan} · unlimited personal words`));
-  body.append(planLine);
+
+  const accountSupport = document.createElement("details");
+  accountSupport.className = "advanced";
+  accountSupport.open = accountSupportOpen;
+  accountSupport.addEventListener("toggle", () => { accountSupportOpen = accountSupport.open; });
+  const accountSummary = document.createElement("summary");
+  accountSummary.textContent = t("settings.accountSupport", "Subscription, company sync and feedback");
+  accountSupport.append(accountSummary, line, planLine);
 
   const activationCard = collapsibleCard(
     t("settings.activation", "Browser Pro activation"),
@@ -930,7 +1031,7 @@ async function renderSettings() {
     });
     activationCard.content.append(activationCodeInput, activateBtn, upgradeBtn);
   }
-  body.append(activationCard.details);
+  accountSupport.append(activationCard.details);
 
   const companyCard = collapsibleCard(
     t("settings.companySync", "Company sync"),
@@ -1003,7 +1104,7 @@ async function renderSettings() {
     });
     companyCard.content.append(joinCode, email, joinBtn);
   }
-  body.append(companyCard.details);
+  accountSupport.append(companyCard.details);
 
   const feedbackCard = collapsibleCard(
     t("settings.feedback", "Feedback"),
@@ -1070,15 +1171,32 @@ async function renderSettings() {
     }
   });
   feedbackCard.content.append(feedbackMessage, feedbackEmail, feedbackRow, sendFeedbackBtn);
-  body.append(feedbackCard.details);
-
-  // --- the few settings most people touch -----------------------------------
-  body.append(toggleRow("enabled", t("settings.protectionOn", "Protection on"), t("settings.protectionHint", "Master switch for detection and masking."), settings.enabled !== false));
-  body.append(toggleRow("autoReplace", t("settings.replace", "Replace as I type"), t("settings.replaceHint", "Mask each value live, before send."), settings.autoReplace !== false));
-  body.append(toggleRow("restoreResponses", t("settings.restore", "Reveal replies here"), t("settings.restoreHint", "Show the reply with real values in this panel."), settings.restoreResponses !== false));
+  accountSupport.append(feedbackCard.details);
+  body.append(accountSupport);
 
   const paused = host ? (settings.pausedHosts || []).includes(host) : false;
   const sessionPaused = host ? sessionPausedHosts.includes(host) : false;
+  const protectionCard = collapsibleCard(
+    t("settings.protectionControls", "Protection controls"),
+    { open: true }
+  );
+  protectionCard.content.append(
+    toggleRow("enabled", t("settings.protectionOn", "Protection on"), t("settings.protectionHint", "Master switch for detection and masking."), settings.enabled !== false),
+    toggleRow("autoReplace", t("settings.replace", "Replace as I type"), t("settings.replaceHint", "Mask each value live, before send."), settings.autoReplace !== false),
+    toggleRow("restoreResponses", t("settings.restore", "Reveal replies here"), t("settings.restoreHint", "Show the reply with real values in this panel."), settings.restoreResponses !== false),
+    el("div", "section", t("settings.mode", "Protection style")),
+    el("p", "lead", t("settings.modeLead", "Choose how broad Ledebe should be when it guesses what to protect."))
+  );
+  if (paused || sessionPaused) {
+    protectionCard.content.append(el("p", "lead", t("settings.pausedHint", "Protection is currently paused on this site. Choosing Mild or Aggressive will turn it back on.")));
+  }
+  protectionCard.content.append(modePicker(settings));
+  body.append(protectionCard.details);
+
+  const siteActionsCard = collapsibleCard(
+    t("settings.siteActions", "Site actions"),
+    { open: true }
+  );
   const sessionPauseBtn = el(
     "button",
     "btn btn--secondary",
@@ -1094,7 +1212,7 @@ async function renderSettings() {
     await refreshState();
     renderSettings();
   });
-  body.append(sessionPauseBtn);
+  siteActionsCard.content.append(sessionPauseBtn);
 
   const pauseBtn = el("button", "btn btn--secondary", paused ? t("settings.resume", "Resume on this site") : t("settings.pause", "Pause on this site"));
   pauseBtn.type = "button";
@@ -1106,16 +1224,16 @@ async function renderSettings() {
     await chrome.storage.sync.set({ pausedHosts: Array.from(set) });
     renderSettings();
   });
-  body.append(pauseBtn);
+  siteActionsCard.content.append(pauseBtn);
 
-  const toggleSelectionBtn = el("button", "btn btn--secondary", t("field.toggleSelection", "Toggle selected text"));
+  const toggleSelectionBtn = el("button", "btn btn--secondary", t("field.protectSelection", "Protect selected text"));
   toggleSelectionBtn.type = "button";
-  toggleSelectionBtn.addEventListener("click", () => act({ type: "TOGGLE_SELECTION_PROTECTION" }));
+  toggleSelectionBtn.addEventListener("click", () => act({ type: "PROTECT_SELECTION" }));
   const protectBtn = el("button", "btn btn--primary", t("settings.protectField", "Protect active field now"));
   protectBtn.type = "button";
   protectBtn.addEventListener("click", () => act({ type: "PROTECT_ACTIVE_FIELD", source: "panel" }));
-  body.append(protectBtn);
-  body.append(toggleSelectionBtn);
+  siteActionsCard.content.append(protectBtn, toggleSelectionBtn);
+  body.append(siteActionsCard.details);
 
   // --- everything else, tucked away -----------------------------------------
   const adv = document.createElement("details");

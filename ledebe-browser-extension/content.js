@@ -24,11 +24,13 @@
     restoreResponses: true, // reveal real values inside the AI's reply
     persistMappings: true,  // keep token→value map across browser restarts
     appendInstruction: true,// on send, ask the AI to keep [LDB_…] placeholders intact
-    // Advanced: aggressive detection categories (all on by default).
-    detectNames: true,
-    detectNumbers: true,
+    protectionMode: "mild",
+    // Mild is the default preset: keep always-sensitive types on, but avoid the
+    // broader heuristics that tend to surprise people in everyday chat.
+    detectNames: false,
+    detectNumbers: false,
     detectAddresses: true,
-    detectCodes: true,
+    detectCodes: false,
     customTerms: [],
     personalTerms: [],
     pausedHosts: [],
@@ -52,6 +54,21 @@
   } };
   const t = (key, fallback, values) => i18n.t(key, fallback, values);
 
+  const PROTECTION_PRESETS = {
+    mild: {
+      detectNames: false,
+      detectNumbers: false,
+      detectAddresses: true,
+      detectCodes: false
+    },
+    aggressive: {
+      detectNames: true,
+      detectNumbers: true,
+      detectAddresses: true,
+      detectCodes: true
+    }
+  };
+
   // Map the category toggles to the detector rule names to skip when off.
   function disabledTypes() {
     const off = [];
@@ -60,6 +77,59 @@
     if (settings.detectAddresses === false) off.push("ADDRESS");
     if (settings.detectCodes === false) off.push("ALNUM");
     return off;
+  }
+
+  function detectionOptions(extra = {}) {
+    return {
+      numberMinDigits: settings.protectionMode === "aggressive" ? 5 : 3,
+      ...extra
+    };
+  }
+
+  function inferProtectionMode(source = settings) {
+    for (const [mode, preset] of Object.entries(PROTECTION_PRESETS)) {
+      if (
+        source.detectNames === preset.detectNames
+        && source.detectNumbers === preset.detectNumbers
+        && source.detectAddresses === preset.detectAddresses
+        && source.detectCodes === preset.detectCodes
+      ) {
+        return mode;
+      }
+    }
+    return "custom";
+  }
+
+  async function resumeProtectionForCurrentHost() {
+    const host = getHost();
+    const pausedHosts = new Set(settings.pausedHosts || []);
+    const sessionPausedHosts = new Set(settings.sessionPausedHosts || []);
+    let changed = false;
+    if (pausedHosts.delete(host)) {
+      settings.pausedHosts = Array.from(pausedHosts);
+      changed = true;
+    }
+    if (sessionPausedHosts.delete(host)) {
+      settings.sessionPausedHosts = Array.from(sessionPausedHosts);
+      changed = true;
+    }
+    if (!changed) return false;
+    await Promise.all([
+      syncSet({ pausedHosts: settings.pausedHosts }),
+      sessionSet({ [SESSION_PAUSED_HOSTS_KEY]: settings.sessionPausedHosts })
+    ]);
+    return true;
+  }
+
+  async function applyProtectionMode(mode) {
+    const preset = PROTECTION_PRESETS[mode];
+    if (!preset) return;
+    await resumeProtectionForCurrentHost();
+    settings = { ...settings, ...preset, protectionMode: mode };
+    await syncSet({ ...preset, protectionMode: mode });
+    if (activeEditable && settings.autoReplace) liveReplace(activeEditable, true);
+    refreshDrawer(true);
+    syncComposerToggle();
   }
 
   // Prepended to a prompt on send (once, only when it contains placeholders) so
@@ -476,22 +546,31 @@
     return Boolean(node instanceof Node && drawer && drawer.contains(node));
   }
 
+  const RICH_EDITABLE_SELECTOR =
+    '[role="textbox"][contenteditable]:not([contenteditable="false"]), '
+    + '[contenteditable="true"], [contenteditable=""], [contenteditable="plaintext-only"]';
+
+  function isContentEditableLike(node) {
+    if (!(node instanceof HTMLElement)) return false;
+    const attr = (node.getAttribute("contenteditable") || "").toLowerCase();
+    return node.isContentEditable || attr === "" || attr === "true" || attr === "plaintext-only";
+  }
+
   function isEditableElement(node) {
     if (!(node instanceof HTMLElement)) return false;
     if (node instanceof HTMLTextAreaElement) return true;
     if (node instanceof HTMLInputElement) {
       return ["text", "search", "email", "url", "tel", "password"].includes(node.type || "text");
     }
-    return node.isContentEditable;
+    return isContentEditableLike(node) || node.getAttribute("role") === "textbox";
   }
 
   // The real composer in a rich AI editor is the [role=textbox] node; resolve to
   // it so we read/write the right element (ChatGPT/Claude/Gemini ProseMirror).
   function getComposer(node) {
     if (!(node instanceof HTMLElement)) return null;
-    const selector = '[role="textbox"][contenteditable="true"], [role="textbox"][contenteditable=""]';
-    if (node.matches(selector)) return node;
-    return node.closest?.(selector) || node.querySelector?.(selector) || null;
+    if (node.matches(RICH_EDITABLE_SELECTOR)) return node;
+    return node.closest?.(RICH_EDITABLE_SELECTOR) || node.querySelector?.(RICH_EDITABLE_SELECTOR) || null;
   }
 
   function editableRoot(node) {
@@ -519,6 +598,43 @@
       current = current.parentElement;
     }
     return null;
+  }
+
+  function currentEditable() {
+    const candidates = [];
+    const pushCandidate = (node) => {
+      const editable = resolveEditable(node) || (node instanceof HTMLElement && isEditableElement(node) ? editableRoot(node) || node : null);
+      if (!(editable instanceof HTMLElement) || !editable.isConnected || isInsideLedebeUi(editable)) return;
+      if (!candidates.includes(editable)) candidates.push(editable);
+    };
+
+    pushCandidate(activeEditable);
+    pushCandidate(document.activeElement);
+    for (const node of document.querySelectorAll(`textarea, input, ${RICH_EDITABLE_SELECTOR}, [role="textbox"]`)) {
+      pushCandidate(node);
+    }
+
+    if (!candidates.length) return null;
+
+    const scoreFor = (editable) => {
+      const text = getFieldText(editable);
+      const protectedCount = (text.match(/\[LDB_[A-Z0-9_]+\]/g) || []).length;
+      const exposedCount = detectPII(text, allCustomTerms(), disabledTypes(), detectionOptions()).length;
+      return (protectedCount * 100) + exposedCount;
+    };
+
+    let best = candidates[0];
+    let bestScore = scoreFor(best);
+    for (const candidate of candidates.slice(1)) {
+      const score = scoreFor(candidate);
+      if (score > bestScore) {
+        best = candidate;
+        bestScore = score;
+      }
+    }
+
+    activeEditable = best;
+    return best;
   }
 
   function isPlainField(element) {
@@ -551,7 +667,10 @@
     for (const block of clone.querySelectorAll("p, div, li")) {
       if (!block.textContent?.endsWith("\n")) block.append("\n");
     }
-    return (clone.innerText || clone.textContent || "").replace(/\n{3,}/g, "\n\n").trim();
+    return (clone.innerText || clone.textContent || "")
+      .replace(/\u00a0/g, " ")
+      .replace(/\n{3,}/g, "\n\n")
+      .replace(/^\n+|\n+$/g, "");
   }
 
   function getFieldText(element) {
@@ -811,7 +930,8 @@
       existingMap: placeholderMap,
       counters,
       namespace: placeholderNamespace(),
-      disabledTypes: disabledTypes()
+      disabledTypes: disabledTypes(),
+      ...detectionOptions()
     };
 
     if (isPlainField(element)) {
@@ -858,6 +978,7 @@
   function afterProtect(element) {
     activeEditable = element;
     refreshDrawer();
+    syncComposerToggle();
     maybeOpenDrawer();
   }
 
@@ -869,7 +990,7 @@
   // ---- per-item protect / unprotect (drawer actions) ----------------------
 
   function placeholderPrefixFor(value) {
-    const finding = detectPII(value, []).find((f) => f.value === value);
+    const finding = detectPII(value, [], [], detectionOptions()).find((f) => f.value === value);
     return finding ? finding.prefix : "LDB_CUSTOM";
   }
 
@@ -878,8 +999,9 @@
   }
 
   function protectValue(value) {
-    const element = activeEditable;
+    const element = currentEditable();
     if (!element) return;
+    activeEditable = element;
     unprotected.delete(value.toLowerCase());
 
     const original = getFieldText(element);
@@ -903,8 +1025,9 @@
   // Reveal a value: swap every token that maps to it back to the real text, in
   // the active field. Grouped by value, so one click reveals all its copies.
   function unprotectValue(value) {
-    const element = activeEditable;
+    const element = currentEditable();
     if (!element) return;
+    activeEditable = element;
 
     // Never write a real value into a surface the AI app syncs (Canvas, artifact,
     // message). The value stays visible in this panel only.
@@ -933,8 +1056,24 @@
     afterProtect(element);
   }
 
+  function restoreMaskedTextInField(element, { stripInstruction = true } = {}) {
+    if (!element) return false;
+    const current = getFieldText(element);
+    if (!current) return false;
+
+    const restoredResult = restorePlaceholders(current, placeholderMap);
+    const restored = stripInstruction ? stripRetainNote(restoredResult.restored) : restoredResult.restored;
+    if (restored === current) return false;
+
+    applyFieldText(element, restored);
+    activeEditable = element;
+    refreshDrawer(true);
+    syncComposerToggle();
+    return true;
+  }
+
   function toggleSelectionProtection(selectedText = "") {
-    const element = activeEditable || resolveEditable(document.activeElement);
+    const element = currentEditable() || resolveEditable(document.activeElement);
     if (!element) {
       toast("Click into a text field first.");
       return;
@@ -952,7 +1091,8 @@
       const result = maskText(selection, allCustomTerms(), {
         namespace: placeholderNamespace(),
         exclude: unprotected,
-        disabledTypes: disabledTypes()
+        disabledTypes: disabledTypes(),
+        ...detectionOptions()
       });
       if (!result.replacements.length) {
         toast("Nothing sensitive found in this selection.");
@@ -997,6 +1137,81 @@
     }
     focusReplacementSelection(element, restored, selection);
     afterProtect(element);
+  }
+
+  function protectSelectionOnly(selectedText = "") {
+    const element = currentEditable() || resolveEditable(document.activeElement);
+    if (!element) {
+      toast("Click into a text field first.");
+      return;
+    }
+    activeEditable = element;
+
+    const selection = getSelectedFieldText(element) || selectedText;
+    if (!selection) {
+      toast("Select text first, then use Protect selected text.");
+      refreshDrawer();
+      return;
+    }
+
+    if (placeholderTokensIn(selection).length) {
+      toast("That selection is already protected.");
+      refreshDrawer();
+      return;
+    }
+
+    const result = maskText(selection, allCustomTerms(), {
+      namespace: placeholderNamespace(),
+      exclude: unprotected,
+      disabledTypes: disabledTypes(),
+      ...detectionOptions()
+    });
+    let masked = result.masked;
+    let replacements = result.replacements;
+    if (!replacements.length) {
+      const token = createPlaceholderToken(placeholderPrefixFor(selection), placeholderNamespace(), 1);
+      masked = token;
+      replacements = [{ token, original: selection }];
+    }
+    rememberReplacements(replacements);
+    if (!replaceSelectedFieldText(element, masked, selection, true)) {
+      refreshDrawer();
+      return;
+    }
+    focusReplacementSelection(element, masked, selection);
+    activeEditable = element;
+    refreshDrawer(true);
+    window.setTimeout(() => focusReplacementSelection(element, masked, selection), 0);
+    window.setTimeout(() => focusReplacementSelection(element, masked, selection), 120);
+  }
+
+  function selectionToggleState(element, selectedText = "") {
+    if (!element) return { kind: "none" };
+    const selection = getSelectedFieldText(element) || selectedText;
+    if (!selection) return { kind: "none" };
+
+    if (placeholderTokensIn(selection).length) {
+      return { kind: "reveal", selection };
+    }
+
+    const result = maskText(selection, allCustomTerms(), {
+      namespace: placeholderNamespace(),
+      exclude: unprotected,
+      disabledTypes: disabledTypes(),
+      ...detectionOptions()
+    });
+    if (result.replacements.length) {
+      return { kind: "protect", selection };
+    }
+    return { kind: "noneSensitive", selection };
+  }
+
+  function selectionPopupState(element, selectedText = "") {
+    if (!element) return { kind: "none" };
+    const selection = getSelectedFieldText(element) || selectedText;
+    if (!selection || !selection.trim()) return { kind: "none" };
+    if (placeholderTokensIn(selection).length) return { kind: "reveal", selection };
+    return { kind: "protect", selection };
   }
 
   // Drop every mapping for a value from the session map. Stops it being restored
@@ -1045,15 +1260,18 @@
   // regardless of host, ignoring the caret guard.
   function protectActiveField(options = {}) {
     const { forceNotice = false } = options;
-    if (!activeEditable) {
+    const element = currentEditable();
+    if (!element) {
       toast("Click into a text field first.");
       return;
     }
-    const original = getFieldText(activeEditable);
+    activeEditable = element;
+    const original = getFieldText(element);
     const result = maskText(original, allCustomTerms(), {
       namespace: placeholderNamespace(),
       exclude: unprotected,
-      disabledTypes: disabledTypes()
+      disabledTypes: disabledTypes(),
+      ...detectionOptions()
     });
     if (!result.replacements.length) {
       if (protectedItems(original).length) {
@@ -1066,8 +1284,8 @@
       return;
     }
     rememberReplacements(result.replacements);
-    applyFieldText(activeEditable, result.masked);
-    afterProtect(activeEditable);
+    applyFieldText(element, result.masked);
+    afterProtect(element);
     toast(`Protected ${result.replacements.length} item${result.replacements.length === 1 ? "" : "s"}.`);
     if (forceNotice && !nativePanelOpen) openDrawer();
     else showNotice({ ignoreNativePanel: forceNotice });
@@ -1081,7 +1299,7 @@
   function exposedItems(text) {
     if (!text) return [];
     const groups = new Map();
-    for (const finding of detectPII(text, allCustomTerms(), disabledTypes())) {
+    for (const finding of detectPII(text, allCustomTerms(), disabledTypes(), detectionOptions())) {
       if (finding.value.startsWith("[LDB_")) continue;
       const key = finding.value.toLowerCase();
       const g = groups.get(key) || { value: finding.value, label: finding.label, count: 0 };
@@ -1129,6 +1347,8 @@
   let activeTab = "field"; // "home" | "words" | "field" | "settings"
   let renderedDrawerTab = null; // skip rebuilding words/settings on every poll
   let advancedOpen = false;     // overlay Settings → Advanced disclosure state
+  let accountSupportOpen = false;
+  let settingsBodyScrollTop = 0;
   let autoHideTimer = null;
   let drawerHovered = false;
   const AUTO_HIDE_MS = 5000;
@@ -1137,6 +1357,12 @@
   let notice = null;
   let noticeTimer = null;
   const NOTICE_HIDE_MS = 3000;
+  let composerToggle = null;
+  let composerHint = null;
+  let composerHintTimer = null;
+  let composerHintIntroduced = false;
+  let selectionPopup = null;
+  let dismissedSelectionKey = "";
 
   function escapeHtml(value) {
     return String(value).replace(/[&<>"']/g, (ch) => (
@@ -1250,6 +1476,48 @@
     }, 260);
   }
 
+  function ensureComposerHint() {
+    if (composerHint && document.documentElement.contains(composerHint)) return composerHint;
+    composerHint = document.createElement("div");
+    composerHint.className = "ledebe-composer-hint";
+    composerHint.setAttribute("role", "status");
+    composerHint.setAttribute("aria-live", "polite");
+    document.documentElement.appendChild(composerHint);
+    return composerHint;
+  }
+
+  function hideComposerHint(immediate = false) {
+    if (composerHintTimer) {
+      clearTimeout(composerHintTimer);
+      composerHintTimer = null;
+    }
+    if (!composerHint) return;
+    if (immediate) {
+      composerHint.classList.remove("is-visible");
+      composerHint.remove();
+      composerHint = null;
+      return;
+    }
+    composerHint.classList.remove("is-visible");
+  }
+
+  function showComposerHint(message, target) {
+    if (!message || !(target instanceof HTMLElement)) return;
+    const hint = ensureComposerHint();
+    hint.textContent = message;
+    const rect = target.getBoundingClientRect();
+    const top = Math.max(8, rect.top - 36);
+    const left = Math.max(8, rect.right - 240);
+    hint.style.top = `${top}px`;
+    hint.style.left = `${left}px`;
+    hint.classList.add("is-visible");
+    if (composerHintTimer) clearTimeout(composerHintTimer);
+    composerHintTimer = window.setTimeout(() => {
+      composerHintTimer = null;
+      hideComposerHint();
+    }, 2400);
+  }
+
   function showNotice(options = {}) {
     const { ignoreNativePanel = false } = options;
     if ((!ignoreNativePanel && nativePanelOpen) || drawerOpen) return;
@@ -1266,6 +1534,245 @@
       noticeTimer = null;
       hideNotice();
     }, NOTICE_HIDE_MS);
+  }
+
+  function ensureComposerToggle() {
+    if (composerToggle && document.documentElement.contains(composerToggle)) return composerToggle;
+    composerToggle = document.createElement("button");
+    composerToggle.type = "button";
+    composerToggle.className = "ledebe-composer-toggle";
+    composerToggle.setAttribute("aria-label", "Ledebe protection status");
+    composerToggle.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+    });
+    composerToggle.addEventListener("click", async (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      await cycleComposerProtectionMode();
+      syncComposerToggle();
+      refreshDrawer(true);
+    });
+    composerToggle.addEventListener("mouseenter", () => {
+      showComposerHint(
+        composerToggle?.dataset.hint || t("quick.nextAggressive", "Click to switch protection to aggressive mode."),
+        composerToggle
+      );
+    });
+    composerToggle.addEventListener("focus", () => {
+      showComposerHint(
+        composerToggle?.dataset.hint || t("quick.nextAggressive", "Click to switch protection to aggressive mode."),
+        composerToggle
+      );
+    });
+    composerToggle.addEventListener("mouseleave", () => hideComposerHint());
+    composerToggle.addEventListener("blur", () => hideComposerHint());
+    document.documentElement.appendChild(composerToggle);
+    return composerToggle;
+  }
+
+  function composerToggleInsets(target) {
+    if (!(target instanceof HTMLElement)) return { top: 6, right: 12 };
+    if (isPlainField(target)) return { top: 10, right: 12 };
+    return { top: 8, right: 14 };
+  }
+
+  function composerToggleTarget() {
+    if (!isAiHost()) return null;
+    const target = currentEditable() || getComposer(activeEditable) || activeEditable;
+    if (!(target instanceof HTMLElement) || !target.isConnected || isInsideLedebeUi(target)) return null;
+    const focused = document.activeElement;
+    if (
+      focused instanceof HTMLElement
+      && focused !== target
+      && !target.contains(focused)
+      && !target.matches(":focus")
+    ) {
+      return null;
+    }
+    return target;
+  }
+
+  function hideComposerToggle() {
+    composerToggle?.classList.remove("is-visible");
+    hideComposerHint(true);
+  }
+
+  async function setSitePausedForSession(paused) {
+    const host = getHost();
+    const pausedHosts = new Set(settings.sessionPausedHosts || []);
+    if (paused) pausedHosts.add(host);
+    else pausedHosts.delete(host);
+    settings.sessionPausedHosts = Array.from(pausedHosts);
+    await sessionSet({ [SESSION_PAUSED_HOSTS_KEY]: settings.sessionPausedHosts });
+  }
+
+  async function cycleComposerProtectionMode() {
+    const button = ensureComposerToggle();
+    if (isPaused()) {
+      await setSitePausedForSession(false);
+      await applyProtectionMode("mild");
+      showComposerHint(t("quick.mildHint", "Mild protection is on."), button);
+      return;
+    }
+    if (settings.protectionMode === "aggressive") {
+      const element = currentEditable();
+      await setSitePausedForSession(true);
+      if (element) restoreMaskedTextInField(element);
+      syncComposerToggle();
+      showComposerHint(t("quick.offHint", "Protection is off for this site right now."), button);
+      return;
+    }
+    await setSitePausedForSession(false);
+    await applyProtectionMode("aggressive");
+    showComposerHint(t("quick.aggressiveHint", "Aggressive protection is on."), button);
+  }
+
+  function ensureSelectionPopup() {
+    if (selectionPopup && document.documentElement.contains(selectionPopup)) return selectionPopup;
+    selectionPopup = document.createElement("div");
+    selectionPopup.className = "ledebe-selection-popup";
+    selectionPopup.innerHTML = `
+      <button type="button" class="ledebe-selection-popup__action"></button>
+      <button type="button" class="ledebe-selection-popup__dismiss"></button>
+    `;
+    const action = selectionPopup.querySelector(".ledebe-selection-popup__action");
+    const dismiss = selectionPopup.querySelector(".ledebe-selection-popup__dismiss");
+    selectionPopup.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+    });
+    action?.addEventListener("click", () => {
+      const mode = selectionPopup?.dataset.mode;
+      const selectedText = selectionPopup?.dataset.selection || "";
+      dismissedSelectionKey = "";
+      hideSelectionPopup();
+      if (mode === "reveal") toggleSelectionProtection(selectedText);
+      else protectSelectionOnly(selectedText);
+    });
+    dismiss?.addEventListener("click", () => {
+      dismissedSelectionKey = selectionPopup?.dataset.key || "";
+      hideSelectionPopup();
+    });
+    document.documentElement.appendChild(selectionPopup);
+    return selectionPopup;
+  }
+
+  function hideSelectionPopup() {
+    selectionPopup?.classList.remove("is-visible");
+  }
+
+  function selectionPopupInteracting() {
+    return Boolean(
+      selectionPopup
+      && selectionPopup.classList.contains("is-visible")
+      && (
+        selectionPopup.matches(":hover")
+        || selectionPopup.contains(document.activeElement)
+      )
+    );
+  }
+
+  function selectionPopupRect(element) {
+    if (!element) return null;
+    if (!isPlainField(element)) {
+      const selection = window.getSelection();
+      if (selection?.rangeCount) {
+        const rect = selection.getRangeAt(0).getBoundingClientRect();
+        if (rect && (rect.width || rect.height)) return rect;
+      }
+    }
+    return element.getBoundingClientRect();
+  }
+
+  function syncSelectionPopup() {
+    if (!isAiHost()) {
+      hideSelectionPopup();
+      return;
+    }
+    if (selectionPopupInteracting()) return;
+    const element = currentEditable() || resolveEditable(document.activeElement);
+    const state = selectionPopupState(element);
+    if (state.kind === "none") {
+      dismissedSelectionKey = "";
+      hideSelectionPopup();
+      return;
+    }
+    const key = `${state.kind}:${state.selection}`;
+    if (dismissedSelectionKey && dismissedSelectionKey === key) {
+      hideSelectionPopup();
+      return;
+    }
+    const rect = selectionPopupRect(element);
+    if (!rect) {
+      hideSelectionPopup();
+      return;
+    }
+    const popup = ensureSelectionPopup();
+    const action = popup.querySelector(".ledebe-selection-popup__action");
+    const dismiss = popup.querySelector(".ledebe-selection-popup__dismiss");
+    popup.dataset.mode = state.kind;
+    popup.dataset.selection = state.selection;
+    popup.dataset.key = key;
+    if (action) {
+      action.textContent = state.kind === "reveal"
+        ? t("selection.reveal", "Unprotect selection")
+        : t("selection.protect", "Protect selection");
+    }
+    if (dismiss) dismiss.textContent = t("selection.dismiss", "Not now");
+    const top = Math.max(8, rect.top - 42);
+    const left = Math.max(8, rect.left + Math.min(rect.width / 2, 120));
+    popup.style.top = `${top}px`;
+    popup.style.left = `${left}px`;
+    popup.classList.add("is-visible");
+  }
+
+  function syncComposerToggle() {
+    const target = composerToggleTarget();
+    if (!target) {
+      hideComposerToggle();
+      return;
+    }
+    const rect = target.getBoundingClientRect();
+    if (rect.width < 150 || rect.height < 28) {
+      hideComposerToggle();
+      return;
+    }
+    const button = ensureComposerToggle();
+    button.classList.toggle("is-paused", isPaused());
+    button.classList.toggle("is-aggressive", !isPaused() && settings.protectionMode === "aggressive");
+    button.classList.toggle("is-mild", !isPaused() && settings.protectionMode !== "aggressive");
+    button.classList.add("is-visible");
+    const statusText = isPaused()
+      ? t("quick.stateOff", "Ledebe is off for this session")
+      : settings.protectionMode === "aggressive"
+        ? t("quick.stateAggressive", "Ledebe is on in aggressive mode")
+        : t("quick.stateMild", "Ledebe is on in mild mode");
+    const actionText = isPaused()
+      ? t("quick.nextMild", "Click to turn protection on in mild mode.")
+      : settings.protectionMode === "aggressive"
+        ? t("quick.nextOff", "Click to turn protection off.")
+        : t("quick.nextAggressive", "Click to switch protection to aggressive mode.");
+    button.dataset.hint = actionText;
+    button.title = `${statusText}. ${actionText}`;
+    button.setAttribute("aria-label", `${statusText}. ${actionText}`);
+    const width = button.offsetWidth || 16;
+    const height = button.offsetHeight || 16;
+    const inset = composerToggleInsets(target);
+    const minTop = rect.top + inset.top;
+    const maxTop = rect.bottom - height - inset.top;
+    const centeredTop = rect.top + ((rect.height - height) / 2);
+    const top = Math.max(10, Math.min(maxTop, Math.max(minTop, centeredTop)));
+    const left = Math.max(10, rect.right - width - inset.right);
+    button.style.top = `${top}px`;
+    button.style.left = `${left}px`;
+    if (!composerHintIntroduced) {
+      composerHintIntroduced = true;
+      showComposerHint(
+        t("quick.introHint", "Green is mild, amber is aggressive, and red turns protection off."),
+        button
+      );
+    }
   }
 
   function setActiveTab(tab) {
@@ -1541,56 +2048,80 @@
     wrap.className = "ledebe-drawer__actions";
     wrap.append(
       drawerButton(t("settings.protectField", "Protect active field now"), "primary", () => protectActiveField()),
-      drawerButton(t("field.toggleSelection", "Toggle selected text"), "secondary", () => toggleSelectionProtection())
+      drawerButton(t("field.protectSelection", "Protect selected text"), "secondary", () => protectSelectionOnly())
     );
     return wrap;
+  }
+
+  const USER_TURN_SELECTORS =
+    '[data-message-author-role="user"], [data-message-author="user"], '
+    + '[data-testid="user-message"], [data-testid="conversation-turn-user"], '
+    + '.font-user-message, [data-message-role="user"], user-query, '
+    + '[data-test-id="message-user"], [data-message-type="user"]';
+
+  function uniqueTurnNodes(selector) {
+    const nodes = [];
+    for (const el of document.querySelectorAll(selector)) {
+      if (isInsideLedebeUi(el)) continue;
+      const parentTurn = el.parentElement?.closest(selector);
+      if (parentTurn) continue;
+      if (!(el.innerText || el.textContent || "").trim()) continue;
+      nodes.push(el);
+    }
+    return nodes;
+  }
+
+  function assistantContainerFromCopyButton(button) {
+    if (!(button instanceof HTMLElement)) return null;
+    const actionBar = button.parentElement;
+    const siblings = [];
+    if (actionBar?.previousElementSibling instanceof HTMLElement) siblings.push(actionBar.previousElementSibling);
+    if (actionBar?.parentElement instanceof HTMLElement) {
+      siblings.push(...Array.from(actionBar.parentElement.children).filter((child) => child !== actionBar));
+    }
+    for (const candidate of siblings) {
+      if (!(candidate instanceof HTMLElement) || candidate.contains(button) || isInsideLedebeUi(candidate)) continue;
+      if (readStructuredText(candidate)) return candidate;
+    }
+    return null;
+  }
+
+  function assistantTurnNodes() {
+    const turns = [];
+    const hasEquivalentTurn = (candidate) => turns.some((turn) => turn === candidate || turn.contains(candidate) || candidate.contains(turn));
+    const addTurn = (candidate) => {
+      if (!(candidate instanceof HTMLElement) || hasEquivalentTurn(candidate)) return;
+      turns.push(candidate);
+    };
+    for (const el of uniqueTurnNodes(ASSISTANT_SELECTORS)) {
+      addTurn(el);
+    }
+    for (const button of document.querySelectorAll(COPY_BUTTON_SELECTORS)) {
+      const candidate = assistantContainerFromCopyButton(button);
+      addTurn(candidate);
+    }
+    return turns;
   }
 
   // Mirror the conversation, restored, across the major assistants. Returns
   // turns ({ role, blocks }) in document order; empty when the page markup isn't
   // recognised (the Home tab then falls back to the latest restored reply).
   function collectRestoredTranscript() {
-    const providers = [
-      {
-        sel: "[data-message-author-role], [data-message-author]",
-        role: (el) => el.getAttribute("data-message-author-role") || el.getAttribute("data-message-author") || "user"
-      },
-      {
-        sel: '[data-testid="user-message"], [data-testid="assistant-message"], [data-testid="conversation-turn-user"], [data-testid="conversation-turn-assistant"], .font-user-message, .font-claude-message, [data-message-role="user"], [data-message-role="assistant"]',
-        role: (el) => {
-          if (
-            el.matches('[data-testid="user-message"], [data-testid="conversation-turn-user"], .font-user-message, [data-message-role="user"]')
-          ) return "user";
-          return "assistant";
-        }
-      },
-      {
-        sel: "user-query, model-response, [data-test-id='message-user'], [data-test-id='message-assistant'], [data-message-type='user'], [data-message-type='model']",
-        role: (el) => {
-          const tag = el.tagName.toLowerCase();
-          const type = el.getAttribute("data-message-type");
-          return tag === "user-query" || el.getAttribute("data-test-id") === "message-user" || type === "user"
-            ? "user"
-            : "assistant";
-        }
-      }
-    ];
+    const turns = [
+      ...uniqueTurnNodes(USER_TURN_SELECTORS).map((el) => ({ role: "user", el })),
+      ...assistantTurnNodes().map((el) => ({ role: "assistant", el }))
+    ].sort((a, b) => {
+      if (a.el === b.el) return 0;
+      const pos = a.el.compareDocumentPosition(b.el);
+      if (pos & Node.DOCUMENT_POSITION_FOLLOWING) return -1;
+      if (pos & Node.DOCUMENT_POSITION_PRECEDING) return 1;
+      return 0;
+    });
 
-    for (const provider of providers) {
-      const nodes = document.querySelectorAll(provider.sel);
-      if (!nodes.length) continue;
-      const turns = [];
-      for (const el of nodes) {
-        if (isInsideLedebeUi(el)) continue;
-        const parentTurn = el.parentElement?.closest(provider.sel);
-        if (parentTurn) continue;
-        if (!(el.innerText || el.textContent || "").trim()) continue;
-        const blocks = restoredBlocksFor(el);
-        if (blocks.length) turns.push({ role: provider.role(el), blocks });
-      }
-      if (turns.length) return turns;
-    }
-    return [];
+    return turns.flatMap(({ role, el }) => {
+      const blocks = restoredBlocksFor(el);
+      return blocks.length ? [{ role, blocks }] : [];
+    });
   }
 
   function renderHomePane(body) {
@@ -1724,7 +2255,7 @@
   }
 
   function renderFieldPane(body) {
-    const text = getFieldText(activeEditable);
+    const text = getFieldText(currentEditable());
     const prot = protectedItems(text);
     const exposed = exposedItems(text);
     const fieldValues = new Set(prot.map((item) => item.value));
@@ -1752,7 +2283,7 @@
       body.appendChild(sectionEl(`Protected this session (${session.length})`));
       for (const item of session) {
         const meta = item.count > 1 ? `${item.count} placeholders` : "1 placeholder";
-        body.appendChild(rowEl("protected", item.value, meta, "Forget", () => forgetValue(item.value)));
+        body.appendChild(rowEl("session", item.value, meta, "Forget", () => forgetValue(item.value)));
       }
     }
 
@@ -1777,7 +2308,10 @@
     input.checked = checked;
     input.addEventListener("change", async () => {
       settings[key] = input.checked;
-      await syncSet({ [key]: input.checked });
+      if (["detectNames", "detectNumbers", "detectAddresses", "detectCodes"].includes(key)) {
+        settings.protectionMode = inferProtectionMode(settings);
+      }
+      await syncSet({ [key]: input.checked, protectionMode: settings.protectionMode });
       if (activeEditable && settings.autoReplace) liveReplace(activeEditable, true);
       refreshDrawer(true);
     });
@@ -1800,6 +2334,46 @@
     return card;
   }
 
+  function protectionModePicker() {
+    const wrap = document.createElement("div");
+    wrap.className = "ledebe-mode-picker";
+
+    const currentMode = inferProtectionMode(settings);
+    const options = [
+      {
+        mode: "mild",
+        label: t("settings.modeMild", "Mild"),
+        hint: t("settings.modeMildHint", "Protects clearly sensitive data, but leaves broad guesses like ordinals and generic codes alone.")
+      },
+      {
+        mode: "aggressive",
+        label: t("settings.modeAggressive", "Aggressive"),
+        hint: t("settings.modeAggressiveHint", "Also protects names, number runs, and mixed letter-number tokens.")
+      }
+    ];
+
+    for (const option of options) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = `ledebe-mode-option${currentMode === option.mode ? " is-active" : ""}`;
+      button.innerHTML = `
+        <strong>${escapeHtml(option.label)}</strong>
+        <span>${escapeHtml(option.hint)}</span>
+      `;
+      button.addEventListener("click", () => applyProtectionMode(option.mode));
+      wrap.appendChild(button);
+    }
+
+    if (currentMode === "custom") {
+      const custom = document.createElement("p");
+      custom.className = "ledebe-drawer__lead";
+      custom.textContent = t("settings.modeCustomHint", "Custom mix active — advanced toggles no longer match the built-in presets.");
+      wrap.appendChild(custom);
+    }
+
+    return wrap;
+  }
+
   function drawerStack(className = "") {
     const stack = document.createElement("div");
     stack.className = `ledebe-drawer__stack${className ? ` ${className}` : ""}`;
@@ -1813,6 +2387,7 @@
     settings.pausedHosts = Array.from(paused);
     await syncSet({ pausedHosts: settings.pausedHosts });
     refreshDrawer(true);
+    syncComposerToggle();
   }
 
   async function pauseSiteForSession() {
@@ -1822,6 +2397,7 @@
     settings.sessionPausedHosts = Array.from(paused);
     await sessionSet({ [SESSION_PAUSED_HOSTS_KEY]: settings.sessionPausedHosts });
     refreshDrawer(true);
+    syncComposerToggle();
   }
 
   async function clearSavedData(btn) {
@@ -1838,6 +2414,7 @@
     const storedSettings = await getStoredSettings();
     const { companySync, companyTerms } = await getCompanyState();
     const host = getHost();
+
     const status = document.createElement("div");
     status.className = "ledebe-status-line";
     const a = document.createElement("span");
@@ -1845,8 +2422,6 @@
     const b = document.createElement("strong");
     b.textContent = host || "—";
     status.append(a, b);
-    body.appendChild(status);
-
     const planLine = document.createElement("div");
     planLine.className = "ledebe-status-line";
     const plan = effectivePlanFromData(storedSettings, companySync);
@@ -1858,7 +2433,16 @@
       ? `${plan} · ${storedSettings.personalTerms.length}/${limit} personal words`
       : `${plan} · unlimited personal words`;
     planLine.append(planLabel, planValue);
-    body.appendChild(planLine);
+    
+    const accountSupport = document.createElement("details");
+    accountSupport.className = "ledebe-advanced";
+    accountSupport.open = accountSupportOpen;
+    accountSupport.addEventListener("toggle", () => { accountSupportOpen = accountSupport.open; });
+    const accountSummary = document.createElement("summary");
+    accountSummary.textContent = t("settings.accountSupport", "Subscription, company sync and feedback");
+    accountSupport.appendChild(accountSummary);
+    accountSupport.appendChild(status);
+    accountSupport.appendChild(planLine);
 
     const companyCard = drawerCard();
     companyCard.appendChild(sectionEl(t("settings.companySync", "Company sync")));
@@ -1925,7 +2509,7 @@
         }
       }));
     }
-    body.appendChild(companyCard);
+    accountSupport.appendChild(companyCard);
 
     const feedbackCard = drawerCard();
     feedbackCard.appendChild(sectionEl(t("settings.feedback", "Feedback")));
@@ -1983,22 +2567,35 @@
         toast(error instanceof Error ? error.message : t("settings.feedbackFailed", "Could not send feedback"));
       }
     }));
-    body.appendChild(feedbackCard);
+    accountSupport.appendChild(feedbackCard);
+    body.appendChild(accountSupport);
 
-    body.appendChild(settingsToggle("enabled", t("settings.protectionOn", "Protection on"), t("settings.protectionHint", "Master switch for detection and masking."), settings.enabled !== false));
-    body.appendChild(settingsToggle("autoReplace", t("settings.replace", "Replace as I type"), t("settings.replaceHint", "Mask each value live, before send."), settings.autoReplace !== false));
-    body.appendChild(settingsToggle("restoreResponses", t("settings.restore", "Reveal replies here"), t("settings.restoreHint", "Show the reply with real values in this panel."), settings.restoreResponses !== false));
+    const protectionCard = drawerCard();
+    protectionCard.appendChild(sectionEl(t("settings.protectionControls", "Protection controls")));
+    protectionCard.appendChild(settingsToggle("enabled", t("settings.protectionOn", "Protection on"), t("settings.protectionHint", "Master switch for detection and masking."), settings.enabled !== false));
+    protectionCard.appendChild(settingsToggle("autoReplace", t("settings.replace", "Replace as I type"), t("settings.replaceHint", "Mask each value live, before send."), settings.autoReplace !== false));
+    protectionCard.appendChild(settingsToggle("restoreResponses", t("settings.restore", "Reveal replies here"), t("settings.restoreHint", "Show the reply with real values in this panel."), settings.restoreResponses !== false));
+    protectionCard.appendChild(sectionEl(t("settings.mode", "Protection style")));
+    protectionCard.appendChild(leadEl(t("settings.modeLead", "Choose how broad Ledebe should be when it guesses what to protect.")));
+    if (isPaused()) {
+      protectionCard.appendChild(leadEl(t("settings.pausedHint", "Protection is currently paused on this site. Choosing Mild or Aggressive will turn it back on.")));
+    }
+    protectionCard.appendChild(protectionModePicker());
+    body.appendChild(protectionCard);
 
-    body.appendChild(drawerButton(t("settings.protectField", "Protect active field now"), "primary", () => protectActiveField()));
-    body.appendChild(drawerButton(t("field.toggleSelection", "Toggle selected text"), "secondary", () => toggleSelectionProtection()));
+    const siteActionsCard = drawerCard();
+    siteActionsCard.appendChild(sectionEl(t("settings.siteActions", "Site actions")));
+    siteActionsCard.appendChild(drawerButton(t("settings.protectField", "Protect active field now"), "primary", () => protectActiveField()));
+    siteActionsCard.appendChild(drawerButton(t("field.protectSelection", "Protect selected text"), "secondary", () => protectSelectionOnly()));
     const paused = (storedSettings.pausedHosts || []).includes(host);
     const sessionPaused = (settings.sessionPausedHosts || []).includes(host);
-    body.appendChild(drawerButton(
+    siteActionsCard.appendChild(drawerButton(
       sessionPaused ? t("settings.resumeSession", "Resume this session") : t("settings.pauseSession", "Pause for this session"),
       "secondary",
       pauseSiteForSession
     ));
-    body.appendChild(drawerButton(paused ? t("settings.resume", "Resume on this site") : t("settings.pause", "Pause on this site"), "secondary", pauseSite));
+    siteActionsCard.appendChild(drawerButton(paused ? t("settings.resume", "Resume on this site") : t("settings.pause", "Pause on this site"), "secondary", pauseSite));
+    body.appendChild(siteActionsCard);
 
     const adv = document.createElement("details");
     adv.className = "ledebe-advanced";
@@ -2022,10 +2619,14 @@
     adv.appendChild(clearBtn);
 
     body.appendChild(adv);
+    body.scrollTop = settingsBodyScrollTop;
   }
 
   function refreshDrawer(force = false) {
     if (!drawerOpen || !drawer) return;
+    if (activeTab === "settings") {
+      settingsBodyScrollTop = drawer.querySelector(".ledebe-drawer__body")?.scrollTop || 0;
+    }
     drawer.querySelector(".ledebe-drawer__sub").textContent =
       `${placeholderMap.size} value${placeholderMap.size === 1 ? "" : "s"} protected this session`;
     const privacyBadge = drawer.querySelector(".ledebe-drawer__privacy-badge");
@@ -2102,8 +2703,9 @@
     }
     const text = getFieldText(activeEditable);
     if (protectedItems(text).length || exposedItems(text).length) {
-      activeTab = "field";
-      if (drawerOpen) refreshDrawer();
+      const keepCurrentTab = drawerOpen && (activeTab === "words" || activeTab === "settings");
+      if (!keepCurrentTab) activeTab = "field";
+      if (drawerOpen) refreshDrawer(!keepCurrentTab);
       else openDrawer();
     } else {
       if (drawerOpen) refreshDrawer();
@@ -2130,17 +2732,23 @@
   // app that serialises its next request from the DOM. The page keeps showing
   // placeholders; the panel shows the restored reply with a Copy button.
 
+  const COPY_BUTTON_SELECTORS =
+    '[data-testid="copy-turn-action-button"], [data-testid="copy-button"], '
+    + '[data-testid="action-bar-copy"], button[aria-label="Copy"], '
+    + 'button[aria-label="Copy message" i], button[aria-label="Copy to clipboard" i], '
+    + 'button[aria-label="Copy response" i], button[aria-label="Copy code" i]';
   const ASSISTANT_SELECTORS =
     '[data-message-author-role="assistant"], [data-message-author="assistant"], '
     + '[data-testid="assistant-message"], [data-testid="conversation-turn-assistant"], '
     + '[data-test-id="message-assistant"], [data-message-role="assistant"], [data-message-type="model"], '
     + '.model-response-text, message-content, model-response, [data-testid="model-response"], '
-    + 'div.agent-turn, .font-claude-message, .markdown.prose';
+    + 'div.agent-turn, .font-claude-message, .markdown.prose, [data-is-streaming]';
   const TURN_MARKERS =
     '[data-message-author-role], [data-message-author], [data-testid="assistant-message"], [data-testid="user-message"], '
     + '[data-testid="conversation-turn-assistant"], [data-testid="conversation-turn-user"], '
     + '[data-test-id="message-assistant"], [data-test-id="message-user"], '
-    + '[data-message-role], [data-message-type], message-content, model-response, .model-response-text';
+    + '[data-message-role], [data-message-type], message-content, model-response, .model-response-text, [data-is-streaming], '
+    + COPY_BUTTON_SELECTORS;
   const SETTLE_MS = 350;
 
   let responseObserver = null;
@@ -2165,7 +2773,7 @@
     if (!el) return true;
     if (isInsideLedebeUi(el)) return true;
     if (el.closest(".ledebe-toast, .ledebe-drawer")) return true;
-    if (el.closest('input, textarea, [contenteditable=""], [contenteditable="true"], [role="textbox"]')) return true;
+    if (el.closest(`input, textarea, ${RICH_EDITABLE_SELECTOR}, [role="textbox"]`)) return true;
     if (pageUsesTurnRoles() && !el.closest(ASSISTANT_SELECTORS)) return true;
     return false;
   }
@@ -2213,7 +2821,7 @@
     const containers = new Set();
     for (const root of roots) {
       if (!(root instanceof HTMLElement) || !root.isConnected) continue;
-      const container = root.closest(ASSISTANT_SELECTORS) || root;
+      const container = root.closest(ASSISTANT_SELECTORS) || assistantContainerFromCopyButton(root.closest(COPY_BUTTON_SELECTORS)) || root;
       if (container && container !== document.body && (container.innerText || "").indexOf("[LDB_") !== -1) {
         containers.add(container);
       }
@@ -2259,7 +2867,7 @@
     usesTurnRoles = null;
     let queued = false;
     if (pageUsesTurnRoles()) {
-      for (const el of document.querySelectorAll(ASSISTANT_SELECTORS)) queued = queueRoot(el) || queued;
+      for (const el of assistantTurnNodes()) queued = queueRoot(el) || queued;
     } else {
       queued = queueRoot(document.body);
     }
@@ -2302,6 +2910,7 @@
     if (target) {
       if (target !== activeEditable) drawerDismissed = false;
       activeEditable = target;
+      syncComposerToggle();
     }
     return target;
   }
@@ -2316,6 +2925,7 @@
     if (!target) return;
     scheduleScan(target, 90);
     scheduleIdleProtect(target);
+    syncComposerToggle();
     maybeOpenDrawer();
   }
 
@@ -2324,6 +2934,7 @@
     const target = trackTarget(event) || eventEditable(event) || activeEditable;
     if (!target) return;
     activeEditable = target;
+    syncComposerToggle();
     // After the pasted text lands, force-protect it directly. We don't gate this
     // on selfEdit or the caret guard, so every paste (not just the first) masks.
     window.setTimeout(() => {
@@ -2334,7 +2945,7 @@
 
   // Right before send (Enter / send button), force-mask anything still exposed.
   function flushBeforeSend() {
-    const target = activeEditable || resolveEditable(document.activeElement);
+    const target = currentEditable() || resolveEditable(document.activeElement);
     if (!target) return;
     activeEditable = target;
     liveReplace(target, true);
@@ -2402,7 +3013,7 @@
     const form = event.target instanceof HTMLFormElement ? event.target : null;
     if (!form) return;
     const field = activeEditable && form.contains(activeEditable) ? activeEditable
-      : Array.from(form.querySelectorAll('textarea, input, [contenteditable="true"], [role="textbox"]')).find(isEditableElement);
+      : Array.from(form.querySelectorAll(`textarea, input, ${RICH_EDITABLE_SELECTOR}, [role="textbox"]`)).find(isEditableElement);
     if (field) {
       activeEditable = field;
       liveReplace(field, true);
@@ -2433,6 +3044,7 @@
       companySync: local[COMPANY_STATE_STORAGE_KEY] || null,
       sessionPausedHosts: normalizeTerms(session[SESSION_PAUSED_HOSTS_KEY] || [])
     };
+    settings.protectionMode = inferProtectionMode(settings);
   }
 
   // ---- state + actions shared with the native side panel ------------------
@@ -2440,7 +3052,7 @@
   // A full snapshot of what both panels render, computed on demand so the native
   // side panel can poll the active tab without us writing to storage per key.
   function buildPageState() {
-    const text = getFieldText(activeEditable);
+    const text = getFieldText(currentEditable());
     const prot = protectedItems(text);
     const fieldValues = new Set(prot.map((p) => p.value));
     return {
@@ -2493,7 +3105,40 @@
     });
   }
 
+  async function syncNativeSidePanelState() {
+    if (!hasContext() || typeof chrome.runtime?.sendMessage !== "function") return false;
+    return new Promise((resolve) => {
+      let settled = false;
+      const finish = (visible) => {
+        if (settled) return;
+        settled = true;
+        nativePanelOpen = Boolean(visible);
+        if (nativePanelOpen && drawerOpen) closeDrawer();
+        resolve(nativePanelOpen);
+      };
+      const timer = window.setTimeout(() => finish(false), 180);
+      try {
+        chrome.runtime.sendMessage({ type: "GET_SIDE_PANEL_VISIBILITY" }, (response) => {
+          window.clearTimeout(timer);
+          try {
+            if (chrome.runtime?.lastError) {
+              finish(false);
+              return;
+            }
+          } catch (error) {
+            /* ignore */
+          }
+          finish(response?.visible);
+        });
+      } catch (error) {
+        window.clearTimeout(timer);
+        finish(false);
+      }
+    });
+  }
+
   async function toggleOverlay() {
+    await syncNativeSidePanelState();
     if (nativePanelOpen) {
       const nativeToggled = await requestNativeSidePanelToggle();
       if (nativeToggled) {
@@ -2549,12 +3194,7 @@
   function injectInlineButtons() {
     if (!isAiHost()) return;
     // Anchor next to the per-message "Copy" control across the major assistants.
-    const copyButtons = document.querySelectorAll(
-      '[data-testid="copy-turn-action-button"], [data-testid="copy-button"], '
-      + '[data-testid="action-bar-copy"], button[aria-label="Copy"], '
-      + 'button[aria-label="Copy message" i], button[aria-label="Copy to clipboard" i], '
-      + 'button[aria-label="Copy response" i], button[aria-label="Copy code" i]'
-    );
+    const copyButtons = document.querySelectorAll(COPY_BUTTON_SELECTORS);
     for (const copyBtn of copyButtons) {
       const bar = copyBtn.parentElement;
       if (!bar || bar.querySelector(".ledebe-inline-btn")) continue;
@@ -2607,7 +3247,9 @@
           : settings.customTerms
       );
       settings.customTerms = settings.personalTerms;
+      settings.protectionMode = inferProtectionMode(settings);
       if (activeEditable) refreshDrawer();
+      syncComposerToggle();
       startResponseObserver();
       sweepResponses();
     });
@@ -2663,11 +3305,20 @@
           protectActiveField({ forceNotice: message.source !== "panel" });
           sendResponse({ ok: true });
           return true;
+        case "PROTECT_SELECTION":
+          protectSelectionOnly(message.selectedText);
+          sendResponse(buildPageState());
+          return true;
         case "TOGGLE_SELECTION_PROTECTION":
           toggleSelectionProtection(message.selectedText);
           sendResponse(buildPageState());
           return true;
         case "OPEN_PANEL":
+          if (nativePanelOpen) {
+            if (drawerOpen) closeDrawer();
+            sendResponse({ ok: true, open: false, native: true });
+            return true;
+          }
           if (drawerOpen) {
             drawerDismissed = true;
             closeDrawer();
@@ -2695,17 +3346,31 @@
 
   loadSettings()
     .then(async () => loadMap(await mappingGet()))
-    .then(() => {
+    .then(async () => {
+      await syncNativeSidePanelState();
       document.addEventListener("focusin", onFocusIn, true);
+      document.addEventListener("beforeinput", onInput, true);
       document.addEventListener("input", onInput, true);
       document.addEventListener("paste", onPaste, true);
       document.addEventListener("keydown", onKeyDown, true);
+      document.addEventListener("keyup", syncComposerToggle, true);
+      document.addEventListener("keyup", syncSelectionPopup, true);
       document.addEventListener("pointerdown", onPointerDown, true);
+      document.addEventListener("pointerup", syncComposerToggle, true);
+      document.addEventListener("pointerup", syncSelectionPopup, true);
+      document.addEventListener("selectionchange", syncComposerToggle, true);
+      document.addEventListener("selectionchange", syncSelectionPopup, true);
       document.addEventListener("submit", onSubmit, true);
+      window.addEventListener("resize", syncComposerToggle, true);
+      window.addEventListener("resize", syncSelectionPopup, true);
+      window.addEventListener("scroll", syncComposerToggle, true);
+      window.addEventListener("scroll", syncSelectionPopup, true);
       startResponseObserver();
       scheduleInlineInjection();
       setTimeout(scheduleInlineInjection, 1500);
       setTimeout(scheduleInlineInjection, 3500);
+      syncComposerToggle();
+      syncSelectionPopup();
       console.debug("[Ledebe] content script active:", getHost(), "· AI host:", isAiHost());
     });
 })();

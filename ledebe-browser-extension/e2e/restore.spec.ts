@@ -29,6 +29,9 @@ test('restored replies do not auto-open the drawer', async ({ context }) => {
   await page.click(S.ta);
   await page.keyboard.type('email a@b.com ');
   await expect.poll(() => page.inputValue(S.ta)).toMatch(/\[LDB_EMAIL_/);
+  await expect(page.locator(S.noticeVisible)).toBeVisible();
+  await expect(page.locator(S.drawerOpen)).toHaveCount(0);
+  await sendMessageToPage(page, { type: 'OPEN_PANEL' });
   await expect(page.locator(S.drawerOpen)).toBeVisible();
   await sendMessageToPage(page, { type: 'OPEN_PANEL' });
   await expect(page.locator(S.drawerOpen)).toHaveCount(0);

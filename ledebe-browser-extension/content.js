@@ -1702,9 +1702,7 @@
 
   function composerUsesTopRightOverlay(target) {
     if (!(target instanceof HTMLElement)) return false;
-    const host = getHost();
-    return host.includes("claude.ai")
-      || matchesWithin(target, CLAUDE_EDITOR_SELECTOR);
+    return matchesWithin(target, CLAUDE_EDITOR_SELECTOR);
   }
 
   function claudeEditable() {

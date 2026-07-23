@@ -34,8 +34,13 @@
     customTerms: [],
     personalTerms: [],
     pausedHosts: [],
-    subscriptionPlan: "free"
+    subscriptionPlan: "free",
+    // Where the protected-words utility box pops up. One of: "composer" (anchored
+    // to the active text box), "top-right", "bottom-right", "top-left", "bottom-left".
+    boxPosition: "composer"
   };
+
+  const BOX_POSITIONS = ["composer", "top-right", "bottom-right", "top-left", "bottom-left"];
 
   const COMPANY_TERMS_STORAGE_KEY = "ledebeCompanyTerms";
   const COMPANY_STATE_STORAGE_KEY = "ledebeCompanyState";
@@ -552,8 +557,12 @@
 
   function isContentEditableLike(node) {
     if (!(node instanceof HTMLElement)) return false;
+    if (node.isContentEditable) return true;
+    // An absent contenteditable attribute reads back as null (not ""), so guard
+    // on hasAttribute — otherwise every plain element (body, divs) looks editable.
+    if (!node.hasAttribute("contenteditable")) return false;
     const attr = (node.getAttribute("contenteditable") || "").toLowerCase();
-    return node.isContentEditable || attr === "" || attr === "true" || attr === "plaintext-only";
+    return attr === "" || attr === "true" || attr === "plaintext-only";
   }
 
   function isEditableElement(node) {
@@ -1356,7 +1365,8 @@
   const PAGE_PUSH_VAR = "--ledebe-panel-offset";
   let notice = null;
   let noticeTimer = null;
-  const NOTICE_HIDE_MS = 3000;
+  let noticeHovered = false;
+  const NOTICE_HIDE_MS = 6000;
   let composerToggle = null;
   let composerHint = null;
   let composerHintTimer = null;
@@ -1422,33 +1432,128 @@
     return drawer;
   }
 
+  // ---- protected-words utility box ----------------------------------------
+  // A small pop-up that lists what was just protected. Clicking a word reveals
+  // (unprotects) it back into the field. It replaces the old "open the panel"
+  // notice; the full 50% panel is still reachable from its header button.
+
+  function boxPosition() {
+    const pos = settings.boxPosition;
+    return BOX_POSITIONS.includes(pos) ? pos : "composer";
+  }
+
   function ensureNotice() {
     if (notice && document.documentElement.contains(notice)) return notice;
     notice = document.createElement("div");
-    notice.className = "ledebe-notice";
+    notice.className = "ledebe-protected-box";
     notice.innerHTML = `
-      <div class="ledebe-notice__card" role="status" aria-live="polite">
-        <span class="ledebe-notice__text">Protected. Click the icon if you want the full panel.</span>
-        <button type="button" class="ledebe-notice__icon" aria-label="Open Ledebe conversation panel"></button>
+      <div class="ledebe-protected-box__card" role="status" aria-live="polite">
+        <div class="ledebe-protected-box__head">
+          <span class="ledebe-protected-box__title">Protected</span>
+          <button type="button" class="ledebe-protected-box__open">Open panel</button>
+        </div>
+        <ul class="ledebe-protected-box__list"></ul>
       </div>
     `;
-    const iconButton = notice.querySelector(".ledebe-notice__icon");
-    const iconUrl = runtimeUrl("ledebe-icon.png");
-    if (iconButton) {
-      if (iconUrl) {
-        iconButton.innerHTML = `<img src="${iconUrl}" alt="" />`;
-      } else {
-        iconButton.textContent = "L";
-      }
-      iconButton.addEventListener("click", async (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        hideNotice(true);
-        await toggleOverlay();
-      });
-    }
+    notice.querySelector(".ledebe-protected-box__open").addEventListener("click", async (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      hideNotice(true);
+      await toggleOverlay();
+    });
+    // Keep it up while the user is reading / clicking inside it.
+    notice.addEventListener("mouseenter", () => {
+      noticeHovered = true;
+      if (noticeTimer) { clearTimeout(noticeTimer); noticeTimer = null; }
+    });
+    notice.addEventListener("mouseleave", () => {
+      noticeHovered = false;
+      scheduleNoticeHide();
+    });
     document.documentElement.appendChild(notice);
     return notice;
+  }
+
+  // Fill the box with the values currently protected in the active field. Returns
+  // the number of rows rendered so callers can skip an empty box.
+  function renderProtectedBox() {
+    if (!notice) return 0;
+    const list = notice.querySelector(".ledebe-protected-box__list");
+    if (!list) return 0;
+    const items = protectedItems(getFieldText(activeEditable));
+    list.innerHTML = "";
+    for (const { value, count } of items) {
+      const li = document.createElement("li");
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "ledebe-protected-box__item";
+      btn.title = t("box.unprotect", "Click to unprotect");
+      const val = document.createElement("span");
+      val.className = "ledebe-protected-box__val";
+      val.textContent = count > 1 ? `${value} ×${count}` : value;
+      const tag = document.createElement("span");
+      tag.className = "ledebe-protected-box__tag";
+      tag.textContent = placeholderPrefixFor(value).replace(/^LDB_/, "");
+      const x = document.createElement("span");
+      x.className = "ledebe-protected-box__x";
+      x.textContent = "✕";
+      btn.append(val, tag, x);
+      btn.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        unprotectValue(value);
+        if (!renderProtectedBox()) hideNotice(true); // last one revealed → dismiss
+        else positionProtectedBox();
+      });
+      li.appendChild(btn);
+      list.appendChild(li);
+    }
+    return items.length;
+  }
+
+  // Place the box per the user's setting: a fixed corner, or anchored just above
+  // the active composer.
+  function positionProtectedBox() {
+    if (!notice) return;
+    const pos = boxPosition();
+    notice.dataset.pos = pos;
+    notice.style.top = notice.style.bottom = notice.style.left = notice.style.right = "";
+    const margin = 16;
+    const rect = notice.getBoundingClientRect();
+    const w = rect.width || 300;
+    const h = rect.height || 120;
+    if (pos === "composer") {
+      const target = composerToggleTarget();
+      if (target instanceof HTMLElement) {
+        const r = target.getBoundingClientRect();
+        let top = r.top - h - 10;
+        if (top < 8) top = Math.min(r.bottom + 10, window.innerHeight - h - 8);
+        const left = Math.max(8, Math.min(r.right - w, window.innerWidth - w - 8));
+        notice.style.top = `${Math.max(8, top)}px`;
+        notice.style.left = `${left}px`;
+        return;
+      }
+      notice.style.bottom = `${margin}px`;
+      notice.style.right = `${margin}px`;
+      return;
+    }
+    if (pos.includes("top")) notice.style.top = `${margin}px`;
+    else notice.style.bottom = `${margin}px`;
+    if (pos.includes("left")) notice.style.left = `${margin}px`;
+    else notice.style.right = `${margin}px`;
+  }
+
+  function scheduleNoticeHide() {
+    if (noticeTimer) clearTimeout(noticeTimer);
+    noticeTimer = window.setTimeout(() => {
+      noticeTimer = null;
+      if (!noticeHovered) hideNotice();
+    }, NOTICE_HIDE_MS);
+  }
+
+  // Reposition a visible box as the page scrolls or the composer grows/moves.
+  function syncProtectedBox() {
+    if (notice && notice.classList.contains("is-visible")) positionProtectedBox();
   }
 
   function hideNotice(immediate = false) {
@@ -1456,9 +1561,7 @@
       clearTimeout(noticeTimer);
       noticeTimer = null;
     }
-    document.querySelectorAll(".ledebe-inline-btn, .ledebe-inline-tray").forEach((node) => {
-      node.classList.remove("ledebe-guided-target");
-    });
+    noticeHovered = false;
     if (!notice) return;
     if (immediate) {
       notice.classList.remove("is-visible");
@@ -1473,7 +1576,7 @@
         current.remove();
         notice = null;
       }
-    }, 260);
+    }, 220);
   }
 
   function ensureComposerHint() {
@@ -1518,29 +1621,33 @@
     }, 2400);
   }
 
+  // `preview` (from the settings position picker) forces the box open so the user
+  // can see where it lands, even with the panel open or nothing protected yet.
   function showNotice(options = {}) {
-    const { ignoreNativePanel = false } = options;
-    if ((!ignoreNativePanel && nativePanelOpen) || drawerOpen) return;
+    const { ignoreNativePanel = false, preview = false } = options;
+    if (!preview && ((!ignoreNativePanel && nativePanelOpen) || drawerOpen)) return;
     const el = ensureNotice();
-    document.querySelectorAll(".ledebe-inline-btn").forEach((button) => {
-      button.classList.add("ledebe-guided-target");
-      button.parentElement?.classList.add("ledebe-inline-tray");
-      button.parentElement?.classList.add("ledebe-guided-target");
-    });
+    const count = renderProtectedBox();
+    if (!count) {
+      if (!preview) { hideNotice(true); return; }
+      const list = el.querySelector(".ledebe-protected-box__list");
+      list.innerHTML = `<li class="ledebe-protected-box__empty">${t("box.empty", "Protected words will appear here.")}</li>`;
+    }
     if (noticeTimer) clearTimeout(noticeTimer);
     void el.offsetWidth;
     el.classList.add("is-visible");
-    noticeTimer = window.setTimeout(() => {
-      noticeTimer = null;
-      hideNotice();
-    }, NOTICE_HIDE_MS);
+    positionProtectedBox();
+    scheduleNoticeHide();
   }
 
   function ensureComposerToggle() {
     if (composerToggle && document.documentElement.contains(composerToggle)) return composerToggle;
     composerToggle = document.createElement("button");
     composerToggle.type = "button";
+    composerToggle.id = "ledebe-composer-toggle";
     composerToggle.className = "ledebe-composer-toggle";
+    composerToggle.dataset.ledebe = "composer-toggle";
+    composerToggle.dataset.ledebePlacement = "unknown";
     composerToggle.setAttribute("aria-label", "Ledebe protection status");
     composerToggle.addEventListener("pointerdown", (event) => {
       event.preventDefault();
@@ -1567,8 +1674,17 @@
     });
     composerToggle.addEventListener("mouseleave", () => hideComposerHint());
     composerToggle.addEventListener("blur", () => hideComposerHint());
-    document.documentElement.appendChild(composerToggle);
+    (document.body || document.documentElement).appendChild(composerToggle);
     return composerToggle;
+  }
+
+  function ensureContentMarker() {
+    if (document.getElementById("ledebe-content-script-marker")) return;
+    const marker = document.createElement("meta");
+    marker.id = "ledebe-content-script-marker";
+    marker.dataset.ledebe = "content-script-marker";
+    marker.content = "active";
+    (document.head || document.documentElement).appendChild(marker);
   }
 
   function composerToggleInsets(target) {
@@ -1577,24 +1693,374 @@
     return { top: 8, right: 14 };
   }
 
+  function composerUsesLeadingOverlay(target) {
+    if (!(target instanceof HTMLElement)) return false;
+    const host = getHost();
+    return host.includes("gemini.google.com")
+      || matchesWithin(target, GEMINI_EDITOR_SELECTOR);
+  }
+
+  function composerUsesTopRightOverlay(target) {
+    if (!(target instanceof HTMLElement)) return false;
+    const host = getHost();
+    return host.includes("claude.ai")
+      || matchesWithin(target, CLAUDE_EDITOR_SELECTOR);
+  }
+
+  function claudeEditable() {
+    try {
+      const node = document.querySelector(
+        '[data-testid="chat-input"][contenteditable="true"], [data-testid="chat-input"].tiptap.ProseMirror, .tiptap.ProseMirror[contenteditable="true"]'
+      );
+      return node instanceof HTMLElement ? node : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function visibleComposerAncestor(node) {
+    if (!(node instanceof HTMLElement)) return null;
+    let best = null;
+    let current = node;
+    for (let depth = 0; depth < 8 && current instanceof HTMLElement; depth += 1, current = current.parentElement) {
+      if (isInsideLedebeUi(current)) continue;
+      const rect = current.getBoundingClientRect();
+      if (rect.width >= 300 && rect.height >= 56) {
+        best = current;
+        const className = String(current.getAttribute("class") || "");
+        if (
+          current.matches?.("fieldset")
+          || className.includes("relative")
+          || className.includes("flex-col")
+        ) {
+          break;
+        }
+      }
+    }
+    return best;
+  }
+
   function composerToggleTarget() {
     if (!isAiHost()) return null;
-    const target = currentEditable() || getComposer(activeEditable) || activeEditable;
+    const target = siteComposerTarget() || currentEditable() || getComposer(activeEditable) || activeEditable;
     if (!(target instanceof HTMLElement) || !target.isConnected || isInsideLedebeUi(target)) return null;
+    return target;
+  }
+
+  // The floating overlay should only show while the composer is actually active
+  // (otherwise a stray dot sits over the page). A pinned toolbar button doesn't
+  // need this — it lives in the site's own button row and stays put like theirs.
+  function composerToggleIsFocused(target) {
     const focused = document.activeElement;
-    if (
+    return !(
       focused instanceof HTMLElement
       && focused !== target
       && !target.contains(focused)
       && !target.matches(":focus")
-    ) {
+    );
+  }
+
+  // The composer's own trailing button row (mic / send / voice), so the toggle
+  // can sit pinned alongside those controls instead of floating over the text.
+  // Selectors are best-effort and site-specific — fall back to null (overlay).
+  const COMPOSER_TOOLBAR_SELECTORS = [
+    '[class*="grid-area:trailing"]',              // ChatGPT (Tailwind grid-area class)
+    '[data-composer-transition-slot="trailing"]', // ChatGPT transition slot
+    '[data-testid="composer-trailing-actions"]',
+    '.composer-actions', '.input-actions', '.send-button-container'
+  ];
+
+  // The send button marks the composer's action row across assistants (Claude
+  // and Gemini don't expose a named trailing container, so we anchor off this).
+  const SEND_BUTTON_SELECTORS =
+    'button[data-testid="send-button"], button[aria-label*="send" i], button[type="submit"]';
+
+  // Trailing controls that are present even when the composer is empty (mic /
+  // dictation / voice). Claude only renders its send button once there's text,
+  // so we anchor off these too — otherwise the toggle would only show up after a
+  // send instead of the whole time.
+  const TRAILING_CONTROL_SELECTORS = SEND_BUTTON_SELECTORS
+    + ', button[aria-label*="dictat" i], button[aria-label*="microphone" i]'
+    + ', button[aria-label*="voice" i], button[aria-label*="read aloud" i]';
+
+  const GEMINI_EDITOR_SELECTOR = '.ql-editor[role="textbox"], .ql-editor[contenteditable], [role="textbox"].ql-editor';
+  const GEMINI_LEADING_WRAPPER_SELECTOR = '.leading-actions-wrapper, simplified-input-menu';
+  const GEMINI_MIC_WRAPPER_SELECTOR = '[data-node-type="speech_dictation_mic_button"]';
+  const GEMINI_MIC_BUTTON_SELECTOR = `${GEMINI_MIC_WRAPPER_SELECTOR} button[aria-label="Microphone"]`;
+  const GEMINI_SEND_ICON_SELECTOR = 'mat-icon[data-mat-icon-name="arrow_upward"]';
+  const CLAUDE_COMPOSER_SELECTOR = '[data-testid="chat-input"]';
+  const CLAUDE_EDITOR_SELECTOR = '.tiptap.ProseMirror, [data-testid="chat-input"], [data-testid="chat-input"] .tiptap, [data-testid="chat-input"] .ProseMirror';
+
+  function siteComposerTarget() {
+    const host = getHost();
+    if (host.includes("claude.ai")) {
+      const editable = claudeEditable();
+      if (editable instanceof HTMLElement && editable.isConnected && !isInsideLedebeUi(editable)) {
+        activeEditable = editable;
+        return editable;
+      }
+    }
+    const selectors = [];
+    if (host.includes("claude.ai")) selectors.push(CLAUDE_COMPOSER_SELECTOR, CLAUDE_EDITOR_SELECTOR);
+    if (host.includes("gemini.google.com")) selectors.push(GEMINI_EDITOR_SELECTOR);
+    if (!selectors.length) return null;
+    for (const selector of selectors) {
+      try {
+        const node = document.querySelector(selector);
+        const editable = resolveEditable(node) || getComposer(node) || node;
+        if (editable instanceof HTMLElement && editable.isConnected && !isInsideLedebeUi(editable)) {
+          activeEditable = editable;
+          return editable;
+        }
+      } catch (error) {
+        /* ignore */
+      }
+    }
+    return null;
+  }
+
+  function directChildWithin(parent, node) {
+    if (!(parent instanceof HTMLElement) || !(node instanceof HTMLElement)) return null;
+    let cur = node;
+    while (cur && cur.parentElement && cur.parentElement !== parent) {
+      cur = cur.parentElement;
+    }
+    return cur?.parentElement === parent ? cur : null;
+  }
+
+  function rowControlChildren(row, target) {
+    if (!(row instanceof HTMLElement)) return [];
+    let nodes = [];
+    try { nodes = row.querySelectorAll(TRAILING_CLUSTER_SELECTORS); } catch (error) { return []; }
+    const seen = new Set();
+    const out = [];
+    for (const node of nodes) {
+      if (!(node instanceof HTMLElement) || node === target || node.contains(target) || isInsideLedebeUi(node)) continue;
+      const child = directChildWithin(row, node);
+      if (!(child instanceof HTMLElement) || seen.has(child)) continue;
+      seen.add(child);
+      out.push(child);
+    }
+    return out;
+  }
+
+  function controlRowAnchor(row, target, preferred = null) {
+    if (!(row instanceof HTMLElement) || row.contains(target) || isInsideLedebeUi(row)) return null;
+    const controls = rowControlChildren(row, target);
+    if (!controls.length) return null;
+    const preferredChild = preferred instanceof HTMLElement ? directChildWithin(row, preferred) : null;
+    return {
+      el: row,
+      before: preferredChild || controls[0]
+    };
+  }
+
+  function bestControlRow(primaryControl, target, secondaryControl = null) {
+    if (!(primaryControl instanceof HTMLElement) || !(target instanceof HTMLElement)) return null;
+    let best = null;
+    let row = primaryControl.parentElement;
+    for (let depth = 0; depth < 6 && row instanceof HTMLElement; depth += 1, row = row.parentElement) {
+      if (row.contains(target) || isInsideLedebeUi(row)) continue;
+      const controls = rowControlChildren(row, target);
+      if (!controls.length) continue;
+      const includesPrimary = controls.some((control) => control === directChildWithin(row, primaryControl));
+      const includesSecondary = !(secondaryControl instanceof HTMLElement)
+        || controls.some((control) => control === directChildWithin(row, secondaryControl));
+      if (!includesPrimary || !includesSecondary) continue;
+      const candidate = {
+        el: row,
+        before: controls[0],
+        score: controls.length
+      };
+      if (!best || candidate.score > best.score) best = candidate;
+    }
+    return best ? { el: best.el, before: best.before } : null;
+  }
+
+  function matchesWithin(target, selector) {
+    if (!(target instanceof HTMLElement)) return false;
+    if (target.matches(selector)) return true;
+    return Boolean(target.closest?.(selector) || target.querySelector?.(selector));
+  }
+
+  function leadingComposerAnchor(target) {
+    if (!(target instanceof HTMLElement)) return null;
+    const host = getHost();
+    if (!host.includes("gemini.google.com")) return null;
+    let scope = target.parentElement;
+    for (let depth = 0; depth < 6 && scope instanceof HTMLElement; depth += 1, scope = scope.parentElement) {
+      let wrapper = null;
+      let plusButton = null;
+      try {
+        plusButton = scope.querySelector('button[aria-label*="upload" i], button[aria-label*="tool" i], button[aria-haspopup="menu"], button');
+      } catch (error) {
+        plusButton = null;
+      }
+      const preferredAnchor = plusButton instanceof HTMLElement
+        ? plusButton.closest('.toolbox-drawer-container, simplified-input-menu, .leading-actions-wrapper')
+        : null;
+      wrapper = preferredAnchor instanceof HTMLElement ? preferredAnchor : null;
+      if (!(wrapper instanceof HTMLElement)) {
+        try { wrapper = scope.querySelector(GEMINI_LEADING_WRAPPER_SELECTOR); } catch (error) { wrapper = null; }
+      }
+      if (!(wrapper instanceof HTMLElement) || wrapper.contains(target) || isInsideLedebeUi(wrapper)) continue;
+      try {
+        plusButton = plusButton instanceof HTMLElement ? plusButton : wrapper.querySelector('button[aria-label*="upload" i], button[aria-label*="tool" i], button[aria-haspopup="menu"], button');
+      } catch (error) {
+        plusButton = null;
+      }
+      const plusChild = plusButton instanceof HTMLElement ? directChildWithin(wrapper, plusButton) : null;
+      if (plusChild instanceof HTMLElement) {
+        const after = plusChild.nextElementSibling;
+        return { el: wrapper, before: after instanceof HTMLElement ? after : null };
+      }
+      return { el: wrapper, before: null };
+    }
+    return null;
+  }
+
+  function geminiToolbarAnchor(target, scope) {
+    if (!(target instanceof HTMLElement) || !(scope instanceof HTMLElement)) return null;
+    if (!matchesWithin(target, GEMINI_EDITOR_SELECTOR)) return null;
+    let micWrap = null;
+    let sendIcon = null;
+    try {
+      micWrap = scope.querySelector(GEMINI_MIC_WRAPPER_SELECTOR);
+      sendIcon = scope.querySelector(GEMINI_SEND_ICON_SELECTOR);
+    } catch (error) {
       return null;
     }
-    return target;
+    if (!(micWrap instanceof HTMLElement) || micWrap.contains(target)) return null;
+    const sendButton = sendIcon instanceof HTMLElement ? sendIcon.closest('button, [role="button"]') : null;
+    return bestControlRow(micWrap, target, sendButton)
+      || bestControlRow(sendButton, target, micWrap)
+      || controlRowAnchor(micWrap.parentElement, target, null);
+  }
+
+  function claudeToolbarAnchor(target, scope) {
+    if (!(target instanceof HTMLElement) || !(scope instanceof HTMLElement)) return null;
+    if (!matchesWithin(target, CLAUDE_EDITOR_SELECTOR)) return null;
+    let sendButton = null;
+    let micButton = null;
+    try {
+      sendButton = scope.querySelector(SEND_BUTTON_SELECTORS);
+      micButton = scope.querySelector('button[aria-label*="dictat" i], button[aria-label*="microphone" i], button[aria-label*="voice" i]');
+    } catch (error) {
+      return null;
+    }
+    const control = sendButton instanceof HTMLElement ? sendButton : micButton;
+    if (!(control instanceof HTMLElement) || control.contains(target) || isInsideLedebeUi(control)) return null;
+    return bestControlRow(control, target, sendButton instanceof HTMLElement ? micButton : sendButton)
+      || controlRowAnchor(control.parentElement, target, control);
+  }
+
+  // Returns { el, before } describing where to pin the toggle: `el` is the
+  // toolbar to inject into, `before` is a node to insert ahead of (the send
+  // button, so we sit just left of it) or null to append at the end.
+  function composerToolbarAnchor(target) {
+    if (!(target instanceof HTMLElement)) return null;
+    // Climb a few levels from the composer, looking for the site's trailing
+    // toolbar or the row that holds its action buttons. The anchor must NOT
+    // contain the editable itself, so the toggle can never land over the text.
+    let scope = target.parentElement;
+    for (let depth = 0; depth < 6 && scope instanceof HTMLElement; depth += 1, scope = scope.parentElement) {
+      for (const selector of COMPOSER_TOOLBAR_SELECTORS) {
+        let el = null;
+        try { el = scope.querySelector(selector); } catch (error) { /* bad selector on this engine */ }
+        if (el instanceof HTMLElement && !isInsideLedebeUi(el) && !el.contains(target)) {
+          return { el, before: null }; // named trailing container → append (ChatGPT)
+        }
+      }
+      const geminiAnchor = geminiToolbarAnchor(target, scope);
+      if (geminiAnchor) return geminiAnchor;
+      const claudeAnchor = claudeToolbarAnchor(target, scope);
+      if (claudeAnchor) return claudeAnchor;
+      // The trailing action group: the parent of the first trailing control.
+      let control = null;
+      try { control = scope.querySelector(TRAILING_CONTROL_SELECTORS); } catch (error) { /* ignore */ }
+      const genericAnchor = controlRowAnchor(control?.parentElement, target, control);
+      if (genericAnchor) return genericAnchor;
+    }
+    return null;
+  }
+
+  // The left edge (viewport x) of the composer's trailing-controls cluster — the
+  // mic / send / model-picker buttons that sit in the editable's row on its right.
+  // Used only to POSITION the floating dot just left of ALL of them (like
+  // QuillBot), so it never lands on top of one. Returns null if none found.
+  const TRAILING_CLUSTER_SELECTORS =
+    'button, [role="button"], select, [aria-haspopup], [role="combobox"]';
+  function composerTrailingBound(target, rect) {
+    if (!(target instanceof HTMLElement) || !rect) return null;
+    let scope = target.parentElement;
+    for (let depth = 0; depth < 6 && scope instanceof HTMLElement; depth += 1, scope = scope.parentElement) {
+      let nodes = [];
+      try { nodes = scope.querySelectorAll(TRAILING_CLUSTER_SELECTORS); } catch (error) { continue; }
+      let minLeft = Infinity;
+      for (const el of nodes) {
+        if (!(el instanceof HTMLElement) || isInsideLedebeUi(el) || el.contains(target) || el === target) continue;
+        const r = el.getBoundingClientRect();
+        if (!r.width || !r.height) continue;
+        if (r.top >= rect.bottom - 2 || r.bottom <= rect.top + 2) continue; // must share the editable's row
+        if (r.left <= rect.left + rect.width * 0.6) continue;               // must be a right-side control
+        if (r.left < minLeft) minLeft = r.left;
+      }
+      if (minLeft !== Infinity) return minLeft;
+    }
+    return null;
+  }
+
+  function composerOverlayHost(target) {
+    if (!(target instanceof HTMLElement)) return null;
+    if (composerUsesTopRightOverlay(target)) {
+      const editable = claudeEditable();
+      const visualHost = visibleComposerAncestor(editable || target);
+      return visualHost
+        || target.closest?.("fieldset")
+        || target.parentElement;
+    }
+    return getComposer(target) || target;
+  }
+
+  function composerOverlayRect(target, rect) {
+    const host = composerOverlayHost(target);
+    if (!(host instanceof HTMLElement)) return rect;
+    try {
+      const hostRect = host.getBoundingClientRect();
+      if (hostRect.width >= rect.width && hostRect.height >= rect.height) return hostRect;
+    } catch (error) {
+      /* ignore */
+    }
+    return rect;
+  }
+
+  function composerLeadingBound(target, rect) {
+    if (!(target instanceof HTMLElement) || !rect) return null;
+    let scope = target.parentElement;
+    for (let depth = 0; depth < 6 && scope instanceof HTMLElement; depth += 1, scope = scope.parentElement) {
+      let nodes = [];
+      try { nodes = scope.querySelectorAll(TRAILING_CLUSTER_SELECTORS); } catch (error) { continue; }
+      let maxRight = -Infinity;
+      let bestRect = null;
+      for (const el of nodes) {
+        if (!(el instanceof HTMLElement) || isInsideLedebeUi(el) || el.contains(target) || el === target) continue;
+        const r = el.getBoundingClientRect();
+        if (!r.width || !r.height) continue;
+        if (r.top >= rect.bottom - 2 || r.bottom <= rect.top + 2) continue; // must share the editable's row
+        if (r.right >= rect.left + rect.width * 0.45) continue;              // must be a left-side control
+        if (r.right > maxRight) {
+          maxRight = r.right;
+          bestRect = r;
+        }
+      }
+      if (bestRect) return bestRect;
+    }
+    return null;
   }
 
   function hideComposerToggle() {
     composerToggle?.classList.remove("is-visible");
+    if (composerToggle) composerToggle.dataset.ledebeVisible = "false";
     hideComposerHint(true);
   }
 
@@ -1730,11 +2196,19 @@
   function syncComposerToggle() {
     const target = composerToggleTarget();
     if (!target) {
+      const button = ensureComposerToggle();
+      button.dataset.ledebePlacement = "hidden:no-target";
+      button.dataset.ledebeVisible = "false";
       hideComposerToggle();
       return;
     }
     const rect = target.getBoundingClientRect();
-    if (rect.width < 150 || rect.height < 28) {
+    const placementRect = composerOverlayRect(target, rect);
+    if (placementRect.width < 150 || placementRect.height < 28) {
+      const button = ensureComposerToggle();
+      button.dataset.ledebePlacement = "hidden:small-rect";
+      button.dataset.ledebeRect = `${Math.round(placementRect.width)}x${Math.round(placementRect.height)}`;
+      button.dataset.ledebeVisible = "false";
       hideComposerToggle();
       return;
     }
@@ -1742,7 +2216,6 @@
     button.classList.toggle("is-paused", isPaused());
     button.classList.toggle("is-aggressive", !isPaused() && settings.protectionMode === "aggressive");
     button.classList.toggle("is-mild", !isPaused() && settings.protectionMode !== "aggressive");
-    button.classList.add("is-visible");
     const statusText = isPaused()
       ? t("quick.stateOff", "Ledebe is off for this session")
       : settings.protectionMode === "aggressive"
@@ -1756,16 +2229,92 @@
     button.dataset.hint = actionText;
     button.title = `${statusText}. ${actionText}`;
     button.setAttribute("aria-label", `${statusText}. ${actionText}`);
-    const width = button.offsetWidth || 16;
-    const height = button.offsetHeight || 16;
-    const inset = composerToggleInsets(target);
-    const minTop = rect.top + inset.top;
-    const maxTop = rect.bottom - height - inset.top;
-    const centeredTop = rect.top + ((rect.height - height) / 2);
-    const top = Math.max(10, Math.min(maxTop, Math.max(minTop, centeredTop)));
-    const left = Math.max(10, rect.right - width - inset.right);
-    button.style.top = `${top}px`;
-    button.style.left = `${left}px`;
+    // Prefer pinning the toggle inside the composer's trailing toolbar (like
+    // QuillBot) so it flows with the layout instead of chasing the growing text
+    // rect. Fall back to the fixed overlay when no toolbar anchor is found.
+    const leadingAnchorInfo = composerUsesLeadingOverlay(target) ? leadingComposerAnchor(target) : null;
+    const anchorInfo = composerToolbarAnchor(target);
+    if (leadingAnchorInfo) {
+      const anchor = leadingAnchorInfo.el;
+      const before = leadingAnchorInfo.before;
+      button.classList.add("is-pinned");
+      button.classList.add("is-visible");
+      button.dataset.ledebePlacement = "leading-pinned";
+      button.dataset.ledebeVisible = "true";
+      button.style.top = "";
+      button.style.left = "";
+      if (before instanceof HTMLElement && before.parentElement === anchor && before !== button) {
+        if (button.nextElementSibling !== before) anchor.insertBefore(button, before);
+      } else if (button.parentElement !== anchor) {
+        anchor.appendChild(button);
+      }
+    } else if (anchorInfo && !composerUsesLeadingOverlay(target) && !composerUsesTopRightOverlay(target)) {
+      // Pinned into the site's toolbar: persist like the site's own buttons,
+      // whether or not the composer currently has focus.
+      const anchor = anchorInfo.el;
+      const before = anchorInfo.before;
+      button.classList.add("is-pinned");
+      button.classList.add("is-visible");
+      button.dataset.ledebePlacement = "trailing-pinned";
+      button.dataset.ledebeVisible = "true";
+      button.style.top = "";
+      button.style.left = "";
+      if (before instanceof HTMLElement && before.parentElement === anchor && before !== button) {
+        if (button.nextElementSibling !== before) anchor.insertBefore(button, before);
+      } else if (button.parentElement !== anchor) {
+        anchor.appendChild(button);
+      }
+    } else {
+      button.classList.remove("is-pinned");
+      // Claude prefers a QuillBot-style top-right badge inside the composer box.
+      // Gemini prefers the left-side fallback when we cannot pin after upload.
+      button.classList.add("is-visible");
+      button.dataset.ledebePlacement = composerUsesTopRightOverlay(target)
+        ? "top-right-overlay"
+        : (composerUsesLeadingOverlay(target) ? "leading-overlay" : "trailing-overlay");
+      button.dataset.ledebeVisible = "true";
+      const root = document.body || document.documentElement;
+      if (button.parentElement !== root) {
+        root.appendChild(button);
+      }
+      const width = button.offsetWidth || 16;
+      const height = button.offsetHeight || 16;
+      let top;
+      let left;
+      const overlayRect = composerOverlayRect(target, rect);
+      // Sit just LEFT of the composer's entire trailing-controls cluster (model
+      // picker + mic + send, like Gemini's "Flash" dropdown next to the mic), so
+      // the dot is clearly visible and never lands on top of one of them. Fall
+      // back to the editable's right edge when there's no such cluster.
+      const trailingLeft = composerTrailingBound(target, rect);
+      const leadingControl = composerLeadingBound(target, rect);
+      const inset = composerToggleInsets(target);
+      const minTop = overlayRect.top + inset.top;
+      const maxTop = overlayRect.bottom - height - inset.top;
+      const centeredTop = overlayRect.top + ((overlayRect.height - height) / 2);
+      top = Math.min(maxTop, Math.max(minTop, centeredTop));
+      if (composerUsesTopRightOverlay(target)) {
+        top = overlayRect.top + inset.top;
+        left = overlayRect.right - width - inset.right;
+      } else if (composerUsesLeadingOverlay(target)) {
+        if (leadingControl) {
+          left = leadingControl.right + 10;
+          const controlCenteredTop = leadingControl.top + ((leadingControl.height - height) / 2);
+          top = Math.min(maxTop, Math.max(minTop, controlCenteredTop));
+        } else {
+          left = overlayRect.left + 12;
+        }
+      } else if (trailingLeft != null && trailingLeft > rect.left) {
+        const gap = 8;
+        left = trailingLeft - width - gap;
+      } else {
+        left = overlayRect.right - width - inset.right;
+      }
+      top = Math.max(10, Math.min(window.innerHeight - height - 4, top));
+      left = Math.max(10, Math.min(window.innerWidth - width - 4, left));
+      button.style.top = `${top}px`;
+      button.style.left = `${left}px`;
+    }
     if (!composerHintIntroduced) {
       composerHintIntroduced = true;
       showComposerHint(
@@ -2319,6 +2868,42 @@
     return wrap;
   }
 
+  // Advanced-settings control: where the protected-words box pops up. Changing it
+  // previews the box in the new spot so the user can try positions.
+  function boxPositionPicker() {
+    const wrap = document.createElement("label");
+    wrap.className = "ledebe-toggle ledebe-box-pos";
+    const span = document.createElement("span");
+    const strong = document.createElement("strong");
+    strong.textContent = t("settings.boxPosition", "Protected-words box position");
+    const small = document.createElement("small");
+    small.textContent = t("settings.boxPositionHint", "Where the pop-up appears when words are protected.");
+    span.append(strong, small);
+    const select = document.createElement("select");
+    select.className = "ledebe-box-pos__select";
+    const options = [
+      ["composer", t("settings.posComposer", "Near the composer")],
+      ["top-right", t("settings.posTopRight", "Top right")],
+      ["bottom-right", t("settings.posBottomRight", "Bottom right")],
+      ["top-left", t("settings.posTopLeft", "Top left")],
+      ["bottom-left", t("settings.posBottomLeft", "Bottom left")]
+    ];
+    for (const [value, label] of options) {
+      const opt = document.createElement("option");
+      opt.value = value;
+      opt.textContent = label;
+      select.appendChild(opt);
+    }
+    select.value = boxPosition();
+    select.addEventListener("change", async () => {
+      settings.boxPosition = BOX_POSITIONS.includes(select.value) ? select.value : "composer";
+      await syncSet({ boxPosition: settings.boxPosition });
+      showNotice({ preview: true, ignoreNativePanel: true }); // show where it now lands
+    });
+    wrap.append(span, select);
+    return wrap;
+  }
+
   function drawerButton(label, kind, onClick) {
     const btn = document.createElement("button");
     btn.type = "button";
@@ -2605,6 +3190,7 @@
     summary.textContent = t("settings.advanced", "Advanced settings");
     adv.appendChild(summary);
 
+    adv.appendChild(boxPositionPicker());
     adv.appendChild(settingsToggle("scanOnPaste", t("settings.scanPaste", "Scan on paste"), t("settings.scanPasteHint", "Mask sensitive data you paste in."), settings.scanOnPaste !== false));
     adv.appendChild(settingsToggle("appendInstruction", t("settings.keepTokens", "Ask AI to keep placeholders"), t("settings.keepTokensHint", "Append a note on send so tokens stay intact."), settings.appendInstruction !== false));
     adv.appendChild(settingsToggle("persistMappings", t("settings.remember", "Remember across restarts"), t("settings.rememberHint", "Keep restoring older chats after the browser closes. Stays on this device."), settings.persistMappings !== false));
@@ -2689,7 +3275,23 @@
     applyPagePush(0);
   }
 
+  // Set briefly when the user sends: the panel should vanish the moment send is
+  // clicked and stay gone while the message goes out, even though masking right
+  // before send injects placeholders that would otherwise reopen it.
+  let suppressReopenUntil = 0;
+
+  function dismissForSend() {
+    suppressReopenUntil = Date.now() + 1500;
+    if (drawerOpen) closeDrawer();
+    hideNotice(true);
+  }
+
   function maybeOpenDrawer() {
+    if (Date.now() < suppressReopenUntil) {
+      if (drawerOpen) closeDrawer();
+      hideNotice(true);
+      return;
+    }
     if (nativePanelOpen) {
       // The native side panel is showing the same thing — don't double up.
       if (drawerOpen) closeDrawer();
@@ -2705,8 +3307,11 @@
     if (protectedItems(text).length || exposedItems(text).length) {
       const keepCurrentTab = drawerOpen && (activeTab === "words" || activeTab === "settings");
       if (!keepCurrentTab) activeTab = "field";
+      // Never auto-open the full panel — it covers the composer and reads as
+      // intrusive. Keep an already-open panel fresh; otherwise just show the
+      // small notice so the user can open it themselves if they want to.
       if (drawerOpen) refreshDrawer(!keepCurrentTab);
-      else openDrawer();
+      else showNotice();
     } else {
       if (drawerOpen) refreshDrawer();
       hideNotice(true);
@@ -2842,6 +3447,7 @@
 
   function onResponseMutations(records) {
     scheduleInlineInjection(); // keep our per-message button present as turns render
+    scheduleComposerToggleSync(); // re-pin the composer toggle if a re-render dropped it
     if (!restoreActive()) return;
     let queued = false;
     for (const record of records) {
@@ -2945,6 +3551,7 @@
 
   // Right before send (Enter / send button), force-mask anything still exposed.
   function flushBeforeSend() {
+    dismissForSend();
     const target = currentEditable() || resolveEditable(document.activeElement);
     if (!target) return;
     activeEditable = target;
@@ -3012,6 +3619,7 @@
     if (!isAiHost() || isPaused()) return;
     const form = event.target instanceof HTMLFormElement ? event.target : null;
     if (!form) return;
+    dismissForSend();
     const field = activeEditable && form.contains(activeEditable) ? activeEditable
       : Array.from(form.querySelectorAll(`textarea, input, ${RICH_EDITABLE_SELECTOR}, [role="textbox"]`)).find(isEditableElement);
     if (field) {
@@ -3215,6 +3823,23 @@
     }, 400);
   }
 
+  // The pinned composer toggle lives inside the site's own (React-managed)
+  // toolbar, so a re-render can strip it out. Re-sync on DOM churn so it heals
+  // itself instead of vanishing after the first protection. Debounced, and a
+  // no-op when the button is already in place, so it can't loop on its own edits.
+  let toggleSyncTimer = null;
+  function scheduleComposerToggleSync() {
+    if (toggleSyncTimer) return;
+    toggleSyncTimer = window.setTimeout(() => {
+      toggleSyncTimer = null;
+      try {
+        syncComposerToggle();
+      } catch (error) {
+        /* DOM shape changed — ignore */
+      }
+    }, 150);
+  }
+
   function wireRuntime() {
     if (!hasContext()) return;
 
@@ -3347,7 +3972,10 @@
   loadSettings()
     .then(async () => loadMap(await mappingGet()))
     .then(async () => {
-      await syncNativeSidePanelState();
+      // Attach protection listeners immediately once settings + map are loaded.
+      // The native side-panel sync below waits on a background round-trip that
+      // can be slow (service-worker wake-up), and protection must not be dead
+      // while it resolves — so wire input handling first, then sync the panel.
       document.addEventListener("focusin", onFocusIn, true);
       document.addEventListener("beforeinput", onInput, true);
       document.addEventListener("input", onInput, true);
@@ -3363,14 +3991,27 @@
       document.addEventListener("submit", onSubmit, true);
       window.addEventListener("resize", syncComposerToggle, true);
       window.addEventListener("resize", syncSelectionPopup, true);
+      window.addEventListener("resize", syncProtectedBox, true);
       window.addEventListener("scroll", syncComposerToggle, true);
       window.addEventListener("scroll", syncSelectionPopup, true);
+      window.addEventListener("scroll", syncProtectedBox, true);
       startResponseObserver();
       scheduleInlineInjection();
       setTimeout(scheduleInlineInjection, 1500);
       setTimeout(scheduleInlineInjection, 3500);
+      if (isAiHost()) {
+        document.documentElement.dataset.ledebeContentScript = "active";
+        ensureContentMarker();
+        ensureComposerToggle();
+      }
       syncComposerToggle();
+      // Claude/Gemini render their composer asynchronously after first paint, so
+      // re-sync a couple of times to surface the status dot without waiting for a
+      // scroll / focus. The mutation observer also re-syncs on later DOM churn.
+      setTimeout(syncComposerToggle, 1500);
+      setTimeout(syncComposerToggle, 3500);
       syncSelectionPopup();
       console.debug("[Ledebe] content script active:", getHost(), "· AI host:", isAiHost());
+      await syncNativeSidePanelState();
     });
 })();

@@ -1,6 +1,6 @@
 {
   "name": "ledebe-browser-protector",
-  "version": "1.2.10",
+  "version": "1.3.7",
   "private": true,
   "description": "Ledebe Browser Protector — masks PII as you type/paste into AI chats and restores it in replies.",
   "type": "commonjs",
